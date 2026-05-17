@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import logo from './assets/logo.png'
+import logo from './assets/Logo.png'
 import bananaBloom from './assets/banana-bloom.png'
 import healthMix from './assets/Murunga-health-mix.png'
 import herbal from './assets/Herbal-Tea.png'
