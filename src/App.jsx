@@ -16,19 +16,19 @@ export default function NatvianFoodsPremiumWebsite() {
     {
       name: 'Banana Bloom Health Mix',
       weight: '500g',
-      price: '₹399',
+      price: '₹499',
       image: bananaBloom
     },
     {
       name: 'Murunga Health Mix',
       weight: '500g',
-      price: '₹349',
+      price: '₹449',
       image: healthMix
     },
     {
       name: 'Avaranpoo Herbal Infusion',
-      weight: '250g',
-      price: '₹299',
+      weight: '100g',
+      price: '₹199',
       image: herbal
     },
   ]
