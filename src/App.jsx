@@ -12,10 +12,23 @@ import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import Cart from "./components/Cart";
 
+import AdminDashboard from "./components/AdminDashboard";
+import AdminLogin from "./components/AdminLogin";
+
 import MurungabannerImage from "./assets/Murunga-banner.png";
 import BananabannerImage from "./assets/Bloom-banner.png";
 
 export default function App() {
+
+  // =========================
+  // 🔐 ADMIN MODE
+  // =========================
+  const [isAdmin, setIsAdmin] =
+    useState(
+      localStorage.getItem(
+        "isAdmin"
+      ) === "true"
+    );
 
   // =========================
   // 🌙 DARK MODE
@@ -48,24 +61,37 @@ export default function App() {
   // =========================
   // 💰 OFFER PRICE FUNCTION
   // =========================
-  const getOfferPrice = (mrp) => {
+  const getOfferPrice = (
+    mrp
+  ) => {
 
     const price =
       Number(mrp) || 0;
 
-    if (!OFFER_CONFIG.isActive) {
+    if (
+      !OFFER_CONFIG.isActive
+    ) {
+
       return price;
     }
 
-    if (OFFER_CONFIG.type === "PERCENT") {
+    if (
+      OFFER_CONFIG.type ===
+      "PERCENT"
+    ) {
 
       return (
         price -
-        (price * OFFER_CONFIG.value) / 100
+        (price *
+          OFFER_CONFIG.value) /
+          100
       );
     }
 
-    if (OFFER_CONFIG.type === "FIXED") {
+    if (
+      OFFER_CONFIG.type ===
+      "FIXED"
+    ) {
 
       return (
         price -
@@ -84,39 +110,33 @@ export default function App() {
     variant
   ) => {
 
-    console.log(
-      "PRODUCT:",
-      product
-    );
-
-    console.log(
-      "VARIANT:",
-      variant
-    );
-
-    // ✅ SAFETY
     const safeVariant = {
 
       weight:
-        variant?.weight || "100g",
+        variant?.weight ||
+        "100g",
 
       mrp:
-        Number(variant?.mrp) || 0
+        Number(
+          variant?.mrp
+        ) || 0
     };
 
-    // ✅ CHECK EXISTING
+    // CHECK EXISTING
     const existingIndex =
       cart.findIndex(
         (item) =>
 
-          item.id === product.id &&
-          item.weight === safeVariant.weight
+          item.id ===
+            product.id &&
+          item.weight ===
+            safeVariant.weight
       );
 
-    // =========================
-    // ✅ PRODUCT ALREADY EXISTS
-    // =========================
-    if (existingIndex !== -1) {
+    // PRODUCT EXISTS
+    if (
+      existingIndex !== -1
+    ) {
 
       const updatedCart =
         [...cart];
@@ -130,9 +150,7 @@ export default function App() {
       return;
     }
 
-    // =========================
-    // ✅ NEW PRODUCT
-    // =========================
+    // NEW PRODUCT
     setCart((prev) => [
 
       ...prev,
@@ -142,7 +160,8 @@ export default function App() {
 
         name: product.name,
 
-        image: product.image,
+        image:
+          product.image,
 
         weight:
           safeVariant.weight,
@@ -182,13 +201,19 @@ export default function App() {
       (total, item) => {
 
         const mrp =
-          Number(item.mrp) || 0;
+          Number(
+            item.mrp
+          ) || 0;
 
         const qty =
-          Number(item.qty) || 1;
+          Number(
+            item.qty
+          ) || 1;
 
         const offerPrice =
-          getOfferPrice(mrp);
+          getOfferPrice(
+            mrp
+          );
 
         return (
           total +
@@ -199,6 +224,32 @@ export default function App() {
       0
     );
 
+  // =========================
+  // 🔐 ADMIN LOGIN PAGE
+  // =========================
+  if (
+    window.location.pathname ===
+    "/admin"
+  ) {
+
+    return isAdmin ? (
+
+      <AdminDashboard />
+
+    ) : (
+
+      <AdminLogin
+        setIsAdmin={
+          setIsAdmin
+        }
+      />
+
+    );
+  }
+
+  // =========================
+  // 🛍 MAIN WEBSITE
+  // =========================
   return (
 
     <div
@@ -212,10 +263,16 @@ export default function App() {
       {/* NAVBAR */}
       <Navbar
         darkMode={darkMode}
-        setDarkMode={setDarkMode}
+        setDarkMode={
+          setDarkMode
+        }
         language={language}
-        setLanguage={setLanguage}
-        cartCount={cart.length}
+        setLanguage={
+          setLanguage
+        }
+        cartCount={
+          cart.length
+        }
       />
 
       {/* HERO */}
@@ -237,7 +294,9 @@ export default function App() {
 
         <ProductGrid
           products={products}
-          addToCart={addToCart}
+          addToCart={
+            addToCart
+          }
         />
 
       </div>
@@ -251,7 +310,9 @@ export default function App() {
           removeFromCart={
             removeFromCart
           }
-          totalPrice={totalPrice}
+          totalPrice={
+            totalPrice
+          }
           offerConfig={
             OFFER_CONFIG
           }
