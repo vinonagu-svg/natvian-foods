@@ -52,7 +52,7 @@ export default function Cart({
     useState("");
 
   // =========================
-  // 🚚 STATE
+  // 🚚 SHIPPING STATE
   // =========================
   const [state, setState] =
     useState("Tamil Nadu");
@@ -93,6 +93,17 @@ export default function Cart({
         (price *
           OFFER_CONFIG.value) /
           100
+      );
+    }
+
+    if (
+      OFFER_CONFIG.type ===
+      "FIXED"
+    ) {
+
+      return (
+        price -
+        OFFER_CONFIG.value
       );
     }
 
@@ -210,7 +221,7 @@ export default function Cart({
   };
 
   // =========================
-  // 💰 FINAL TOTAL
+  // 💰 FINAL AFTER COUPON
   // =========================
   const finalAfterCoupon =
     offerTotal -
@@ -290,7 +301,7 @@ export default function Cart({
       );
 
       alert(
-        "Order Placed Successfully"
+        "Order Saved Successfully"
       );
 
     } catch (error) {
@@ -306,7 +317,7 @@ export default function Cart({
   };
 
   // =========================
-  // 📄 PDF INVOICE
+  // 📄 DOWNLOAD PDF
   // =========================
   const downloadInvoice =
     () => {
@@ -358,7 +369,7 @@ export default function Cart({
       71
     );
 
-    let y = 90;
+    let y = 95;
 
     doc.text(
       "Products",
@@ -418,7 +429,7 @@ export default function Cart({
     y += 10;
 
     doc.text(
-      `Coupon: -₹${couponDiscount.toFixed(
+      `Coupon Discount: -₹${couponDiscount.toFixed(
         2
       )}`,
       20,
@@ -474,7 +485,7 @@ export default function Cart({
 
   return (
 
-    <div className="bg-white rounded-3xl shadow-xl p-8">
+    <div className="bg-white p-8 rounded-3xl shadow-xl">
 
       <h1 className="text-4xl font-bold mb-8">
 
@@ -482,11 +493,12 @@ export default function Cart({
 
       </h1>
 
-      {cart.length ===
-      0 ? (
+      {cart.length === 0 ? (
 
-        <p>
+        <p className="text-gray-500">
+
           Your cart is empty
+
         </p>
 
       ) : (
@@ -507,13 +519,10 @@ export default function Cart({
               <input
                 type="text"
                 placeholder="Full Name"
-                value={
-                  customerName
-                }
+                value={customerName}
                 onChange={(e) =>
                   setCustomerName(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
                 className="border p-4 rounded-2xl"
@@ -522,13 +531,10 @@ export default function Cart({
               <input
                 type="text"
                 placeholder="Phone Number"
-                value={
-                  phoneNumber
-                }
+                value={phoneNumber}
                 onChange={(e) =>
                   setPhoneNumber(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
                 className="border p-4 rounded-2xl"
@@ -539,12 +545,11 @@ export default function Cart({
                 value={address}
                 onChange={(e) =>
                   setAddress(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
-                className="border p-4 rounded-2xl md:col-span-2"
                 rows={4}
+                className="border p-4 rounded-2xl md:col-span-2"
               />
 
               <input
@@ -553,8 +558,7 @@ export default function Cart({
                 value={pincode}
                 onChange={(e) =>
                   setPincode(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
                 className="border p-4 rounded-2xl"
@@ -564,8 +568,7 @@ export default function Cart({
                 value={state}
                 onChange={(e) =>
                   setState(
-                    e.target
-                      .value
+                    e.target.value
                   )
                 }
                 className="border p-4 rounded-2xl"
@@ -601,9 +604,7 @@ export default function Cart({
             />
 
             <button
-              onClick={
-                applyCoupon
-              }
+              onClick={applyCoupon}
               className="bg-black text-white px-6 rounded-2xl"
             >
 
@@ -613,14 +614,11 @@ export default function Cart({
 
           </div>
 
-          {/* PRODUCTS */}
+          {/* CART ITEMS */}
           <div className="space-y-5">
 
             {cart.map(
-              (
-                item,
-                index
-              ) => {
+              (item, index) => {
 
                 const offerPrice =
                   getOfferPrice(
@@ -637,12 +635,8 @@ export default function Cart({
                     <div className="flex flex-col md:flex-row gap-5">
 
                       <img
-                        src={
-                          item.image
-                        }
-                        alt={
-                          item.name
-                        }
+                        src={item.image}
+                        alt={item.name}
                         className="w-28 h-28 rounded-2xl object-cover"
                       />
 
@@ -650,26 +644,19 @@ export default function Cart({
 
                         <h2 className="text-2xl font-bold">
 
-                          {
-                            item.name
-                          }
+                          {item.name}
 
                         </h2>
 
                         <p className="text-gray-500">
 
-                          {
-                            item.weight
-                          }
+                          {item.weight}
 
                         </p>
 
                         <p className="line-through text-gray-400">
 
-                          ₹
-                          {
-                            item.mrp
-                          }
+                          ₹{item.mrp}
 
                         </p>
 
@@ -700,9 +687,7 @@ export default function Cart({
 
                           <span className="font-bold">
 
-                            {
-                              item.qty
-                            }
+                            {item.qty}
 
                           </span>
 
@@ -763,6 +748,7 @@ export default function Cart({
               {productDiscount.toFixed(
                 2
               )}
+
             </p>
 
             <p>
@@ -809,15 +795,59 @@ export default function Cart({
 
             </h2>
 
+            {shippingCharge === 0 && (
+
+              <p className="text-green-600 font-bold">
+
+                🎉 Free Shipping Applied
+
+              </p>
+
+            )}
+
+          </div>
+
+          {/* PAYMENT */}
+          <div className="mt-10 bg-gradient-to-r from-green-50 to-green-100 rounded-3xl p-8 border">
+
+            <h2 className="text-3xl font-bold mb-4">
+
+              Payment Method
+
+            </h2>
+
+            <p className="text-gray-700 mb-6">
+
+              After payment, please send payment screenshot to WhatsApp:
+              <span className="font-bold">
+                {" "}
+                9788857645
+              </span>
+
+            </p>
+
+            <a
+              href={`upi://pay?pa=3386071708387@cnrb&pn=NatvianFoods&am=${grandTotal}&cu=INR`}
+              className="block w-full bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-2xl font-bold text-lg"
+            >
+
+              Pay via Google Pay / UPI
+
+            </a>
+
+            <p className="text-sm text-gray-500 mt-4 text-center">
+
+              Supports Google Pay, PhonePe, Paytm & all UPI apps
+
+            </p>
+
           </div>
 
           {/* BUTTONS */}
           <div className="grid md:grid-cols-2 gap-5 mt-10">
 
             <button
-              onClick={
-                downloadInvoice
-              }
+              onClick={downloadInvoice}
               className="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold"
             >
 
@@ -836,7 +866,7 @@ export default function Cart({
                 ) {
 
                   alert(
-                    "Please fill all details"
+                    "Please fill all shipping details"
                   );
 
                   return;
