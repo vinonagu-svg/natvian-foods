@@ -6,8 +6,7 @@ import {
   addDoc
 } from "firebase/firestore";
 
-import { db }
-  from "../firebase";
+import { db } from "../firebase";
 
 export default function Cart({
   cart,
@@ -16,13 +15,11 @@ export default function Cart({
 }) {
 
   // =========================
-  // 🎉 OFFER CONFIG
+  // 🎉 OFFER
   // =========================
   const OFFER_CONFIG = {
     name: "Launching Offer",
-    type: "PERCENT",
-    value: 10,
-    isActive: true
+    value: 10
   };
 
   // =========================
@@ -37,7 +34,7 @@ export default function Cart({
     "11061090";
 
   // =========================
-  // 👤 CUSTOMER DETAILS
+  // 👤 CUSTOMER
   // =========================
   const [customerName, setCustomerName] =
     useState("");
@@ -52,7 +49,7 @@ export default function Cart({
     useState("");
 
   // =========================
-  // 🚚 SHIPPING STATE
+  // 🚚 SHIPPING
   // =========================
   const [state, setState] =
     useState("Tamil Nadu");
@@ -76,38 +73,12 @@ export default function Cart({
     const price =
       Number(mrp) || 0;
 
-    if (
-      !OFFER_CONFIG.isActive
-    ) {
-
-      return price;
-    }
-
-    if (
-      OFFER_CONFIG.type ===
-      "PERCENT"
-    ) {
-
-      return (
-        price -
-        (price *
-          OFFER_CONFIG.value) /
-          100
-      );
-    }
-
-    if (
-      OFFER_CONFIG.type ===
-      "FIXED"
-    ) {
-
-      return (
-        price -
-        OFFER_CONFIG.value
-      );
-    }
-
-    return price;
+    return (
+      price -
+      (price *
+        OFFER_CONFIG.value) /
+        100
+    );
   };
 
   // =========================
@@ -176,14 +147,11 @@ export default function Cart({
         item
       ) => {
 
-        const offerPrice =
-          getOfferPrice(
-            item.mrp
-          );
-
         return (
           sum +
-          offerPrice *
+          getOfferPrice(
+            item.mrp
+          ) *
             Number(
               item.qty
             )
@@ -221,7 +189,7 @@ export default function Cart({
   };
 
   // =========================
-  // 💰 FINAL AFTER COUPON
+  // 💰 FINAL
   // =========================
   const finalAfterCoupon =
     offerTotal -
@@ -263,7 +231,11 @@ export default function Cart({
   // 💾 SAVE ORDER
   // =========================
   const saveOrder =
-    async () => {
+    async (
+      paymentStatus =
+        "Paid",
+      paymentId = ""
+    ) => {
 
     try {
 
@@ -292,8 +264,9 @@ export default function Cart({
           total:
             grandTotal,
 
-          paymentStatus:
-            "Pending",
+          paymentStatus,
+
+          paymentId,
 
           createdAt:
             new Date().toLocaleString()
@@ -301,8 +274,10 @@ export default function Cart({
       );
 
       alert(
-        "Order Saved Successfully"
+        "Order Placed Successfully"
       );
+
+      setCart([]);
 
     } catch (error) {
 
@@ -317,7 +292,112 @@ export default function Cart({
   };
 
   // =========================
-  // 📄 DOWNLOAD PDF
+  // 💳 RAZORPAY
+  // =========================
+  const handleRazorpayPayment =
+    async () => {
+
+    const options = {
+
+      key:
+        "rzp_test_SrwfCzkA7F6hsH",
+
+      amount:
+        grandTotal * 100,
+
+      currency:
+        "INR",
+
+      name:
+        "Natvian Foods",
+
+      description:
+        "Order Payment",
+
+      method: {
+
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true
+      },
+
+      config: {
+
+        display: {
+
+          blocks: {
+
+            upi: {
+
+              name:
+                "Pay using UPI",
+
+              instruments: [
+
+                {
+                  method:
+                    "upi"
+                }
+              ]
+            }
+          },
+
+          sequence: [
+            "block.upi"
+          ],
+
+          preferences: {
+
+            show_default_blocks:
+              true
+          }
+        }
+      },
+
+      handler:
+        async function (
+          response
+        ) {
+
+          alert(
+            "Payment Successful"
+          );
+
+          await saveOrder(
+            "Paid",
+            response.razorpay_payment_id
+          );
+
+          downloadInvoice();
+        },
+
+      prefill: {
+
+        name:
+          customerName,
+
+        contact:
+          phoneNumber
+      },
+
+      theme: {
+
+        color:
+          "#16a34a"
+      }
+    };
+
+    const razorpay =
+      new window.Razorpay(
+        options
+      );
+
+    razorpay.open();
+  };
+
+  // =========================
+  // 📄 PDF
   // =========================
   const downloadInvoice =
     () => {
@@ -348,36 +428,28 @@ export default function Cart({
     doc.text(
       `HSN: ${HSN_CODE}`,
       20,
-      43
+      45
     );
 
     doc.text(
       `Customer: ${customerName}`,
       20,
-      55
+      60
     );
 
     doc.text(
       `Phone: ${phoneNumber}`,
       20,
-      63
+      70
     );
 
     doc.text(
       `Address: ${address}`,
       20,
-      71
+      80
     );
 
-    let y = 95;
-
-    doc.text(
-      "Products",
-      20,
-      y
-    );
-
-    y += 10;
+    let y = 100;
 
     cart.forEach(
       (item) => {
@@ -505,7 +577,7 @@ export default function Cart({
 
         <>
 
-          {/* SHIPPING DETAILS */}
+          {/* SHIPPING */}
           <div className="bg-gray-50 rounded-3xl p-6 mb-8">
 
             <h2 className="text-2xl font-bold mb-6">
@@ -614,11 +686,14 @@ export default function Cart({
 
           </div>
 
-          {/* CART ITEMS */}
+          {/* PRODUCTS */}
           <div className="space-y-5">
 
             {cart.map(
-              (item, index) => {
+              (
+                item,
+                index
+              ) => {
 
                 const offerPrice =
                   getOfferPrice(
@@ -669,7 +744,6 @@ export default function Cart({
 
                         </p>
 
-                        {/* QTY */}
                         <div className="flex items-center gap-3 mt-4">
 
                           <button
@@ -743,7 +817,7 @@ export default function Cart({
 
             <p className="text-green-700">
 
-              Product Discount:
+              Discount:
               -₹
               {productDiscount.toFixed(
                 2
@@ -795,16 +869,6 @@ export default function Cart({
 
             </h2>
 
-            {shippingCharge === 0 && (
-
-              <p className="text-green-600 font-bold">
-
-                🎉 Free Shipping Applied
-
-              </p>
-
-            )}
-
           </div>
 
           {/* PAYMENT */}
@@ -818,45 +882,12 @@ export default function Cart({
 
             <p className="text-gray-700 mb-6">
 
-              After payment, please send payment screenshot to WhatsApp:
-              <span className="font-bold">
-                {" "}
-                9788857645
-              </span>
+              Secure Razorpay Payment Gateway
 
             </p>
 
-            <a
-              href={`upi://pay?pa=3386071708387@cnrb&pn=NatvianFoods&am=${grandTotal}&cu=INR`}
-              className="block w-full bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-2xl font-bold text-lg"
-            >
-
-              Pay via Google Pay / UPI
-
-            </a>
-
-            <p className="text-sm text-gray-500 mt-4 text-center">
-
-              Supports Google Pay, PhonePe, Paytm & all UPI apps
-
-            </p>
-
-          </div>
-
-          {/* BUTTONS */}
-          <div className="grid md:grid-cols-2 gap-5 mt-10">
-
             <button
-              onClick={downloadInvoice}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold"
-            >
-
-              Download Invoice
-
-            </button>
-
-            <button
-              onClick={async () => {
+              onClick={() => {
 
                 if (
                   !customerName ||
@@ -872,14 +903,28 @@ export default function Cart({
                   return;
                 }
 
-                await saveOrder();
-
-                downloadInvoice();
+                handleRazorpayPayment();
               }}
-              className="bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-bold"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-bold text-lg"
             >
 
-              Place Order
+              Pay & Place Order
+
+            </button>
+
+          </div>
+
+          {/* DOWNLOAD */}
+          <div className="mt-6">
+
+            <button
+              onClick={
+                downloadInvoice
+              }
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold"
+            >
+
+              Download Invoice
 
             </button>
 
