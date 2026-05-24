@@ -1,27 +1,53 @@
-import { useState } from "react";
+import {
+  useState,
+  lazy,
+  Suspense,
+} from "react";
+
 import { products } from "./data/products";
 
+// =========================
+// NORMAL COMPONENTS
+// =========================
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
 import ProductGrid from "./components/ProductGrid";
 import About from "./components/About";
 import FAQ from "./components/FAQ";
-import Testimonials from "./components/Testimonials";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
-import Cart from "./components/Cart";
 
-import AdminDashboard from "./components/AdminDashboard";
-import AdminLogin from "./components/AdminLogin";
+// =========================
+// LAZY LOADED COMPONENTS
+// =========================
+const Cart = lazy(() =>
+  import("./components/Cart")
+);
 
-import MurungabannerImage from "./assets/Murunga-banner.png";
-import BananabannerImage from "./assets/Bloom-banner.png";
+const Testimonials = lazy(() =>
+  import("./components/Testimonials")
+);
+
+const AdminDashboard = lazy(() =>
+  import("./components/AdminDashboard")
+);
+
+const AdminLogin = lazy(() =>
+  import("./components/AdminLogin")
+);
+
+// =========================
+// WEBP IMAGES
+// =========================
+import MurungabannerImage from "./assets/Murunga-banner.webp";
+
+import BananabannerImage from "./assets/Bloom-banner.webp";
 
 export default function App() {
 
   // =========================
-  // 🔐 ADMIN MODE
+  // ADMIN MODE
   // =========================
   const [isAdmin, setIsAdmin] =
     useState(
@@ -31,35 +57,39 @@ export default function App() {
     );
 
   // =========================
-  // 🌙 DARK MODE
+  // DARK MODE
   // =========================
   const [darkMode, setDarkMode] =
     useState(false);
 
   // =========================
-  // 🌐 LANGUAGE
+  // LANGUAGE
   // =========================
   const [language, setLanguage] =
     useState("en");
 
   // =========================
-  // 🛒 CART
+  // CART
   // =========================
   const [cart, setCart] =
     useState([]);
 
   // =========================
-  // 🎉 OFFER CONFIG
+  // OFFER CONFIG
   // =========================
   const OFFER_CONFIG = {
+
     name: "Launching Offer",
+
     type: "PERCENT",
+
     value: 10,
-    isActive: true
+
+    isActive: true,
   };
 
   // =========================
-  // 💰 OFFER PRICE FUNCTION
+  // OFFER PRICE
   // =========================
   const getOfferPrice = (
     mrp
@@ -75,6 +105,7 @@ export default function App() {
       return price;
     }
 
+    // PERCENT OFFER
     if (
       OFFER_CONFIG.type ===
       "PERCENT"
@@ -82,12 +113,14 @@ export default function App() {
 
       return (
         price -
-        (price *
-          OFFER_CONFIG.value) /
-          100
+        (
+          price *
+          OFFER_CONFIG.value
+        ) / 100
       );
     }
 
+    // FIXED OFFER
     if (
       OFFER_CONFIG.type ===
       "FIXED"
@@ -103,7 +136,7 @@ export default function App() {
   };
 
   // =========================
-  // ➕ ADD TO CART
+  // ADD TO CART
   // =========================
   const addToCart = (
     product,
@@ -119,16 +152,17 @@ export default function App() {
       mrp:
         Number(
           variant?.mrp
-        ) || 0
+        ) || 0,
     };
 
-    // CHECK EXISTING
+    // CHECK EXISTING PRODUCT
     const existingIndex =
       cart.findIndex(
         (item) =>
 
           item.id ===
             product.id &&
+
           item.weight ===
             safeVariant.weight
       );
@@ -156,9 +190,11 @@ export default function App() {
       ...prev,
 
       {
+
         id: product.id,
 
-        name: product.name,
+        name:
+          product.name,
 
         image:
           product.image,
@@ -169,14 +205,14 @@ export default function App() {
         mrp:
           safeVariant.mrp,
 
-        qty: 1
-      }
+        qty: 1,
+      },
 
     ]);
   };
 
   // =========================
-  // ❌ REMOVE FROM CART
+  // REMOVE FROM CART
   // =========================
   const removeFromCart = (
     index
@@ -194,7 +230,7 @@ export default function App() {
   };
 
   // =========================
-  // 💰 TOTAL PRICE
+  // TOTAL PRICE
   // =========================
   const totalPrice =
     cart.reduce(
@@ -225,42 +261,62 @@ export default function App() {
     );
 
   // =========================
-  // 🔐 ADMIN LOGIN PAGE
+  // ADMIN PAGE
   // =========================
   if (
     window.location.pathname ===
     "/admin"
   ) {
 
-    return isAdmin ? (
+    return (
 
-      <AdminDashboard />
+      <Suspense
+        fallback={
 
-    ) : (
+          <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
 
-      <AdminLogin
-        setIsAdmin={
-          setIsAdmin
+            Loading Admin Panel...
+
+          </div>
         }
-      />
+      >
 
+        {isAdmin ? (
+
+          <AdminDashboard />
+
+        ) : (
+
+          <AdminLogin
+            setIsAdmin={
+              setIsAdmin
+            }
+          />
+
+        )}
+
+      </Suspense>
     );
   }
 
   // =========================
-  // 🛍 MAIN WEBSITE
+  // MAIN WEBSITE
   // =========================
   return (
 
     <div
       className={
         darkMode
+
           ? "bg-[#101510] text-white min-h-screen"
+
           : "bg-[#F8F7F2] text-gray-800 min-h-screen"
       }
     >
 
-      {/* NAVBAR */}
+      {/* =========================
+          NAVBAR
+      ========================= */}
       <Navbar
         darkMode={darkMode}
         setDarkMode={
@@ -275,22 +331,35 @@ export default function App() {
         }
       />
 
-      {/* HERO */}
-      <Hero
-        language={language}
-        MurungabannerImage={
-          MurungabannerImage
-        }
-        BananabannerImage={
-          BananabannerImage
-        }
-      />
+      {/* =========================
+          HERO
+      ========================= */}
+      <section id="home">
 
-      {/* FEATURES */}
+        <Hero
+          language={language}
+          MurungabannerImage={
+            MurungabannerImage
+          }
+          BananabannerImage={
+            BananabannerImage
+          }
+        />
+
+      </section>
+
+      {/* =========================
+          FEATURES
+      ========================= */}
       <Features />
 
-      {/* PRODUCTS */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
+      {/* =========================
+          PRODUCTS
+      ========================= */}
+      <section
+        id="products"
+        className="max-w-7xl mx-auto px-6 py-20"
+      >
 
         <ProductGrid
           products={products}
@@ -299,40 +368,89 @@ export default function App() {
           }
         />
 
-      </div>
+      </section>
 
-      {/* CART */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
+      {/* =========================
+          CART
+      ========================= */}
+      <section
+        id="cart"
+        className="max-w-7xl mx-auto px-6 py-20"
+      >
 
-        <Cart
-          cart={cart}
-          setCart={setCart}
-          removeFromCart={
-            removeFromCart
+        <Suspense
+          fallback={
+
+            <div className="text-center py-20 text-2xl font-bold">
+
+              Loading Cart...
+
+            </div>
           }
-          totalPrice={
-            totalPrice
-          }
-          offerConfig={
-            OFFER_CONFIG
-          }
-        />
+        >
 
-      </div>
+          <Cart
+            cart={cart}
+            setCart={setCart}
+            removeFromCart={
+              removeFromCart
+            }
+            totalPrice={
+              totalPrice
+            }
+            offerConfig={
+              OFFER_CONFIG
+            }
+          />
 
-      {/* ABOUT */}
-      <About />
+        </Suspense>
 
-      {/* FAQ */}
+      </section>
+
+      {/* =========================
+          ABOUT
+      ========================= */}
+      <section id="about">
+
+        <About />
+
+      </section>
+
+      {/* =========================
+          FAQ
+      ========================= */}
       <FAQ />
 
-      {/* TESTIMONIALS */}
-      <Testimonials />
+      {/* =========================
+          TESTIMONIALS
+      ========================= */}
+      <Suspense
+        fallback={
 
-      {/* CONTACT */}
-      <Contact />
+          <div className="text-center py-20 text-2xl font-bold">
 
-      {/* FOOTER */}
+            Loading Testimonials...
+
+          </div>
+        }
+      >
+
+        <Testimonials />
+
+      </Suspense>
+
+      {/* =========================
+          CONTACT
+      ========================= */}
+      <section id="contact">
+
+        <Contact />
+
+      </section>
+
+      {/* =========================
+          FOOTER
+      ========================= */}
       <Footer />
 
     </div>

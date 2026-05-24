@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import bannerImage from '../assets/All-Products-banner.png'
+import bannerImage from '../assets/All-Products-banner.webp'
 
 export default function About() {
   const [showMore, setShowMore] = useState(false)
@@ -116,7 +116,7 @@ export default function About() {
                     hover:-translate-y-3 hover:shadow-2xl"
                   >
                     <img
-                      src="/nathiya.png"
+                      src="/nathiya.webp"
                       alt="Founder Nathiya V"
                       className="w-40 h-40 object-cover rounded-full mx-auto mt-4 mb-5 shadow-lg"
                     />
@@ -142,7 +142,7 @@ export default function About() {
                     hover:-translate-y-3 hover:shadow-2xl"
                   >
                     <img
-                      src="/vinoth.png"
+                      src="/vinoth.webp"
                       alt="Vinothkumar Nagaraj"
                       className="w-40 h-40 object-cover rounded-full mx-auto mt-4 mb-5 shadow-lg"
                     />

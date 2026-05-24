@@ -1,61 +1,31 @@
 import { useState } from "react";
-import jsPDF from "jspdf";
-
-import {
-  collection,
-  addDoc
-} from "firebase/firestore";
-
 import { db } from "../firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 export default function Cart({
   cart,
   setCart,
-  removeFromCart
+  removeFromCart,
 }) {
 
   // =========================
-  // 🎉 OFFER
+  // CUSTOMER DETAILS
   // =========================
-  const OFFER_CONFIG = {
-    name: "Launching Offer",
-    value: 10
-  };
-
-  // =========================
-  // 🧾 GST
-  // =========================
-  const GST_RATE = 0.05;
-
-  const GST_NUMBER =
-    "33ATHPN4463C1ZW";
-
-  const HSN_CODE =
-    "11061090";
+  const [customer, setCustomer] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    pincode: "",
+  });
 
   // =========================
-  // 👤 CUSTOMER
-  // =========================
-  const [customerName, setCustomerName] =
-    useState("");
-
-  const [phoneNumber, setPhoneNumber] =
-    useState("");
-
-  const [address, setAddress] =
-    useState("");
-
-  const [pincode, setPincode] =
-    useState("");
-
-  // =========================
-  // 🚚 SHIPPING
+  // STATE
   // =========================
   const [state, setState] =
     useState("Tamil Nadu");
 
   // =========================
-  // 🎟️ COUPON
+  // COUPON
   // =========================
   const [coupon, setCoupon] =
     useState("");
@@ -64,350 +34,132 @@ export default function Cart({
     useState(0);
 
   // =========================
-  // 💰 OFFER PRICE
+  // OFFER
   // =========================
-  const getOfferPrice = (
-    mrp
-  ) => {
+  const OFFER = 10;
 
-    const price =
-      Number(mrp) || 0;
+  const getOfferPrice = (mrp) => {
+    const price = Number(mrp) || 0;
 
     return (
       price -
-      (price *
-        OFFER_CONFIG.value) /
-        100
+      (price * OFFER) / 100
     );
   };
 
   // =========================
-  // ➕ QTY
-  // =========================
-  const increaseQty = (
-    index
-  ) => {
-
-    const updated =
-      [...cart];
-
-    updated[index].qty += 1;
-
-    setCart(updated);
-  };
-
-  // =========================
-  // ➖ QTY
-  // =========================
-  const decreaseQty = (
-    index
-  ) => {
-
-    const updated =
-      [...cart];
-
-    if (
-      updated[index].qty > 1
-    ) {
-
-      updated[index].qty -= 1;
-
-      setCart(updated);
-    }
-  };
-
-  // =========================
-  // 💰 TOTALS
-  // =========================
-  const mrpTotal =
-    cart.reduce(
-      (
-        sum,
-        item
-      ) => {
-
-        return (
-          sum +
-          Number(
-            item.mrp
-          ) *
-            Number(
-              item.qty
-            )
-        );
-
-      },
-      0
-    );
-
-  const offerTotal =
-    cart.reduce(
-      (
-        sum,
-        item
-      ) => {
-
-        return (
-          sum +
-          getOfferPrice(
-            item.mrp
-          ) *
-            Number(
-              item.qty
-            )
-        );
-
-      },
-      0
-    );
-
-  const productDiscount =
-    mrpTotal -
-    offerTotal;
-
-  // =========================
-  // 🎟️ APPLY COUPON
+  // APPLY COUPON
   // =========================
   const applyCoupon = () => {
 
     if (
-      coupon === "SAVE10"
+      coupon.trim().toUpperCase() ===
+      "SAVE10"
     ) {
 
       setCouponDiscount(
         offerTotal * 0.1
       );
 
+      alert("Coupon Applied ✅");
+
     } else {
 
       setCouponDiscount(0);
 
-      alert(
-        "Invalid Coupon"
-      );
+      alert("Invalid Coupon ❌");
     }
   };
 
   // =========================
-  // 💰 FINAL
+  // QTY
   // =========================
-  const finalAfterCoupon =
-    offerTotal -
-    couponDiscount;
+  const increaseQty = (i) => {
+
+    const updated = [...cart];
+
+    updated[i].qty += 1;
+
+    setCart(updated);
+  };
+
+  const decreaseQty = (i) => {
+
+    const updated = [...cart];
+
+    if (updated[i].qty > 1) {
+      updated[i].qty -= 1;
+    }
+
+    setCart(updated);
+  };
 
   // =========================
-  // 🧾 GST SPLIT
+  // TOTALS
   // =========================
+  const mrpTotal = cart.reduce(
+    (sum, item) =>
+      sum +
+      Number(item.mrp) *
+      Number(item.qty),
+    0
+  );
+
+  const offerTotal = cart.reduce(
+    (sum, item) =>
+      sum +
+      getOfferPrice(item.mrp) *
+      item.qty,
+    0
+  );
+
+  const finalAfterCoupon =
+    offerTotal - couponDiscount;
+
+  // =========================
+  // GST
+  // =========================
+  const GST = 0.05;
+
   const totalGST =
     finalAfterCoupon -
-    finalAfterCoupon /
-      (1 + GST_RATE);
+    finalAfterCoupon / (1 + GST);
 
-  const cgst =
-    totalGST / 2;
-
-  const sgst =
-    totalGST / 2;
+  const cgst = totalGST / 2;
+  const sgst = totalGST / 2;
 
   // =========================
-  // 🚚 SHIPPING
+  // SHIPPING
   // =========================
-  const shippingCharge =
-    finalAfterCoupon >= 999
-      ? 0
-      : state ===
-        "Tamil Nadu"
-      ? 60
-      : 100;
+  const totalQty = cart.reduce(
+    (sum, item) =>
+      sum + item.qty,
+    0
+  );
+
+  const shipping =
+    state === "Tamil Nadu"
+      ? totalQty * 60
+      : totalQty * 100;
 
   // =========================
-  // 💰 GRAND TOTAL
+  // GRAND TOTAL
   // =========================
   const grandTotal =
-    finalAfterCoupon +
-    shippingCharge;
+    finalAfterCoupon + shipping;
 
   // =========================
-  // 💾 SAVE ORDER
-  // =========================
-  const saveOrder =
-    async (
-      paymentStatus =
-        "Paid",
-      paymentId = ""
-    ) => {
-
-    try {
-
-      await addDoc(
-        collection(
-          db,
-          "orders"
-        ),
-        {
-
-          id:
-            "ORD-" +
-            Date.now(),
-
-          customerName,
-
-          phoneNumber,
-
-          address,
-
-          pincode,
-
-          products:
-            cart,
-
-          total:
-            grandTotal,
-
-          paymentStatus,
-
-          paymentId,
-
-          createdAt:
-            new Date().toLocaleString()
-        }
-      );
-
-      alert(
-        "Order Placed Successfully"
-      );
-
-      setCart([]);
-
-    } catch (error) {
-
-      console.error(
-        error
-      );
-
-      alert(
-        "Failed to save order"
-      );
-    }
-  };
-
-  // =========================
-  // 💳 RAZORPAY
-  // =========================
-  const handleRazorpayPayment =
-    async () => {
-
-    const options = {
-
-      key:
-        "rzp_test_SrwfCzkA7F6hsH",
-
-      amount:
-        grandTotal * 100,
-
-      currency:
-        "INR",
-
-      name:
-        "Natvian Foods",
-
-      description:
-        "Order Payment",
-
-      method: {
-
-        upi: true,
-        card: true,
-        netbanking: true,
-        wallet: true
-      },
-
-      config: {
-
-        display: {
-
-          blocks: {
-
-            upi: {
-
-              name:
-                "Pay using UPI",
-
-              instruments: [
-
-                {
-                  method:
-                    "upi"
-                }
-              ]
-            }
-          },
-
-          sequence: [
-            "block.upi"
-          ],
-
-          preferences: {
-
-            show_default_blocks:
-              true
-          }
-        }
-      },
-
-      handler:
-        async function (
-          response
-        ) {
-
-          alert(
-            "Payment Successful"
-          );
-
-          await saveOrder(
-            "Paid",
-            response.razorpay_payment_id
-          );
-
-          downloadInvoice();
-        },
-
-      prefill: {
-
-        name:
-          customerName,
-
-        contact:
-          phoneNumber
-      },
-
-      theme: {
-
-        color:
-          "#16a34a"
-      }
-    };
-
-    const razorpay =
-      new window.Razorpay(
-        options
-      );
-
-    razorpay.open();
-  };
-
-  // =========================
-  // 📄 PDF
+  // DOWNLOAD INVOICE
   // =========================
   const downloadInvoice =
-    () => {
+    async () => {
 
-    const doc =
-      new jsPDF();
+    const { default: jsPDF } =
+      await import("jspdf");
 
-    doc.setFontSize(
-      22
-    );
+    const doc = new jsPDF();
+
+    doc.setFontSize(22);
 
     doc.text(
       "NATVIAN FOODS",
@@ -415,137 +167,58 @@ export default function Cart({
       20
     );
 
-    doc.setFontSize(
-      12
-    );
+    doc.setFontSize(12);
 
     doc.text(
-      `GSTIN: ${GST_NUMBER}`,
+      `Customer: ${customer.name}`,
       20,
-      35
+      40
     );
 
     doc.text(
-      `HSN: ${HSN_CODE}`,
+      `Phone: ${customer.phone}`,
       20,
-      45
+      50
     );
 
     doc.text(
-      `Customer: ${customerName}`,
+      `Address: ${customer.address}`,
       20,
       60
     );
 
     doc.text(
-      `Phone: ${phoneNumber}`,
+      `Pincode: ${customer.pincode}`,
       20,
       70
     );
 
     doc.text(
-      `Address: ${address}`,
+      `State: ${state}`,
       20,
       80
     );
 
     let y = 100;
 
-    cart.forEach(
-      (item) => {
+    cart.forEach((item) => {
 
-        const total =
-          getOfferPrice(
-            item.mrp
-          ) *
-          item.qty;
+      doc.text(
+        `${item.name} (${item.weight}) x ${item.qty} = ₹${(
+          getOfferPrice(item.mrp) *
+          item.qty
+        ).toFixed(2)}`,
+        20,
+        y
+      );
 
-        doc.text(
-          `${item.name} (${item.weight}) x ${item.qty}`,
-          20,
-          y
-        );
-
-        doc.text(
-          `₹${total.toFixed(
-            2
-          )}`,
-          160,
-          y
-        );
-
-        y += 10;
-      }
-    );
+      y += 10;
+    });
 
     y += 10;
 
     doc.text(
-      `MRP Total: ₹${mrpTotal.toFixed(
-        2
-      )}`,
-      20,
-      y
-    );
-
-    y += 10;
-
-    doc.text(
-      `Discount: -₹${productDiscount.toFixed(
-        2
-      )}`,
-      20,
-      y
-    );
-
-    y += 10;
-
-    doc.text(
-      `Coupon Discount: -₹${couponDiscount.toFixed(
-        2
-      )}`,
-      20,
-      y
-    );
-
-    y += 10;
-
-    doc.text(
-      `CGST: ₹${cgst.toFixed(
-        2
-      )}`,
-      20,
-      y
-    );
-
-    y += 10;
-
-    doc.text(
-      `SGST: ₹${sgst.toFixed(
-        2
-      )}`,
-      20,
-      y
-    );
-
-    y += 10;
-
-    doc.text(
-      `Shipping: ₹${shippingCharge}`,
-      20,
-      y
-    );
-
-    y += 15;
-
-    doc.setFontSize(
-      18
-    );
-
-    doc.text(
-      `Grand Total: ₹${grandTotal.toFixed(
-        2
-      )}`,
+      `Grand Total: ₹${grandTotal.toFixed(2)}`,
       20,
       y
     );
@@ -555,384 +228,525 @@ export default function Cart({
     );
   };
 
+  // =========================
+  // PAYMENT
+  // =========================
+  const handlePayment =
+    async () => {
+
+    if (
+      !customer.name ||
+      !customer.phone ||
+      !customer.address ||
+      !customer.pincode
+    ) {
+
+      alert(
+        "Please fill all customer details"
+      );
+
+      return;
+    }
+
+    if (cart.length === 0) {
+
+      alert("Cart is empty");
+
+      return;
+    }
+
+    try {
+
+      // CREATE ORDER
+      const response =
+        await fetch(
+          "/api/create-order",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              amount:
+                Math.round(
+                  grandTotal * 100
+                ),
+
+              currency: "INR",
+
+              receipt:
+                "receipt_" +
+                Date.now(),
+            }),
+          }
+        );
+
+      const order =
+        await response.json();
+
+      if (!order.id) {
+
+        alert(
+          "Order creation failed"
+        );
+
+        return;
+      }
+
+      // RAZORPAY OPTIONS
+      const options = {
+
+        key:
+          import.meta.env
+            .VITE_RAZORPAY_KEY_ID,
+
+        amount:
+          order.amount,
+
+        currency:
+          order.currency,
+
+        order_id:
+          order.id,
+
+        name:
+          "Natvian Foods",
+
+        description:
+          "Healthy Food Order",
+
+        image:
+          "/Logo.webp",
+
+        prefill: {
+
+          name:
+            customer.name,
+
+          contact:
+            customer.phone,
+        },
+
+        notes: {
+
+          address:
+            customer.address,
+        },
+
+        theme: {
+          color: "#31572C",
+        },
+
+        handler:
+          async function (
+            response
+          ) {
+
+          try {
+
+            // VERIFY PAYMENT
+            const verifyResponse =
+              await fetch(
+                "/api/verify-payment",
+                {
+                  method:
+                    "POST",
+
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+
+                  body:
+                    JSON.stringify(
+                      response
+                    ),
+                }
+              );
+
+            const verifyData =
+              await verifyResponse.json();
+
+            if (
+              !verifyData.success
+            ) {
+
+              alert(
+                "Payment Verification Failed ❌"
+              );
+
+              return;
+            }
+
+            // SAVE ORDER
+            await addDoc(
+              collection(
+                db,
+                "orders"
+              ),
+              {
+                orderId:
+                  "ORD-" +
+                  Date.now(),
+
+                customerName:
+                  customer.name,
+
+                phoneNumber:
+                  customer.phone,
+
+                address:
+                  customer.address,
+
+                pincode:
+                  customer.pincode,
+
+                state,
+
+                products:
+                  cart,
+
+                totalQuantity:
+                  totalQty,
+
+                mrpTotal,
+
+                offerTotal,
+
+                couponDiscount,
+
+                shipping,
+
+                cgst,
+
+                sgst,
+
+                grandTotal,
+
+                paymentStatus:
+                  "Paid",
+
+                paymentId:
+                  response.razorpay_payment_id,
+
+                createdAt:
+                  new Date().toISOString(),
+              }
+            );
+
+            alert(
+              "🎉 Order Placed Successfully!"
+            );
+
+            await downloadInvoice();
+
+            setCart([]);
+
+          } catch (error) {
+
+            console.error(error);
+
+            alert(
+              "Order save failed"
+            );
+          }
+        },
+      };
+
+      const rzp =
+        new window.Razorpay(
+          options
+        );
+
+      rzp.open();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Something went wrong"
+      );
+    }
+  };
+
+  // =========================
+  // UI
+  // =========================
   return (
 
-    <div className="bg-white p-8 rounded-3xl shadow-xl">
+    <section
+      className="max-w-5xl mx-auto p-6"
+    >
 
-      <h1 className="text-4xl font-bold mb-8">
-
+      <h1 className="text-3xl font-bold mb-8 text-[#31572C]">
         Shopping Cart
-
       </h1>
 
-      {cart.length === 0 ? (
+      {cart.length === 0 && (
 
-        <p className="text-gray-500">
+        <div className="border p-10 text-center bg-white rounded-2xl">
+          <h2>
+            Your Cart is Empty 🛒
+          </h2>
+        </div>
+      )}
 
-          Your cart is empty
+      {/* CART ITEMS */}
+      <div className="space-y-4">
 
-        </p>
+        {cart.map((item, i) => (
 
-      ) : (
+          <div
+            key={i}
+            className="border rounded-2xl p-4 flex justify-between items-center bg-white"
+          >
 
-        <>
+            <div>
 
-          {/* SHIPPING */}
-          <div className="bg-gray-50 rounded-3xl p-6 mb-8">
+              <h3 className="font-bold text-lg">
+                {item.name}
+              </h3>
 
-            <h2 className="text-2xl font-bold mb-6">
+              <p>
+                {item.weight}
+              </p>
 
-              Shipping Details
+              <p className="line-through text-gray-400">
+                ₹{item.mrp}
+              </p>
 
-            </h2>
+              <p className="text-green-600 font-bold">
+                ₹
+                {getOfferPrice(
+                  item.mrp
+                ).toFixed(2)}
+              </p>
 
-            <div className="grid md:grid-cols-2 gap-5">
+            </div>
 
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={customerName}
-                onChange={(e) =>
-                  setCustomerName(
-                    e.target.value
-                  )
+            <div className="flex items-center gap-2">
+
+              <button
+                onClick={() =>
+                  decreaseQty(i)
                 }
-                className="border p-4 rounded-2xl"
-              />
-
-              <input
-                type="text"
-                placeholder="Phone Number"
-                value={phoneNumber}
-                onChange={(e) =>
-                  setPhoneNumber(
-                    e.target.value
-                  )
-                }
-                className="border p-4 rounded-2xl"
-              />
-
-              <textarea
-                placeholder="Full Address"
-                value={address}
-                onChange={(e) =>
-                  setAddress(
-                    e.target.value
-                  )
-                }
-                rows={4}
-                className="border p-4 rounded-2xl md:col-span-2"
-              />
-
-              <input
-                type="text"
-                placeholder="Pincode"
-                value={pincode}
-                onChange={(e) =>
-                  setPincode(
-                    e.target.value
-                  )
-                }
-                className="border p-4 rounded-2xl"
-              />
-
-              <select
-                value={state}
-                onChange={(e) =>
-                  setState(
-                    e.target.value
-                  )
-                }
-                className="border p-4 rounded-2xl"
+                className="bg-gray-200 px-3 py-1 rounded"
               >
+                -
+              </button>
 
-                <option value="Tamil Nadu">
-                  Tamil Nadu
-                </option>
+              <span>
+                {item.qty}
+              </span>
 
-                <option value="Other">
-                  Other States
-                </option>
+              <button
+                onClick={() =>
+                  increaseQty(i)
+                }
+                className="bg-gray-200 px-3 py-1 rounded"
+              >
+                +
+              </button>
 
-              </select>
+              <button
+                onClick={() =>
+                  removeFromCart(i)
+                }
+                className="bg-red-500 text-white px-3 py-1 rounded"
+              >
+                Remove
+              </button>
 
             </div>
 
           </div>
-
-          {/* COUPON */}
-          <div className="flex gap-3 mb-8">
-
-            <input
-              type="text"
-              placeholder="Coupon Code"
-              value={coupon}
-              onChange={(e) =>
-                setCoupon(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl flex-1"
-            />
-
-            <button
-              onClick={applyCoupon}
-              className="bg-black text-white px-6 rounded-2xl"
-            >
-
-              Apply
-
-            </button>
-
-          </div>
-
-          {/* PRODUCTS */}
-          <div className="space-y-5">
-
-            {cart.map(
-              (
-                item,
-                index
-              ) => {
-
-                const offerPrice =
-                  getOfferPrice(
-                    item.mrp
-                  );
-
-                return (
-
-                  <div
-                    key={index}
-                    className="border rounded-3xl p-5"
-                  >
-
-                    <div className="flex flex-col md:flex-row gap-5">
-
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-28 h-28 rounded-2xl object-cover"
-                      />
-
-                      <div className="flex-1">
-
-                        <h2 className="text-2xl font-bold">
-
-                          {item.name}
-
-                        </h2>
-
-                        <p className="text-gray-500">
-
-                          {item.weight}
-
-                        </p>
-
-                        <p className="line-through text-gray-400">
-
-                          ₹{item.mrp}
-
-                        </p>
-
-                        <p className="text-3xl font-bold text-green-700">
-
-                          ₹
-                          {offerPrice.toFixed(
-                            2
-                          )}
-
-                        </p>
-
-                        <div className="flex items-center gap-3 mt-4">
-
-                          <button
-                            onClick={() =>
-                              decreaseQty(
-                                index
-                              )
-                            }
-                            className="bg-gray-200 px-4 py-2 rounded-xl"
-                          >
-
-                            -
-
-                          </button>
-
-                          <span className="font-bold">
-
-                            {item.qty}
-
-                          </span>
-
-                          <button
-                            onClick={() =>
-                              increaseQty(
-                                index
-                              )
-                            }
-                            className="bg-gray-200 px-4 py-2 rounded-xl"
-                          >
-
-                            +
-
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          removeFromCart(
-                            index
-                          )
-                        }
-                        className="text-red-500 font-bold"
-                      >
-
-                        Remove
-
-                      </button>
-
-                    </div>
-
-                  </div>
-                );
-              }
-            )}
-
-          </div>
-
-          {/* TOTALS */}
-          <div className="border-t mt-10 pt-8 space-y-4">
-
-            <p>
-              MRP Total:
-              ₹
-              {mrpTotal.toFixed(
-                2
-              )}
-            </p>
-
-            <p className="text-green-700">
-
-              Discount:
-              -₹
-              {productDiscount.toFixed(
-                2
-              )}
-
-            </p>
-
-            <p>
-
-              Coupon Discount:
-              -₹
-              {couponDiscount.toFixed(
-                2
-              )}
-
-            </p>
-
-            <p>
-
-              CGST:
-              ₹
-              {cgst.toFixed(2)}
-
-            </p>
-
-            <p>
-
-              SGST:
-              ₹
-              {sgst.toFixed(2)}
-
-            </p>
-
-            <p>
-
-              Shipping:
-              ₹
-              {shippingCharge}
-
-            </p>
-
-            <h2 className="text-4xl font-bold text-green-700">
-
-              Total:
-              ₹
-              {grandTotal.toFixed(
-                2
-              )}
-
-            </h2>
-
-          </div>
-
-          {/* PAYMENT */}
-          <div className="mt-10 bg-gradient-to-r from-green-50 to-green-100 rounded-3xl p-8 border">
-
-            <h2 className="text-3xl font-bold mb-4">
-
-              Payment Method
-
-            </h2>
-
-            <p className="text-gray-700 mb-6">
-
-              Secure Razorpay Payment Gateway
-
-            </p>
-
-            <button
-              onClick={() => {
-
-                if (
-                  !customerName ||
-                  !phoneNumber ||
-                  !address ||
-                  !pincode
-                ) {
-
-                  alert(
-                    "Please fill all shipping details"
-                  );
-
-                  return;
-                }
-
-                handleRazorpayPayment();
-              }}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-bold text-lg"
-            >
-
-              Pay & Place Order
-
-            </button>
-
-          </div>
-
-          {/* DOWNLOAD */}
-          <div className="mt-6">
-
-            <button
-              onClick={
-                downloadInvoice
-              }
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold"
-            >
-
-              Download Invoice
-
-            </button>
-
-          </div>
-
-        </>
-      )}
-
-    </div>
+        ))}
+      </div>
+
+      {/* CUSTOMER DETAILS */}
+      <div className="mt-10 grid gap-4">
+
+        <input
+          type="text"
+          placeholder="Full Name"
+          className="border p-3 rounded-xl"
+          value={customer.name}
+          onChange={(e) =>
+            setCustomer({
+              ...customer,
+              name:
+                e.target.value,
+            })
+          }
+        />
+
+        <input
+          type="text"
+          placeholder="Phone Number"
+          className="border p-3 rounded-xl"
+          value={customer.phone}
+          onChange={(e) =>
+            setCustomer({
+              ...customer,
+              phone:
+                e.target.value,
+            })
+          }
+        />
+
+        <textarea
+          placeholder="Full Address"
+          className="border p-3 rounded-xl"
+          value={customer.address}
+          onChange={(e) =>
+            setCustomer({
+              ...customer,
+              address:
+                e.target.value,
+            })
+          }
+        />
+
+        <input
+          type="text"
+          placeholder="Pincode"
+          className="border p-3 rounded-xl"
+          value={customer.pincode}
+          onChange={(e) =>
+            setCustomer({
+              ...customer,
+              pincode:
+                e.target.value,
+            })
+          }
+        />
+
+        <select
+          className="border p-3 rounded-xl"
+          value={state}
+          onChange={(e) =>
+            setState(
+              e.target.value
+            )
+          }
+        >
+
+          <option>
+            Tamil Nadu
+          </option>
+
+          <option>
+            Karnataka
+          </option>
+
+          <option>
+            Kerala
+          </option>
+
+          <option>
+            Andhra Pradesh
+          </option>
+
+        </select>
+
+      </div>
+
+      {/* COUPON */}
+      <div className="mt-8 flex gap-3">
+
+        <input
+          type="text"
+          placeholder="Coupon Code"
+          className="border p-3 rounded-xl flex-1"
+          value={coupon}
+          onChange={(e) =>
+            setCoupon(
+              e.target.value
+            )
+          }
+        />
+
+        <button
+          onClick={applyCoupon}
+          className="bg-black text-white px-6 rounded-xl"
+        >
+          Apply
+        </button>
+
+      </div>
+
+      {/* TOTAL */}
+      <div className="mt-10 border rounded-2xl p-6 bg-white">
+
+        <div className="flex justify-between mb-2">
+          <span>
+            Offer Total
+          </span>
+
+          <span>
+            ₹{offerTotal.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between mb-2">
+          <span>
+            Shipping
+          </span>
+
+          <span>
+            ₹{shipping.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between mb-2">
+          <span>
+            Discount
+          </span>
+
+          <span>
+            -₹{couponDiscount.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between text-2xl font-bold mt-4">
+          <span>
+            Grand Total
+          </span>
+
+          <span>
+            ₹{grandTotal.toFixed(2)}
+          </span>
+        </div>
+
+      </div>
+
+      {/* BUTTONS */}
+      <div className="mt-8 flex gap-4">
+
+        <button
+          onClick={
+            handlePayment
+          }
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold"
+        >
+          Pay & Place Order
+        </button>
+
+        <button
+          onClick={
+            downloadInvoice
+          }
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold"
+        >
+          Download Invoice
+        </button>
+
+      </div>
+
+    </section>
   );
 }

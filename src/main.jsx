@@ -1,18 +1,36 @@
-import React from "react";
+import React, {
+  Suspense,
+  lazy,
+} from "react";
+
 import ReactDOM from "react-dom/client";
 
 import {
   BrowserRouter,
   Routes,
-  Route
+  Route,
 } from "react-router-dom";
-
-import App from "./App";
-import AdminLogin from "./components/AdminLogin";
-import AdminDashboard from "./components/AdminDashboard";
 
 import "./index.css";
 
+// =========================
+// LAZY IMPORTS
+// =========================
+const App = lazy(() =>
+  import("./App")
+);
+
+const AdminLogin = lazy(() =>
+  import("./components/AdminLogin")
+);
+
+const AdminDashboard = lazy(() =>
+  import("./components/AdminDashboard")
+);
+
+// =========================
+// ROOT COMPONENT
+// =========================
 function Root() {
 
   const isAdmin =
@@ -24,36 +42,61 @@ function Root() {
 
     <BrowserRouter>
 
-      <Routes>
+      <Suspense
+        fallback={
 
-        <Route
-          path="/"
-          element={<App />}
-        />
+          <div className="min-h-screen flex items-center justify-center text-2xl font-bold">
 
-        <Route
-          path="/admin"
-          element={
-            isAdmin
-              ? (
+            Loading...
+
+          </div>
+        }
+      >
+
+        <Routes>
+
+          {/* =========================
+              MAIN WEBSITE
+          ========================= */}
+          <Route
+            path="/"
+            element={<App />}
+          />
+
+          {/* =========================
+              ADMIN PAGE
+          ========================= */}
+          <Route
+            path="/admin"
+            element={
+
+              isAdmin ? (
+
                 <AdminDashboard />
-              )
-              : (
+
+              ) : (
+
                 <AdminLogin
                   setIsAdmin={() =>
                     window.location.reload()
                   }
                 />
-              )
-          }
-        />
 
-      </Routes>
+              )
+            }
+          />
+
+        </Routes>
+
+      </Suspense>
 
     </BrowserRouter>
   );
 }
 
+// =========================
+// RENDER APP
+// =========================
 ReactDOM.createRoot(
   document.getElementById("root")
 ).render(

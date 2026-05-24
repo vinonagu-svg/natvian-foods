@@ -1,6 +1,6 @@
-import product1 from "../assets/banana-bloom.png";
-import product2 from "../assets/Murunga-health-mix.png";
-import product3 from "../assets/Herbal-Tea.png";
+import product1 from "../assets/banana-bloom.webp";
+import product2 from "../assets/Murunga-health-mix.webp";
+import product3 from "../assets/Herbal-Tea.webp";
 
 export const products = [
   {

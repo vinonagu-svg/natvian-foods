@@ -1,39 +1,55 @@
 import { initializeApp } from "firebase/app";
 
 import {
-  getFirestore
+  getFirestore,
 } from "firebase/firestore";
 
+// =========================
+// FIREBASE CONFIG
+// =========================
 const firebaseConfig = {
 
   apiKey:
-    "AIzaSyAVE4ssLc9o2TlETeuIxGlSNWYksDTViuk",
+    import.meta.env
+      .VITE_FIREBASE_API_KEY,
 
   authDomain:
-    "natvian-foods.firebaseapp.com",
+    import.meta.env
+      .VITE_FIREBASE_AUTH_DOMAIN,
 
   projectId:
-    "natvian-foods",
+    import.meta.env
+      .VITE_FIREBASE_PROJECT_ID,
 
   storageBucket:
-    "natvian-foods.firebasestorage.app",
+    import.meta.env
+      .VITE_FIREBASE_STORAGE_BUCKET,
 
   messagingSenderId:
-    "699739865570",
+    import.meta.env
+      .VITE_FIREBASE_MESSAGING_SENDER_ID,
 
   appId:
-    "1:699739865570:web:329ee93c83edb928baf9bb",
+    import.meta.env
+      .VITE_FIREBASE_APP_ID,
 
   measurementId:
-    "G-SGFZPH0ZC5"
+    import.meta.env
+      .VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// =========================
 // INITIALIZE FIREBASE
+// =========================
 const app =
   initializeApp(
     firebaseConfig
   );
 
+// =========================
 // FIRESTORE DATABASE
+// =========================
 export const db =
   getFirestore(app);
+
+export default app;
