@@ -39,6 +39,7 @@ export default function Cart({
   const OFFER = 10;
 
   const getOfferPrice = (mrp) => {
+
     const price = Number(mrp) || 0;
 
     return (
@@ -257,7 +258,9 @@ export default function Cart({
 
     try {
 
+      // =========================
       // CREATE ORDER
+      // =========================
       const response =
         await fetch(
           "/api/create-order",
@@ -296,7 +299,9 @@ export default function Cart({
         return;
       }
 
+      // =========================
       // RAZORPAY OPTIONS
+      // =========================
       const options = {
 
         key:
@@ -347,7 +352,9 @@ export default function Cart({
 
           try {
 
+            // =========================
             // VERIFY PAYMENT
+            // =========================
             const verifyResponse =
               await fetch(
                 "/api/verify-payment",
@@ -381,7 +388,9 @@ export default function Cart({
               return;
             }
 
+            // =========================
             // SAVE ORDER
+            // =========================
             await addDoc(
               collection(
                 db,
@@ -625,6 +634,7 @@ export default function Cart({
           }
         />
 
+        {/* STATE */}
         <select
           className="border p-3 rounded-xl"
           value={state}
@@ -635,20 +645,12 @@ export default function Cart({
           }
         >
 
-          <option>
+          <option value="Tamil Nadu">
             Tamil Nadu
           </option>
 
-          <option>
-            Karnataka
-          </option>
-
-          <option>
-            Kerala
-          </option>
-
-          <option>
-            Andhra Pradesh
+          <option value="Other State">
+            Other State
           </option>
 
         </select>
