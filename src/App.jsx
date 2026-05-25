@@ -60,21 +60,12 @@ import BananabannerImage from "./assets/Bloom-banner.webp";
 // =========================
 function HomePage() {
 
-  // =========================
-  // DARK MODE
-  // =========================
   const [darkMode, setDarkMode] =
     useState(false);
 
-  // =========================
-  // LANGUAGE
-  // =========================
   const [language, setLanguage] =
     useState("en");
 
-  // =========================
-  // CART
-  // =========================
   const [cart, setCart] =
     useState([]);
 
@@ -82,13 +73,9 @@ function HomePage() {
   // OFFER CONFIG
   // =========================
   const OFFER_CONFIG = {
-
     name: "Launching Offer",
-
     type: "PERCENT",
-
     value: 10,
-
     isActive: true,
   };
 
@@ -105,11 +92,9 @@ function HomePage() {
     if (
       !OFFER_CONFIG.isActive
     ) {
-
       return price;
     }
 
-    // PERCENT OFFER
     if (
       OFFER_CONFIG.type ===
       "PERCENT"
@@ -124,7 +109,6 @@ function HomePage() {
       );
     }
 
-    // FIXED OFFER
     if (
       OFFER_CONFIG.type ===
       "FIXED"
@@ -148,7 +132,6 @@ function HomePage() {
   ) => {
 
     const safeVariant = {
-
       weight:
         variant?.weight ||
         "100g",
@@ -159,19 +142,15 @@ function HomePage() {
         ) || 0,
     };
 
-    // CHECK EXISTING PRODUCT
     const existingIndex =
       cart.findIndex(
         (item) =>
-
           item.id ===
             product.id &&
-
           item.weight ===
             safeVariant.weight
       );
 
-    // PRODUCT EXISTS
     if (
       existingIndex !== -1
     ) {
@@ -188,30 +167,18 @@ function HomePage() {
       return;
     }
 
-    // NEW PRODUCT
     setCart((prev) => [
-
       ...prev,
-
       {
-
         id: product.id,
-
-        name:
-          product.name,
-
-        image:
-          product.image,
-
+        name: product.name,
+        image: product.image,
         weight:
           safeVariant.weight,
-
         mrp:
           safeVariant.mrp,
-
         qty: 1,
       },
-
     ]);
   };
 
@@ -272,9 +239,7 @@ function HomePage() {
     <div
       className={
         darkMode
-
           ? "bg-[#101510] text-white min-h-screen"
-
           : "bg-[#F8F7F2] text-gray-800 min-h-screen"
       }
     >
@@ -335,11 +300,8 @@ function HomePage() {
 
         <Suspense
           fallback={
-
             <div className="text-center py-20 text-2xl font-bold">
-
               Loading Cart...
-
             </div>
           }
         >
@@ -364,9 +326,7 @@ function HomePage() {
 
       {/* ABOUT */}
       <section id="about">
-
         <About />
-
       </section>
 
       {/* FAQ */}
@@ -375,11 +335,8 @@ function HomePage() {
       {/* TESTIMONIALS */}
       <Suspense
         fallback={
-
           <div className="text-center py-20 text-2xl font-bold">
-
             Loading Testimonials...
-
           </div>
         }
       >
@@ -390,9 +347,7 @@ function HomePage() {
 
       {/* CONTACT */}
       <section id="contact">
-
         <Contact />
-
       </section>
 
       {/* FOOTER */}
@@ -426,7 +381,7 @@ export default function App() {
           element={<HomePage />}
         />
 
-        {/* ADMIN LOGIN */}
+        {/* ADMIN */}
         <Route
           path="/admin"
           element={
@@ -440,17 +395,13 @@ export default function App() {
             >
 
               {isAdmin ? (
-
                 <AdminDashboard />
-
               ) : (
-
                 <AdminLogin
                   setIsAdmin={
                     setIsAdmin
                   }
                 />
-
               )}
 
             </Suspense>
@@ -471,17 +422,13 @@ export default function App() {
             >
 
               {isAdmin ? (
-
                 <AdminOrders />
-
               ) : (
-
                 <AdminLogin
                   setIsAdmin={
                     setIsAdmin
                   }
                 />
-
               )}
 
             </Suspense>
