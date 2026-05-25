@@ -4,6 +4,12 @@ import {
   Suspense,
 } from "react";
 
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+} from "react-router-dom";
+
 import { products } from "./data/products";
 
 // =========================
@@ -17,6 +23,11 @@ import About from "./components/About";
 import FAQ from "./components/FAQ";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+
+// =========================
+// ADMIN COMPONENT
+// =========================
+import AdminOrders from "./components/AdminOrders";
 
 // =========================
 // LAZY LOADED COMPONENTS
@@ -44,7 +55,10 @@ import MurungabannerImage from "./assets/Murunga-banner.webp";
 
 import BananabannerImage from "./assets/Bloom-banner.webp";
 
-export default function App() {
+// =========================
+// HOME PAGE COMPONENT
+// =========================
+function HomePage() {
 
   // =========================
   // ADMIN MODE
@@ -261,45 +275,6 @@ export default function App() {
     );
 
   // =========================
-  // ADMIN PAGE
-  // =========================
-  if (
-    window.location.pathname ===
-    "/admin"
-  ) {
-
-    return (
-
-      <Suspense
-        fallback={
-
-          <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
-
-            Loading Admin Panel...
-
-          </div>
-        }
-      >
-
-        {isAdmin ? (
-
-          <AdminDashboard />
-
-        ) : (
-
-          <AdminLogin
-            setIsAdmin={
-              setIsAdmin
-            }
-          />
-
-        )}
-
-      </Suspense>
-    );
-  }
-
-  // =========================
   // MAIN WEBSITE
   // =========================
   return (
@@ -314,9 +289,7 @@ export default function App() {
       }
     >
 
-      {/* =========================
-          NAVBAR
-      ========================= */}
+      {/* NAVBAR */}
       <Navbar
         darkMode={darkMode}
         setDarkMode={
@@ -331,9 +304,7 @@ export default function App() {
         }
       />
 
-      {/* =========================
-          HERO
-      ========================= */}
+      {/* HERO */}
       <section id="home">
 
         <Hero
@@ -348,14 +319,10 @@ export default function App() {
 
       </section>
 
-      {/* =========================
-          FEATURES
-      ========================= */}
+      {/* FEATURES */}
       <Features />
 
-      {/* =========================
-          PRODUCTS
-      ========================= */}
+      {/* PRODUCTS */}
       <section
         id="products"
         className="max-w-7xl mx-auto px-6 py-20"
@@ -370,9 +337,7 @@ export default function App() {
 
       </section>
 
-      {/* =========================
-          CART
-      ========================= */}
+      {/* CART */}
       <section
         id="cart"
         className="max-w-7xl mx-auto px-6 py-20"
@@ -407,23 +372,17 @@ export default function App() {
 
       </section>
 
-      {/* =========================
-          ABOUT
-      ========================= */}
+      {/* ABOUT */}
       <section id="about">
 
         <About />
 
       </section>
 
-      {/* =========================
-          FAQ
-      ========================= */}
+      {/* FAQ */}
       <FAQ />
 
-      {/* =========================
-          TESTIMONIALS
-      ========================= */}
+      {/* TESTIMONIALS */}
       <Suspense
         fallback={
 
@@ -439,20 +398,83 @@ export default function App() {
 
       </Suspense>
 
-      {/* =========================
-          CONTACT
-      ========================= */}
+      {/* CONTACT */}
       <section id="contact">
 
         <Contact />
 
       </section>
 
-      {/* =========================
-          FOOTER
-      ========================= */}
+      {/* FOOTER */}
       <Footer />
 
     </div>
+  );
+}
+
+// =========================
+// APP ROUTER
+// =========================
+export default function App() {
+
+  const [isAdmin, setIsAdmin] =
+    useState(
+      localStorage.getItem(
+        "isAdmin"
+      ) === "true"
+    );
+
+  return (
+
+    <BrowserRouter>
+
+      <Routes>
+
+        {/* HOME */}
+        <Route
+          path="/"
+          element={<HomePage />}
+        />
+
+        {/* ADMIN LOGIN */}
+        <Route
+          path="/admin"
+          element={
+
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
+                  Loading Admin...
+                </div>
+              }
+            >
+
+              {isAdmin ? (
+
+                <AdminDashboard />
+
+              ) : (
+
+                <AdminLogin
+                  setIsAdmin={
+                    setIsAdmin
+                  }
+                />
+
+              )}
+
+            </Suspense>
+          }
+        />
+
+        {/* ADMIN ORDERS */}
+        <Route
+          path="/admin/orders"
+          element={<AdminOrders />}
+        />
+
+      </Routes>
+
+    </BrowserRouter>
   );
 }
