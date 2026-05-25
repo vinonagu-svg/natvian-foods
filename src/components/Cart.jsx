@@ -1,10 +1,10 @@
 import { useState } from "react";
+
 import { db } from "../firebase";
 
 import {
   collection,
   addDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 
 export default function Cart({
@@ -12,8 +12,9 @@ export default function Cart({
   setCart,
   removeFromCart,
 }) {
+
   // =========================
-  // COMPANY
+  // COMPANY DETAILS
   // =========================
   const COMPANY = {
     name: "Natvian Foods",
@@ -38,15 +39,15 @@ export default function Cart({
   };
 
   // =========================
-  // CUSTOMER
+  // CUSTOMER DETAILS
   // =========================
   const [customer, setCustomer] =
     useState({
       name: "",
       phone: "",
       address: "",
-      city: "",
       pincode: "",
+      city: "",
     });
 
   // =========================
@@ -75,26 +76,56 @@ export default function Cart({
   // =========================
   // OFFER
   // =========================
-  const OFFER_PERCENT = 10;
+  const OFFER = 10;
 
   const getOfferPrice = (
     mrp
   ) => {
+
     const price =
       Number(mrp) || 0;
 
     return (
       price -
-      (price *
-        OFFER_PERCENT) /
-        100
+      (price * OFFER) / 100
     );
   };
 
   // =========================
-  // QTY
+  // APPLY COUPON
+  // =========================
+  const applyCoupon = () => {
+
+    if (
+      coupon
+        .trim()
+        .toUpperCase() ===
+      "SAVE10"
+    ) {
+
+      setCouponDiscount(
+        offerTotal * 0.1
+      );
+
+      alert(
+        "Coupon Applied ✅"
+      );
+
+    } else {
+
+      setCouponDiscount(0);
+
+      alert(
+        "Invalid Coupon ❌"
+      );
+    }
+  };
+
+  // =========================
+  // QUANTITY
   // =========================
   const increaseQty = (i) => {
+
     const updated = [...cart];
 
     updated[i].qty += 1;
@@ -103,9 +134,13 @@ export default function Cart({
   };
 
   const decreaseQty = (i) => {
+
     const updated = [...cart];
 
-    if (updated[i].qty > 1) {
+    if (
+      updated[i].qty > 1
+    ) {
+
       updated[i].qty -= 1;
     }
 
@@ -115,23 +150,29 @@ export default function Cart({
   // =========================
   // TOTALS
   // =========================
-  const mrpTotal = cart.reduce(
-    (sum, item) =>
-      sum +
-      Number(item.mrp) *
-        Number(item.qty),
-    0
-  );
+  const mrpTotal =
+    cart.reduce(
+      (sum, item) =>
 
-  const offerTotal = cart.reduce(
-    (sum, item) =>
-      sum +
-      getOfferPrice(
-        item.mrp
-      ) *
-        item.qty,
-    0
-  );
+        sum +
+        Number(item.mrp || 0) *
+          Number(item.qty || 1),
+
+      0
+    );
+
+  const offerTotal =
+    cart.reduce(
+      (sum, item) =>
+
+        sum +
+        getOfferPrice(
+          item.mrp
+        ) *
+          Number(item.qty || 1),
+
+      0
+    );
 
   const finalAfterCoupon =
     offerTotal -
@@ -156,11 +197,13 @@ export default function Cart({
   // =========================
   // SHIPPING
   // =========================
-  const totalQty = cart.reduce(
-    (sum, item) =>
-      sum + item.qty,
-    0
-  );
+  const totalQty =
+    cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.qty || 1),
+      0
+    );
 
   const shipping =
     state ===
@@ -176,690 +219,791 @@ export default function Cart({
     shipping;
 
   // =========================
-  // APPLY COUPON
-  // =========================
-  const applyCoupon = () => {
-    if (
-      coupon
-        .trim()
-        .toUpperCase() ===
-      "SAVE10"
-    ) {
-      const discount =
-        offerTotal * 0.1;
-
-      setCouponDiscount(
-        discount
-      );
-
-      alert(
-        "Coupon Applied ✅"
-      );
-    } else {
-      setCouponDiscount(0);
-
-      alert(
-        "Invalid Coupon ❌"
-      );
-    }
-  };
-
-  // =========================
   // DOWNLOAD INVOICE
   // =========================
   const downloadInvoice =
     async (
-      paymentId = "COD"
+      paymentId =
+        "COD"
     ) => {
-      try {
-        const {
-          default: jsPDF,
-        } = await import(
-          "jspdf"
-        );
 
-        const doc =
-          new jsPDF();
+    const {
+      default: jsPDF,
+    } = await import(
+      "jspdf"
+    );
 
-        const invoiceNo =
-          "INV-" +
-          Date.now();
+    const doc =
+      new jsPDF();
 
-        // HEADER
-        doc.setFillColor(
-          49,
-          87,
-          44
-        );
+    // =========================
+    // HEADER
+    // =========================
+    doc.setFillColor(
+      49,
+      87,
+      44
+    );
 
-        doc.rect(
-          0,
-          0,
-          220,
-          35,
-          "F"
-        );
+    doc.rect(
+      0,
+      0,
+      220,
+      35,
+      "F"
+    );
 
-        doc.setTextColor(
-          255,
-          255,
-          255
-        );
+    doc.setTextColor(
+      255,
+      255,
+      255
+    );
 
-        doc.setFontSize(24);
+    doc.setFontSize(24);
+
+    doc.text(
+      COMPANY.name,
+      20,
+      20
+    );
+
+    doc.setFontSize(11);
+
+    doc.text(
+      "TAX INVOICE",
+      20,
+      29
+    );
+
+    // =========================
+    // COMPANY DETAILS
+    // =========================
+    doc.setTextColor(
+      0,
+      0,
+      0
+    );
+
+    doc.setFontSize(11);
+
+    doc.text(
+      doc.splitTextToSize(
+        COMPANY.address,
+        80
+      ),
+      20,
+      48
+    );
+
+    doc.text(
+      `GSTIN : ${COMPANY.gstin}`,
+      20,
+      68
+    );
+
+    doc.text(
+      `FSSAI : ${COMPANY.fssai}`,
+      20,
+      76
+    );
+
+    doc.text(
+      `PAN : ${COMPANY.pan}`,
+      20,
+      84
+    );
+
+    doc.text(
+      `Phone : ${COMPANY.phone}`,
+      20,
+      92
+    );
+
+    // =========================
+    // INVOICE DETAILS
+    // =========================
+    const invoiceNo =
+      "INV-" +
+      Date.now();
+
+    doc.setFontSize(12);
+
+    doc.text(
+      `Invoice No : ${invoiceNo}`,
+      130,
+      48
+    );
+
+    doc.text(
+      `Date : ${new Date().toLocaleDateString()}`,
+      130,
+      58
+    );
+
+    doc.text(
+      `Payment ID : ${paymentId}`,
+      130,
+      68
+    );
+
+    // =========================
+    // CUSTOMER DETAILS
+    // =========================
+    doc.setFillColor(
+      240,
+      240,
+      240
+    );
+
+    doc.rect(
+      20,
+      105,
+      170,
+      50,
+      "F"
+    );
+
+    doc.setFontSize(13);
+
+    doc.text(
+      "Bill To",
+      25,
+      115
+    );
+
+    doc.setFontSize(11);
+
+    doc.text(
+      `Name : ${customer.name}`,
+      25,
+      125
+    );
+
+    doc.text(
+      `Phone : ${customer.phone}`,
+      25,
+      133
+    );
+
+    doc.text(
+      doc.splitTextToSize(
+        `Address : ${customer.address}`,
+        150
+      ),
+      25,
+      141
+    );
+
+    doc.text(
+      `${customer.city} - ${customer.pincode}`,
+      25,
+      155
+    );
+
+    // =========================
+    // PRODUCT TABLE HEADER
+    // =========================
+    let y = 175;
+
+    doc.setFillColor(
+      49,
+      87,
+      44
+    );
+
+    doc.rect(
+      20,
+      y,
+      170,
+      10,
+      "F"
+    );
+
+    doc.setTextColor(
+      255,
+      255,
+      255
+    );
+
+    doc.text(
+      "Product",
+      25,
+      y + 7
+    );
+
+    doc.text(
+      "Qty",
+      120,
+      y + 7
+    );
+
+    doc.text(
+      "Amount",
+      155,
+      y + 7
+    );
+
+    y += 18;
+
+    doc.setTextColor(
+      0,
+      0,
+      0
+    );
+
+    // =========================
+    // PRODUCTS
+    // =========================
+    cart.forEach(
+      (item) => {
 
         doc.text(
-          COMPANY.name,
-          20,
-          20
-        );
-
-        doc.setFontSize(11);
-
-        doc.text(
-          "TAX INVOICE",
-          20,
-          29
-        );
-
-        // COMPANY
-        doc.setTextColor(
-          0,
-          0,
-          0
-        );
-
-        doc.setFontSize(11);
-
-        doc.text(
-          COMPANY.address,
-          20,
-          48
-        );
-
-        doc.text(
-          `GSTIN : ${COMPANY.gstin}`,
-          20,
-          58
-        );
-
-        doc.text(
-          `FSSAI : ${COMPANY.fssai}`,
-          20,
-          66
-        );
-
-        doc.text(
-          `PAN : ${COMPANY.pan}`,
-          20,
-          74
-        );
-
-        // INVOICE DETAILS
-        doc.text(
-          `Invoice No : ${invoiceNo}`,
-          130,
-          48
-        );
-
-        doc.text(
-          `Date : ${new Date().toLocaleDateString()}`,
-          130,
-          58
-        );
-
-        doc.text(
-          `Payment ID : ${paymentId}`,
-          130,
-          68
-        );
-
-        // CUSTOMER
-        doc.setFillColor(
-          240,
-          240,
-          240
-        );
-
-        doc.rect(
-          20,
-          92,
-          170,
-          45,
-          "F"
-        );
-
-        doc.setFontSize(13);
-
-        doc.text(
-          "Bill To",
+          `${item.name || ""} (${item.weight || ""})`,
           25,
-          102
-        );
-
-        doc.setFontSize(11);
-
-        doc.text(
-          `Name : ${customer.name}`,
-          25,
-          112
+          y
         );
 
         doc.text(
-          `Phone : ${customer.phone}`,
-          25,
-          120
+          `${item.qty || 1}`,
+          122,
+          y
         );
 
         doc.text(
-          `Address : ${customer.address}`,
-          25,
-          128
-        );
-
-        doc.text(
-          `${customer.city} - ${customer.pincode}`,
-          25,
-          136
-        );
-
-        // TABLE
-        let y = 155;
-
-        doc.setFillColor(
-          49,
-          87,
-          44
-        );
-
-        doc.rect(
-          20,
-          y,
-          170,
-          10,
-          "F"
-        );
-
-        doc.setTextColor(
-          255,
-          255,
-          255
-        );
-
-        doc.text(
-          "Product",
-          25,
-          y + 7
-        );
-
-        doc.text(
-          "Qty",
-          120,
-          y + 7
-        );
-
-        doc.text(
-          "Amount",
+          `₹${(
+            getOfferPrice(
+              item.mrp
+            ) *
+            Number(item.qty || 1)
+          ).toFixed(2)}`,
           155,
-          y + 7
-        );
-
-        y += 18;
-
-        doc.setTextColor(
-          0,
-          0,
-          0
-        );
-
-        cart.forEach(
-          (item) => {
-            doc.text(
-              `${item.name} (${item.weight})`,
-              25,
-              y
-            );
-
-            doc.text(
-              `${item.qty}`,
-              122,
-              y
-            );
-
-            doc.text(
-              `₹${(
-                getOfferPrice(
-                  item.mrp
-                ) * item.qty
-              ).toFixed(2)}`,
-              155,
-              y
-            );
-
-            y += 10;
-          }
+          y
         );
 
         y += 10;
-
-        doc.line(
-          20,
-          y,
-          190,
-          y
-        );
-
-        y += 12;
-
-        doc.text(
-          `MRP Total : ₹${mrpTotal.toFixed(
-            2
-          )}`,
-          120,
-          y
-        );
-
-        y += 8;
-
-        doc.text(
-          `Coupon Discount : ₹${couponDiscount.toFixed(
-            2
-          )}`,
-          120,
-          y
-        );
-
-        y += 8;
-
-        doc.text(
-          `CGST : ₹${cgst.toFixed(
-            2
-          )}`,
-          120,
-          y
-        );
-
-        y += 8;
-
-        doc.text(
-          `SGST : ₹${sgst.toFixed(
-            2
-          )}`,
-          120,
-          y
-        );
-
-        y += 8;
-
-        doc.text(
-          `Shipping : ₹${shipping.toFixed(
-            2
-          )}`,
-          120,
-          y
-        );
-
-        y += 15;
-
-        doc.setFontSize(16);
-
-        doc.setTextColor(
-          49,
-          87,
-          44
-        );
-
-        doc.text(
-          `Grand Total : ₹${grandTotal.toFixed(
-            2
-          )}`,
-          110,
-          y
-        );
-
-        y += 25;
-
-        doc.setFontSize(10);
-
-        doc.setTextColor(
-          100,
-          100,
-          100
-        );
-
-        doc.text(
-          "Thank you for shopping with Natvian Foods",
-          20,
-          y
-        );
-
-        doc.save(
-          `${invoiceNo}.pdf`
-        );
-      } catch (error) {
-        console.error(
-          "Invoice Error",
-          error
-        );
       }
-    };
+    );
+
+    // =========================
+    // TOTALS
+    // =========================
+    y += 10;
+
+    doc.line(
+      20,
+      y,
+      190,
+      y
+    );
+
+    y += 10;
+
+    doc.text(
+      `MRP Total : ₹${mrpTotal.toFixed(
+        2
+      )}`,
+      120,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `Offer Discount : ₹${(
+        mrpTotal -
+        offerTotal
+      ).toFixed(2)}`,
+      120,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `Coupon Discount : ₹${couponDiscount.toFixed(
+        2
+      )}`,
+      120,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `CGST (2.5%) : ₹${cgst.toFixed(
+        2
+      )}`,
+      120,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `SGST (2.5%) : ₹${sgst.toFixed(
+        2
+      )}`,
+      120,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `Shipping : ₹${shipping.toFixed(
+        2
+      )}`,
+      120,
+      y
+    );
+
+    y += 15;
+
+    doc.setFontSize(16);
+
+    doc.setTextColor(
+      49,
+      87,
+      44
+    );
+
+    doc.text(
+      `Grand Total : ₹${grandTotal.toFixed(
+        2
+      )}`,
+      110,
+      y
+    );
+
+    // =========================
+    // FOOTER
+    // =========================
+    y += 25;
+
+    doc.setFontSize(10);
+
+    doc.setTextColor(
+      80,
+      80,
+      80
+    );
+
+    doc.text(
+      "Thank you for shopping with Natvian Foods",
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      "This is a computer generated invoice.",
+      20,
+      y
+    );
+
+    doc.save(
+      `${invoiceNo}.pdf`
+    );
+  };
 
   // =========================
   // PAYMENT
   // =========================
   const handlePayment =
     async () => {
-      if (
-        !customer.name ||
-        !customer.phone ||
-        !customer.address ||
-        !customer.city ||
-        !customer.pincode
-      ) {
-        alert(
-          "Please fill all customer details"
-        );
 
-        return;
-      }
+    if (
+      !customer.name ||
+      !customer.phone ||
+      !customer.address ||
+      !customer.pincode ||
+      !customer.city
+    ) {
 
-      if (cart.length === 0) {
-        alert(
-          "Cart is empty"
-        );
+      alert(
+        "Please fill all customer details"
+      );
 
-        return;
-      }
+      return;
+    }
 
-      try {
-        setLoading(true);
+    if (
+      cart.length === 0
+    ) {
 
-        // CREATE ORDER
-        const response =
-          await fetch(
-            "/api/create-order",
-            {
-              method: "POST",
+      alert(
+        "Cart is empty"
+      );
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
+      return;
+    }
 
-              body:
-                JSON.stringify(
-                  {
-                    amount:
-                      Math.round(
-                        grandTotal *
-                          100
-                      ),
+    try {
 
-                    currency:
-                      "INR",
-                  }
-                ),
-            }
-          );
+      setLoading(true);
 
-        const order =
-          await response.json();
+      // =========================
+      // CREATE ORDER
+      // =========================
+      const response =
+        await fetch(
+          "/api/create-order",
+          {
+            method: "POST",
 
-        if (!order.id) {
-          alert(
-            "Order creation failed"
-          );
-
-          setLoading(false);
-
-          return;
-        }
-
-        const options = {
-          key:
-            import.meta.env
-              .VITE_RAZORPAY_KEY_ID,
-
-          amount:
-            order.amount,
-
-          currency:
-            order.currency,
-
-          order_id:
-            order.id,
-
-          name:
-            "Natvian Foods",
-
-          description:
-            "Healthy Food Order",
-
-          image:
-            "/Logo.webp",
-
-          theme: {
-            color:
-              "#31572C",
-          },
-
-          prefill: {
-            name:
-              customer.name,
-
-            contact:
-              customer.phone,
-          },
-
-          handler:
-            async function (
-              response
-            ) {
-              try {
-                // VERIFY
-                const verifyResponse =
-                  await fetch(
-                    "/api/verify-payment",
-                    {
-                      method:
-                        "POST",
-
-                      headers:
-                        {
-                          "Content-Type":
-                            "application/json",
-                        },
-
-                      body:
-                        JSON.stringify(
-                          response
-                        ),
-                    }
-                  );
-
-                const verifyData =
-                  await verifyResponse.json();
-
-                if (
-                  !verifyData.success
-                ) {
-                  alert(
-                    "Payment verification failed"
-                  );
-
-                  setLoading(
-                    false
-                  );
-
-                  return;
-                }
-
-                // SAVE FIREBASE
-                await addDoc(
-                  collection(
-                    db,
-                    "orders"
-                  ),
-                  {
-                    orderId:
-                      "ORD-" +
-                      Date.now(),
-
-                    customerName:
-                      customer.name,
-
-                    phoneNumber:
-                      customer.phone,
-
-                    address:
-                      customer.address,
-
-                    city:
-                      customer.city,
-
-                    pincode:
-                      customer.pincode,
-
-                    state,
-
-                    products:
-                      cart,
-
-                    totalQuantity:
-                      totalQty,
-
-                    mrpTotal,
-
-                    offerTotal,
-
-                    couponDiscount,
-
-                    shipping,
-
-                    cgst,
-
-                    sgst,
-
-                    grandTotal,
-
-                    paymentStatus:
-                      "Paid",
-
-                    paymentId:
-                      response.razorpay_payment_id,
-
-                    createdAt:
-                      serverTimestamp(),
-                  }
-                );
-
-                // DOWNLOAD
-                await downloadInvoice(
-                  response.razorpay_payment_id
-                );
-
-                alert(
-                  "🎉 Order Placed Successfully!"
-                );
-
-                // RESET
-                setCart([]);
-
-                setCoupon("");
-
-                setCouponDiscount(
-                  0
-                );
-
-                setCustomer({
-                  name: "",
-                  phone: "",
-                  address:
-                    "",
-                  city: "",
-                  pincode:
-                    "",
-                });
-
-                setLoading(
-                  false
-                );
-              } catch (error) {
-                console.error(
-                  error
-                );
-
-                setLoading(
-                  false
-                );
-
-                alert(
-                  "Order save failed"
-                );
-              }
+            headers: {
+              "Content-Type":
+                "application/json",
             },
 
-          modal: {
-            ondismiss:
-              function () {
-                setLoading(
-                  false
-                );
-              },
-          },
-        };
+            body:
+              JSON.stringify(
+                {
+                  amount:
+                    Math.round(
+                      grandTotal *
+                        100
+                    ),
 
-        const rzp =
-          new window.Razorpay(
-            options
-          );
+                  currency:
+                    "INR",
 
-        rzp.open();
-      } catch (error) {
-        console.error(
-          error
+                  receipt:
+                    "receipt_" +
+                    Date.now(),
+                }
+              ),
+          }
         );
+
+      const order =
+        await response.json();
+
+      if (!order.id) {
 
         setLoading(false);
 
         alert(
-          "Something went wrong"
+          "Order creation failed"
         );
+
+        return;
       }
-    };
+
+      // =========================
+      // RAZORPAY
+      // =========================
+      const options = {
+
+        key:
+          import.meta.env
+            .VITE_RAZORPAY_KEY_ID,
+
+        amount:
+          order.amount,
+
+        currency:
+          order.currency,
+
+        order_id:
+          order.id,
+
+        name:
+          "Natvian Foods",
+
+        description:
+          "Healthy Food Order",
+
+        image:
+          "/Logo.webp",
+
+        prefill: {
+
+          name:
+            customer.name,
+
+          contact:
+            customer.phone,
+        },
+
+        notes: {
+
+          address:
+            customer.address,
+        },
+
+        theme: {
+          color:
+            "#31572C",
+        },
+
+        handler:
+          async function (
+            response
+          ) {
+
+          try {
+
+            // =========================
+            // VERIFY PAYMENT
+            // =========================
+            const verifyResponse =
+              await fetch(
+                "/api/verify-payment",
+                {
+                  method:
+                    "POST",
+
+                  headers:
+                    {
+                      "Content-Type":
+                        "application/json",
+                    },
+
+                  body:
+                    JSON.stringify(
+                      response
+                    ),
+                }
+              );
+
+            const verifyData =
+              await verifyResponse.json();
+
+            if (
+              !verifyData.success
+            ) {
+
+              alert(
+                "Payment Verification Failed ❌"
+              );
+
+              setLoading(
+                false
+              );
+
+              return;
+            }
+
+            // =========================
+            // SAVE ORDER
+            // =========================
+            await addDoc(
+              collection(
+                db,
+                "orders"
+              ),
+              {
+                orderId:
+                  "ORD-" +
+                  Date.now(),
+
+                customerName:
+                  customer.name || "",
+
+                phoneNumber:
+                  customer.phone || "",
+
+                address:
+                  customer.address || "",
+
+                city:
+                  customer.city || "",
+
+                pincode:
+                  customer.pincode || "",
+
+                state:
+                  state || "",
+
+                products:
+                  cart.map(
+                    (item) => ({
+                      name:
+                        item.name || "",
+
+                      weight:
+                        item.weight || "",
+
+                      qty:
+                        Number(
+                          item.qty
+                        ) || 1,
+
+                      mrp:
+                        Number(
+                          item.mrp
+                        ) || 0,
+
+                      image:
+                        item.image || "",
+                    })
+                  ),
+
+                totalQuantity:
+                  totalQty,
+
+                mrpTotal,
+
+                offerTotal,
+
+                couponDiscount,
+
+                shipping,
+
+                cgst,
+
+                sgst,
+
+                grandTotal,
+
+                paymentStatus:
+                  "Paid",
+
+                paymentId:
+                  response.razorpay_payment_id ||
+
+                  "",
+
+                createdAt:
+                  Date.now(),
+              }
+            );
+
+            // =========================
+            // SUCCESS
+            // =========================
+            await downloadInvoice(
+              response.razorpay_payment_id
+            );
+
+            alert(
+              "🎉 Order Placed Successfully!"
+            );
+
+            setCart([]);
+
+            setCustomer({
+              name: "",
+              phone: "",
+              address:
+                "",
+              pincode:
+                "",
+              city: "",
+            });
+
+            setCoupon("");
+
+            setCouponDiscount(
+              0
+            );
+
+            setLoading(
+              false
+            );
+
+          } catch (error) {
+
+            console.error(
+              error
+            );
+
+            setLoading(
+              false
+            );
+
+            alert(
+              "Order save failed"
+            );
+          }
+        },
+
+        modal: {
+
+          ondismiss:
+            function () {
+
+            setLoading(
+              false
+            );
+          },
+        },
+      };
+
+      const rzp =
+        new window.Razorpay(
+          options
+        );
+
+      rzp.open();
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+      setLoading(false);
+
+      alert(
+        "Something went wrong"
+      );
+    }
+  };
 
   // =========================
   // UI
   // =========================
   return (
-    <section className="max-w-6xl mx-auto p-6">
+
+    <section className="max-w-5xl mx-auto p-6">
+
       <h1 className="text-4xl font-bold mb-8 text-[#31572C]">
         Shopping Cart
       </h1>
 
+      {cart.length === 0 && (
+
+        <div className="border p-10 text-center bg-white rounded-2xl">
+
+          <h2 className="text-2xl font-bold">
+            Your Cart is Empty 🛒
+          </h2>
+
+        </div>
+      )}
+
       {/* CART ITEMS */}
       <div className="space-y-4">
+
         {cart.map(
           (item, i) => (
+
             <div
               key={i}
-              className="bg-white rounded-3xl border p-5 flex flex-col md:flex-row justify-between gap-5"
+              className="border rounded-2xl p-4 flex flex-col md:flex-row justify-between md:items-center bg-white gap-4"
             >
-              <div className="flex gap-5">
+
+              <div className="flex gap-4 items-center">
+
                 <img
                   src={
-                    item.image
+                    item.image ||
+                    "/Logo.webp"
                   }
                   alt={
                     item.name
                   }
-                  className="w-24 h-24 rounded-2xl object-cover border"
+                  className="w-24 h-24 object-cover rounded-2xl border"
                 />
 
                 <div>
-                  <h2 className="font-bold text-xl">
+
+                  <h3 className="font-bold text-lg">
                     {item.name}
-                  </h2>
+                  </h3>
 
                   <p>
                     {item.weight}
@@ -869,62 +1013,79 @@ export default function Cart({
                     ₹{item.mrp}
                   </p>
 
-                  <p className="text-green-700 font-bold text-xl">
+                  <p className="text-green-600 font-bold text-lg">
                     ₹
                     {getOfferPrice(
                       item.mrp
-                    ).toFixed(2)}
+                    ).toFixed(
+                      2
+                    )}
                   </p>
+
                 </div>
+
               </div>
 
               <div className="flex items-center gap-3">
+
                 <button
                   onClick={() =>
-                    decreaseQty(i)
+                    decreaseQty(
+                      i
+                    )
                   }
-                  className="w-10 h-10 rounded-xl bg-gray-200"
+                  className="bg-gray-200 w-10 h-10 rounded-xl font-bold"
                 >
                   -
                 </button>
 
-                <span className="font-bold text-xl">
+                <span className="font-bold text-lg">
                   {item.qty}
                 </span>
 
                 <button
                   onClick={() =>
-                    increaseQty(i)
+                    increaseQty(
+                      i
+                    )
                   }
-                  className="w-10 h-10 rounded-xl bg-gray-200"
+                  className="bg-gray-200 w-10 h-10 rounded-xl font-bold"
                 >
                   +
                 </button>
 
                 <button
                   onClick={() =>
-                    removeFromCart(i)
+                    removeFromCart(
+                      i
+                    )
                   }
-                  className="bg-red-500 text-white px-4 py-2 rounded-xl"
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl"
                 >
                   Remove
                 </button>
+
               </div>
+
             </div>
           )
         )}
+
       </div>
 
-      {/* CUSTOMER */}
-      <div className="bg-white rounded-3xl border p-6 mt-10">
-        <h2 className="text-2xl font-bold mb-5">
+      {/* CUSTOMER DETAILS */}
+      <div className="mt-10 bg-white rounded-3xl p-6 border shadow-sm">
+
+        <h2 className="text-2xl font-bold mb-6">
           Customer Details
         </h2>
 
         <div className="grid md:grid-cols-2 gap-4">
+
           <input
             type="text"
             placeholder="Full Name"
+            className="border p-4 rounded-xl"
             value={
               customer.name
             }
@@ -936,12 +1097,12 @@ export default function Cart({
                     .value,
               })
             }
-            className="border p-4 rounded-xl"
           />
 
           <input
             type="text"
             placeholder="Phone Number"
+            className="border p-4 rounded-xl"
             value={
               customer.phone
             }
@@ -953,12 +1114,12 @@ export default function Cart({
                     .value,
               })
             }
-            className="border p-4 rounded-xl"
           />
 
           <input
             type="text"
-            placeholder="City"
+            placeholder="City / Town"
+            className="border p-4 rounded-xl"
             value={
               customer.city
             }
@@ -970,12 +1131,12 @@ export default function Cart({
                     .value,
               })
             }
-            className="border p-4 rounded-xl"
           />
 
           <input
             type="text"
             placeholder="Pincode"
+            className="border p-4 rounded-xl"
             value={
               customer.pincode
             }
@@ -987,11 +1148,11 @@ export default function Cart({
                     .value,
               })
             }
-            className="border p-4 rounded-xl"
           />
 
           <textarea
-            placeholder="Full Address"
+            placeholder="Full Delivery Address"
+            className="border p-4 rounded-xl md:col-span-2 min-h-[120px]"
             value={
               customer.address
             }
@@ -1003,10 +1164,10 @@ export default function Cart({
                     .value,
               })
             }
-            className="border p-4 rounded-xl md:col-span-2 min-h-[120px]"
           />
 
           <select
+            className="border p-4 rounded-xl"
             value={state}
             onChange={(e) =>
               setState(
@@ -1014,8 +1175,8 @@ export default function Cart({
                   .value
               )
             }
-            className="border p-4 rounded-xl"
           >
+
             <option value="Tamil Nadu">
               Tamil Nadu
             </option>
@@ -1023,17 +1184,62 @@ export default function Cart({
             <option value="Other State">
               Other State
             </option>
+
           </select>
+
         </div>
+
       </div>
 
-      {/* SUMMARY */}
-      <div className="bg-white rounded-3xl border p-6 mt-10">
-        <h2 className="text-2xl font-bold mb-5">
+      {/* COUPON */}
+      <div className="mt-8 flex gap-3">
+
+        <input
+          type="text"
+          placeholder="Coupon Code"
+          className="border p-4 rounded-xl flex-1"
+          value={coupon}
+          onChange={(e) =>
+            setCoupon(
+              e.target
+                .value
+            )
+          }
+        />
+
+        <button
+          onClick={
+            applyCoupon
+          }
+          className="bg-black text-white px-6 rounded-xl"
+        >
+          Apply
+        </button>
+
+      </div>
+
+      {/* TOTALS */}
+      <div className="mt-10 border rounded-3xl p-6 bg-white shadow-sm">
+
+        <h2 className="text-2xl font-bold mb-6">
           Order Summary
         </h2>
 
         <div className="space-y-3">
+
+          <div className="flex justify-between">
+            <span>
+              MRP Total
+            </span>
+
+            <span>
+              ₹
+              {mrpTotal.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
           <div className="flex justify-between">
             <span>
               Offer Total
@@ -1042,6 +1248,47 @@ export default function Cart({
             <span>
               ₹
               {offerTotal.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Coupon Discount
+            </span>
+
+            <span className="text-red-500">
+              -₹
+              {couponDiscount.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              CGST
+              (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {cgst.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              SGST
+              (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {sgst.toFixed(
                 2
               )}
             </span>
@@ -1060,49 +1307,28 @@ export default function Cart({
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span>
-              CGST
-            </span>
-
-            <span>
-              ₹
-              {cgst.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              SGST
-            </span>
-
-            <span>
-              ₹
-              {sgst.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between text-3xl font-bold text-[#31572C] border-t pt-5 mt-5">
-            <span>
-              Grand Total
-            </span>
-
-            <span>
-              ₹
-              {grandTotal.toFixed(
-                2
-              )}
-            </span>
-          </div>
         </div>
+
+        <div className="border-t mt-5 pt-5 flex justify-between text-3xl font-bold text-[#31572C]">
+
+          <span>
+            Grand Total
+          </span>
+
+          <span>
+            ₹
+            {grandTotal.toFixed(
+              2
+            )}
+          </span>
+
+        </div>
+
       </div>
 
-      {/* BUTTONS */}
-      <div className="mt-8 flex flex-col md:flex-row gap-4">
+      {/* BUTTON */}
+      <div className="mt-8">
+
         <button
           onClick={
             handlePayment
@@ -1110,20 +1336,15 @@ export default function Cart({
           disabled={loading}
           className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50"
         >
+
           {loading
             ? "Processing..."
             : "Pay & Place Order"}
+
         </button>
 
-        <button
-          onClick={() =>
-            downloadInvoice()
-          }
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold"
-        >
-          Download Invoice
-        </button>
       </div>
+
     </section>
   );
 }
