@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { db } from "../firebase";
-import { collection, addDoc } from "firebase/firestore";
+
+import {
+  collection,
+  addDoc,
+} from "firebase/firestore";
 
 export default function Cart({
   cart,
@@ -41,8 +45,8 @@ export default function Cart({
       name: "",
       phone: "",
       address: "",
-      pincode: "",
       city: "",
+      pincode: "",
     });
 
   // =========================
@@ -145,27 +149,22 @@ export default function Cart({
   // =========================
   // TOTALS
   // =========================
-  const mrpTotal =
-    cart.reduce(
-      (sum, item) =>
-
-        sum +
-        Number(item.mrp) *
-          Number(item.qty),
-
-      0
-    );
+  const mrpTotal = cart.reduce(
+    (sum, item) =>
+      sum +
+      Number(item.mrp) *
+        Number(item.qty),
+    0
+  );
 
   const offerTotal =
     cart.reduce(
       (sum, item) =>
-
         sum +
         getOfferPrice(
           item.mrp
         ) *
-          item.qty,
-
+          Number(item.qty),
       0
     );
 
@@ -176,12 +175,11 @@ export default function Cart({
   // =========================
   // GST
   // =========================
-  const GST = 0.05;
+  const GST_PERCENT = 5;
 
   const totalGST =
-    finalAfterCoupon -
-    finalAfterCoupon /
-      (1 + GST);
+    finalAfterCoupon *
+    (GST_PERCENT / 100);
 
   const cgst =
     totalGST / 2;
@@ -192,11 +190,15 @@ export default function Cart({
   // =========================
   // SHIPPING
   // =========================
-
-  // FREE SHIPPING ABOVE ₹999
   let shipping = 0;
 
-  if (finalAfterCoupon < 999) {
+  if (
+    finalAfterCoupon >= 999
+  ) {
+
+    shipping = 0;
+
+  } else {
 
     shipping =
       state ===
@@ -218,7 +220,7 @@ export default function Cart({
   const downloadInvoice =
     async (
       paymentId =
-        "COD"
+        "PAID"
     ) => {
 
     const {
@@ -259,12 +261,12 @@ export default function Cart({
       20
     );
 
-    doc.setFontSize(11);
+    doc.setFontSize(12);
 
     doc.text(
       "TAX INVOICE",
       20,
-      29
+      30
     );
 
     // COMPANY DETAILS
@@ -277,7 +279,10 @@ export default function Cart({
     doc.setFontSize(11);
 
     doc.text(
-      COMPANY.address,
+      doc.splitTextToSize(
+        COMPANY.address,
+        80
+      ),
       20,
       48
     );
@@ -285,23 +290,17 @@ export default function Cart({
     doc.text(
       `GSTIN : ${COMPANY.gstin}`,
       20,
-      58
+      66
     );
 
     doc.text(
       `FSSAI : ${COMPANY.fssai}`,
       20,
-      66
-    );
-
-    doc.text(
-      `PAN : ${COMPANY.pan}`,
-      20,
       74
     );
 
     doc.text(
-      `Phone : ${COMPANY.phone}`,
+      `PAN : ${COMPANY.pan}`,
       20,
       82
     );
@@ -311,27 +310,25 @@ export default function Cart({
       "INV-" +
       Date.now();
 
-    doc.setFontSize(12);
-
     doc.text(
       `Invoice No : ${invoiceNo}`,
-      130,
+      120,
       48
     );
 
     doc.text(
       `Date : ${new Date().toLocaleDateString()}`,
-      130,
+      120,
       58
     );
 
     doc.text(
       `Payment ID : ${paymentId}`,
-      130,
+      120,
       68
     );
 
-    // CUSTOMER DETAILS
+    // CUSTOMER
     doc.setFillColor(
       240,
       240,
@@ -340,7 +337,7 @@ export default function Cart({
 
     doc.rect(
       20,
-      92,
+      95,
       170,
       45,
       "F"
@@ -351,7 +348,7 @@ export default function Cart({
     doc.text(
       "Bill To",
       25,
-      102
+      105
     );
 
     doc.setFontSize(11);
@@ -359,32 +356,32 @@ export default function Cart({
     doc.text(
       `Name : ${customer.name}`,
       25,
-      112
+      115
     );
 
     doc.text(
       `Phone : ${customer.phone}`,
       25,
-      120
+      123
     );
 
     doc.text(
       doc.splitTextToSize(
         `Address : ${customer.address}`,
-        150
+        140
       ),
       25,
-      128
+      131
     );
 
     doc.text(
       `${customer.city} - ${customer.pincode}`,
       25,
-      142
+      147
     );
 
-    // TABLE HEADER
-    let y = 160;
+    // PRODUCT TABLE
+    let y = 165;
 
     doc.setFillColor(
       49,
@@ -436,13 +433,6 @@ export default function Cart({
     cart.forEach(
       (item) => {
 
-        const itemTotal =
-          (
-            getOfferPrice(
-              item.mrp
-            ) * item.qty
-          ).toFixed(2);
-
         doc.text(
           `${item.name} (${item.weight})`,
           25,
@@ -450,14 +440,18 @@ export default function Cart({
         );
 
         doc.text(
-          String(item.qty),
+          `${item.qty}`,
           122,
           y
         );
 
         doc.text(
-          `Rs. ${itemTotal}`,
-          150,
+          `₹${(
+            getOfferPrice(
+              item.mrp
+            ) * item.qty
+          ).toFixed(2)}`,
+          155,
           y
         );
 
@@ -478,61 +472,64 @@ export default function Cart({
     y += 10;
 
     doc.text(
-      `MRP Total : Rs. ${mrpTotal.toFixed(
+      `MRP Total : ₹${mrpTotal.toFixed(
         2
       )}`,
-      110,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Offer Discount : Rs. ${(
-        mrpTotal -
-        offerTotal
-      ).toFixed(2)}`,
-      110,
+      `Offer Total : ₹${offerTotal.toFixed(
+        2
+      )}`,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Coupon Discount : Rs. ${couponDiscount.toFixed(
+      `Coupon Discount : ₹${couponDiscount.toFixed(
         2
       )}`,
-      110,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `CGST (2.5%) : Rs. ${cgst.toFixed(
+      `CGST (2.5%) : ₹${cgst.toFixed(
         2
       )}`,
-      110,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `SGST (2.5%) : Rs. ${sgst.toFixed(
+      `SGST (2.5%) : ₹${sgst.toFixed(
         2
       )}`,
-      110,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Shipping : Rs. ${shipping.toFixed(
-        2
-      )}`,
-      110,
+      `Shipping : ${
+        shipping === 0
+          ? "FREE"
+          : `₹${shipping.toFixed(
+              2
+            )}`
+      }`,
+      120,
       y
     );
 
@@ -547,15 +544,15 @@ export default function Cart({
     );
 
     doc.text(
-      `Grand Total : Rs. ${grandTotal.toFixed(
+      `Grand Total : ₹${grandTotal.toFixed(
         2
       )}`,
-      100,
+      105,
       y
     );
 
     // FOOTER
-    y += 25;
+    y += 20;
 
     doc.setFontSize(10);
 
@@ -594,8 +591,8 @@ export default function Cart({
       !customer.name ||
       !customer.phone ||
       !customer.address ||
-      !customer.pincode ||
-      !customer.city
+      !customer.city ||
+      !customer.pincode
     ) {
 
       alert(
@@ -698,12 +695,6 @@ export default function Cart({
             customer.phone,
         },
 
-        notes: {
-
-          address:
-            customer.address,
-        },
-
         theme: {
           color:
             "#31572C",
@@ -776,11 +767,11 @@ export default function Cart({
 
                 couponDiscount,
 
-                shipping,
-
                 cgst,
 
                 sgst,
+
+                shipping,
 
                 grandTotal,
 
@@ -795,12 +786,12 @@ export default function Cart({
               }
             );
 
-            alert(
-              "🎉 Order Placed Successfully!"
-            );
-
             await downloadInvoice(
               response.razorpay_payment_id
+            );
+
+            alert(
+              "🎉 Order Placed Successfully!"
             );
 
             setCart([]);
@@ -808,11 +799,9 @@ export default function Cart({
             setCustomer({
               name: "",
               phone: "",
-              address:
-                "",
-              pincode:
-                "",
+              address: "",
               city: "",
+              pincode: "",
             });
 
             setCoupon("");
@@ -874,9 +863,6 @@ export default function Cart({
     }
   };
 
-  // =========================
-  // UI
-  // =========================
   return (
 
     <section className="max-w-5xl mx-auto p-6">
@@ -893,7 +879,7 @@ export default function Cart({
 
             <div
               key={i}
-              className="border rounded-2xl p-4 flex flex-col md:flex-row justify-between md:items-center bg-white gap-4"
+              className="border rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center bg-white gap-4"
             >
 
               <div className="flex gap-4 items-center">
@@ -940,37 +926,31 @@ export default function Cart({
 
                 <button
                   onClick={() =>
-                    decreaseQty(
-                      i
-                    )
+                    decreaseQty(i)
                   }
-                  className="bg-gray-200 w-10 h-10 rounded-xl font-bold"
+                  className="bg-gray-200 w-10 h-10 rounded-xl"
                 >
                   -
                 </button>
 
-                <span className="font-bold text-lg">
+                <span className="font-bold">
                   {item.qty}
                 </span>
 
                 <button
                   onClick={() =>
-                    increaseQty(
-                      i
-                    )
+                    increaseQty(i)
                   }
-                  className="bg-gray-200 w-10 h-10 rounded-xl font-bold"
+                  className="bg-gray-200 w-10 h-10 rounded-xl"
                 >
                   +
                 </button>
 
                 <button
                   onClick={() =>
-                    removeFromCart(
-                      i
-                    )
+                    removeFromCart(i)
                   }
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl"
+                  className="bg-red-500 text-white px-4 py-2 rounded-xl"
                 >
                   Remove
                 </button>
@@ -984,7 +964,7 @@ export default function Cart({
       </div>
 
       {/* CUSTOMER DETAILS */}
-      <div className="mt-10 bg-white rounded-3xl p-6 border shadow-sm">
+      <div className="mt-10 bg-white rounded-3xl p-6 shadow">
 
         <h2 className="text-2xl font-bold mb-6">
           Customer Details
@@ -996,7 +976,9 @@ export default function Cart({
             type="text"
             placeholder="Full Name"
             className="border p-4 rounded-xl"
-            value={customer.name}
+            value={
+              customer.name
+            }
             onChange={(e) =>
               setCustomer({
                 ...customer,
@@ -1011,7 +993,9 @@ export default function Cart({
             type="text"
             placeholder="Phone Number"
             className="border p-4 rounded-xl"
-            value={customer.phone}
+            value={
+              customer.phone
+            }
             onChange={(e) =>
               setCustomer({
                 ...customer,
@@ -1024,9 +1008,11 @@ export default function Cart({
 
           <input
             type="text"
-            placeholder="City / Town"
+            placeholder="City"
             className="border p-4 rounded-xl"
-            value={customer.city}
+            value={
+              customer.city
+            }
             onChange={(e) =>
               setCustomer({
                 ...customer,
@@ -1041,7 +1027,9 @@ export default function Cart({
             type="text"
             placeholder="Pincode"
             className="border p-4 rounded-xl"
-            value={customer.pincode}
+            value={
+              customer.pincode
+            }
             onChange={(e) =>
               setCustomer({
                 ...customer,
@@ -1055,7 +1043,9 @@ export default function Cart({
           <textarea
             placeholder="Full Delivery Address"
             className="border p-4 rounded-xl md:col-span-2 min-h-[120px]"
-            value={customer.address}
+            value={
+              customer.address
+            }
             onChange={(e) =>
               setCustomer({
                 ...customer,
@@ -1118,14 +1108,14 @@ export default function Cart({
 
       </div>
 
-      {/* ORDER SUMMARY */}
+      {/* TOTALS */}
       <div className="mt-10 border rounded-3xl p-6 bg-white shadow-sm">
 
         <h2 className="text-2xl font-bold mb-6">
           Order Summary
         </h2>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
 
           <div className="flex justify-between">
             <span>
@@ -1168,37 +1158,77 @@ export default function Cart({
 
           <div className="flex justify-between">
             <span>
-              Shipping
+              CGST (2.5%)
             </span>
 
             <span>
               ₹
-              {shipping.toFixed(
+              {cgst.toFixed(
                 2
               )}
             </span>
           </div>
 
+          <div className="flex justify-between">
+            <span>
+              SGST (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {sgst.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Shipping
+            </span>
+
+            <span>
+              {shipping === 0
+                ? "FREE"
+                : `₹${shipping.toFixed(
+                    2
+                  )}`}
+            </span>
+          </div>
+
+          {shipping === 0 && (
+
+            <div className="bg-green-100 text-green-700 p-4 rounded-2xl font-semibold text-sm">
+
+              🎉 Free Shipping Applied
+              on orders above ₹999
+
+            </div>
+
+          )}
+
         </div>
 
-        <div className="border-t mt-5 pt-5 flex justify-between text-3xl font-bold text-[#31572C]">
+        <div className="border-t mt-6 pt-6 flex justify-between items-center">
 
-          <span>
+          <h2 className="text-3xl font-bold text-[#31572C]">
             Grand Total
-          </span>
+          </h2>
 
-          <span>
+          <h2 className="text-4xl font-bold text-[#31572C]">
+
             ₹
             {grandTotal.toFixed(
               2
             )}
-          </span>
+
+          </h2>
 
         </div>
 
       </div>
 
-      {/* PAYMENT BUTTON */}
+      {/* BUTTON */}
       <div className="mt-8">
 
         <button
@@ -1206,7 +1236,7 @@ export default function Cart({
             handlePayment
           }
           disabled={loading}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50 w-full"
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50"
         >
 
           {loading
