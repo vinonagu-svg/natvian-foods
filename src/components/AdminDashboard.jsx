@@ -33,11 +33,14 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] =
     useState("All");
 
+  const [stateFilter, setStateFilter] =
+    useState("All");
+
   const [dateFilter, setDateFilter] =
     useState("");
 
   // =========================
-  // LOAD ORDERS REALTIME
+  // LOAD ORDERS
   // =========================
   useEffect(() => {
 
@@ -51,7 +54,7 @@ export default function AdminDashboard() {
         q,
         (snapshot) => {
 
-          const ordersData =
+          const data =
             snapshot.docs.map(
               (docItem) => ({
                 id: docItem.id,
@@ -59,7 +62,7 @@ export default function AdminDashboard() {
               })
             );
 
-          setOrders(ordersData);
+          setOrders(data);
 
           setLoading(false);
         },
@@ -76,29 +79,22 @@ export default function AdminDashboard() {
   }, []);
 
   // =========================
-  // TOTALS
+  // STATS
   // =========================
-  const totalSales =
-    useMemo(() => {
-
-      return orders.reduce(
-        (sum, order) => {
-
-          return (
-            sum +
-            Number(
-              order.grandTotal || 0
-            )
-          );
-
-        },
-        0
-      );
-
-    }, [orders]);
-
   const totalOrders =
     orders.length;
+
+  const totalSales =
+    orders.reduce(
+      (sum, order) =>
+
+        sum +
+        Number(
+          order.grandTotal || 0
+        ),
+
+      0
+    );
 
   const paidOrders =
     orders.filter(
@@ -115,57 +111,77 @@ export default function AdminDashboard() {
     ).length;
 
   // =========================
-  // FILTERS
+  // FILTER
   // =========================
   const filteredOrders =
-    orders.filter((order) => {
+    useMemo(() => {
 
-      const searchMatch =
+      return orders.filter(
+        (order) => {
 
-        order.customerName
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          ) ||
+          const searchMatch =
 
-        order.phoneNumber
-          ?.includes(search) ||
+            order.customerName
+              ?.toLowerCase()
+              .includes(
+                search.toLowerCase()
+              ) ||
 
-        order.orderId
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          ) ||
+            order.phoneNumber
+              ?.includes(search) ||
 
-        order.address
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
+            order.orderId
+              ?.toLowerCase()
+              .includes(
+                search.toLowerCase()
+              ) ||
+
+            order.address
+              ?.toLowerCase()
+              .includes(
+                search.toLowerCase()
+              );
+
+          const statusMatch =
+            statusFilter ===
+            "All"
+              ? true
+              : order.paymentStatus ===
+                statusFilter;
+
+          const stateMatch =
+            stateFilter ===
+            "All"
+              ? true
+              : order.state ===
+                stateFilter;
+
+          const dateMatch =
+            !dateFilter
+              ? true
+              : new Date(
+                  order.createdAt
+                )
+                  .toISOString()
+                  .split("T")[0] ===
+                dateFilter;
+
+          return (
+            searchMatch &&
+            statusMatch &&
+            stateMatch &&
+            dateMatch
           );
-
-      const statusMatch =
-        statusFilter === "All"
-          ? true
-          : order.paymentStatus ===
-            statusFilter;
-
-      const dateMatch =
-        !dateFilter
-          ? true
-          : new Date(
-              order.createdAt
-            )
-              .toISOString()
-              .split("T")[0] ===
-            dateFilter;
-
-      return (
-        searchMatch &&
-        statusMatch &&
-        dateMatch
+        }
       );
 
-    });
+    }, [
+      orders,
+      search,
+      statusFilter,
+      stateFilter,
+      dateFilter,
+    ]);
 
   // =========================
   // UPDATE STATUS
@@ -251,11 +267,11 @@ export default function AdminDashboard() {
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center">
 
         <div className="text-center">
 
-          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-5"></div>
 
           <h2 className="text-2xl font-bold">
             Loading Orders...
@@ -289,7 +305,7 @@ export default function AdminDashboard() {
 
             <p className="text-gray-600 mt-2">
 
-              Manage Orders & Customers
+              Orders Management Dashboard
 
             </p>
 
@@ -316,9 +332,7 @@ export default function AdminDashboard() {
             </p>
 
             <h2 className="text-4xl font-bold mt-2">
-
               {totalOrders}
-
             </h2>
 
           </div>
@@ -326,15 +340,13 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-3xl p-6 shadow">
 
             <p className="text-gray-500">
-              Total Sales
+              Total Revenue
             </p>
 
             <h2 className="text-4xl font-bold text-green-700 mt-2">
 
               ₹
-              {totalSales.toFixed(
-                2
-              )}
+              {totalSales.toFixed(2)}
 
             </h2>
 
@@ -371,11 +383,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* FILTERS */}
-        <div className="bg-white rounded-3xl shadow p-5 mb-8 grid md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-3xl p-5 shadow mb-8 grid lg:grid-cols-4 gap-4">
 
           <input
             type="text"
-            placeholder="Search name, phone, address..."
+            placeholder="Search name, phone, address"
             value={search}
             onChange={(e) =>
               setSearch(
@@ -409,6 +421,30 @@ export default function AdminDashboard() {
 
           </select>
 
+          <select
+            value={stateFilter}
+            onChange={(e) =>
+              setStateFilter(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          >
+
+            <option>
+              All
+            </option>
+
+            <option>
+              Tamil Nadu
+            </option>
+
+            <option>
+              Other State
+            </option>
+
+          </select>
+
           <input
             type="date"
             value={dateFilter}
@@ -426,9 +462,9 @@ export default function AdminDashboard() {
         {filteredOrders.length ===
         0 ? (
 
-          <div className="bg-white rounded-3xl p-12 text-center shadow">
+          <div className="bg-white rounded-3xl shadow p-12 text-center">
 
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="text-3xl font-bold">
 
               No Orders Found
 
@@ -448,13 +484,12 @@ export default function AdminDashboard() {
                   className="bg-white rounded-3xl shadow p-8"
                 >
 
-                  {/* TOP */}
-                  <div className="flex flex-col lg:flex-row justify-between gap-6">
+                  <div className="flex flex-col lg:flex-row justify-between gap-8">
 
                     {/* LEFT */}
                     <div className="flex-1">
 
-                      <h2 className="text-3xl font-bold mb-5">
+                      <h2 className="text-3xl font-bold mb-6">
 
                         {
                           order.customerName
@@ -464,95 +499,41 @@ export default function AdminDashboard() {
 
                       <div className="grid md:grid-cols-2 gap-4">
 
-                        <div className="bg-gray-50 p-4 rounded-2xl">
+                        <InfoBox
+                          title="Phone"
+                          value={
+                            order.phoneNumber
+                          }
+                        />
 
-                          <p className="text-gray-500 text-sm">
+                        <InfoBox
+                          title="Order ID"
+                          value={
+                            order.orderId
+                          }
+                        />
 
-                            Phone
+                        <InfoBox
+                          title="Address"
+                          value={
+                            order.address
+                          }
+                          full
+                        />
 
-                          </p>
+                        <InfoBox
+                          title="State"
+                          value={
+                            order.state
+                          }
+                        />
 
-                          <p className="font-bold">
-
-                            {
-                              order.phoneNumber
-                            }
-
-                          </p>
-
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-2xl">
-
-                          <p className="text-gray-500 text-sm">
-
-                            Order ID
-
-                          </p>
-
-                          <p className="font-bold">
-
-                            {
-                              order.orderId
-                            }
-
-                          </p>
-
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
-
-                          <p className="text-gray-500 text-sm">
-
-                            Address
-
-                          </p>
-
-                          <p className="font-bold">
-
-                            {
-                              order.address
-                            }
-
-                          </p>
-
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-2xl">
-
-                          <p className="text-gray-500 text-sm">
-
-                            State
-
-                          </p>
-
-                          <p className="font-bold">
-
-                            {
-                              order.state
-                            }
-
-                          </p>
-
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-2xl">
-
-                          <p className="text-gray-500 text-sm">
-
-                            Date
-
-                          </p>
-
-                          <p className="font-bold">
-
-                            {new Date(
-                              order.createdAt
-                            ).toLocaleString()}
-
-                          </p>
-
-                        </div>
+                        <InfoBox
+                          title="Date"
+                          value={new Date(
+                            order.createdAt
+                          ).toLocaleString()}
+                        />
 
                       </div>
 
@@ -684,13 +665,11 @@ export default function AdminDashboard() {
                             <div className="text-right">
 
                               <p>
-
                                 Qty:
                                 {" "}
                                 {
                                   product.qty
                                 }
-
                               </p>
 
                               <p className="font-bold text-green-700 text-xl">
@@ -703,9 +682,7 @@ export default function AdminDashboard() {
                                   Number(
                                     product.qty
                                   )
-                                ).toFixed(
-                                  2
-                                )}
+                                ).toFixed(2)}
 
                               </p>
 
@@ -750,6 +727,41 @@ export default function AdminDashboard() {
         )}
 
       </div>
+
+    </div>
+  );
+}
+
+// =========================
+// INFO BOX
+// =========================
+function InfoBox({
+  title,
+  value,
+  full,
+}) {
+
+  return (
+
+    <div
+      className={`bg-gray-50 p-4 rounded-2xl ${
+        full
+          ? "md:col-span-2"
+          : ""
+      }`}
+    >
+
+      <p className="text-gray-500 text-sm mb-1">
+
+        {title}
+
+      </p>
+
+      <p className="font-bold break-words">
+
+        {value || "-"}
+
+      </p>
 
     </div>
   );
