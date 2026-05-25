@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import { db } from "../firebase";
 
 import {
@@ -155,8 +154,8 @@ export default function Cart({
       (sum, item) =>
 
         sum +
-        Number(item.mrp || 0) *
-          Number(item.qty || 1),
+        Number(item.mrp) *
+          Number(item.qty),
 
       0
     );
@@ -169,7 +168,7 @@ export default function Cart({
         getOfferPrice(
           item.mrp
         ) *
-          Number(item.qty || 1),
+          item.qty,
 
       0
     );
@@ -197,19 +196,22 @@ export default function Cart({
   // =========================
   // SHIPPING
   // =========================
-  const totalQty =
-    cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(item.qty || 1),
-      0
-    );
+  let shipping = 0;
 
-  const shipping =
-    state ===
-    "Tamil Nadu"
-      ? totalQty * 60
-      : totalQty * 100;
+  if (
+    finalAfterCoupon >= 999
+  ) {
+
+    shipping = 0;
+
+  } else {
+
+    shipping =
+      state ===
+      "Tamil Nadu"
+        ? 60
+        : 100;
+  }
 
   // =========================
   // GRAND TOTAL
@@ -236,9 +238,7 @@ export default function Cart({
     const doc =
       new jsPDF();
 
-    // =========================
     // HEADER
-    // =========================
     doc.setFillColor(
       49,
       87,
@@ -275,9 +275,7 @@ export default function Cart({
       29
     );
 
-    // =========================
     // COMPANY DETAILS
-    // =========================
     doc.setTextColor(
       0,
       0,
@@ -287,10 +285,7 @@ export default function Cart({
     doc.setFontSize(11);
 
     doc.text(
-      doc.splitTextToSize(
-        COMPANY.address,
-        80
-      ),
+      COMPANY.address,
       20,
       48
     );
@@ -298,30 +293,28 @@ export default function Cart({
     doc.text(
       `GSTIN : ${COMPANY.gstin}`,
       20,
-      68
+      58
     );
 
     doc.text(
       `FSSAI : ${COMPANY.fssai}`,
       20,
-      76
+      66
     );
 
     doc.text(
       `PAN : ${COMPANY.pan}`,
       20,
-      84
+      74
     );
 
     doc.text(
       `Phone : ${COMPANY.phone}`,
       20,
-      92
+      82
     );
 
-    // =========================
     // INVOICE DETAILS
-    // =========================
     const invoiceNo =
       "INV-" +
       Date.now();
@@ -346,9 +339,7 @@ export default function Cart({
       68
     );
 
-    // =========================
     // CUSTOMER DETAILS
-    // =========================
     doc.setFillColor(
       240,
       240,
@@ -357,9 +348,9 @@ export default function Cart({
 
     doc.rect(
       20,
-      105,
+      92,
       170,
-      55,
+      50,
       "F"
     );
 
@@ -368,7 +359,7 @@ export default function Cart({
     doc.text(
       "Bill To",
       25,
-      115
+      102
     );
 
     doc.setFontSize(11);
@@ -376,34 +367,32 @@ export default function Cart({
     doc.text(
       `Name : ${customer.name}`,
       25,
-      125
+      112
     );
 
     doc.text(
       `Phone : ${customer.phone}`,
       25,
-      133
+      120
     );
 
     doc.text(
       doc.splitTextToSize(
         `Address : ${customer.address}`,
-        145
+        140
       ),
       25,
-      141
+      128
     );
 
     doc.text(
       `${customer.city} - ${customer.pincode}`,
       25,
-      156
+      140
     );
 
-    // =========================
-    // PRODUCT TABLE HEADER
-    // =========================
-    let y = 175;
+    // PRODUCT TABLE
+    let y = 160;
 
     doc.setFillColor(
       49,
@@ -451,31 +440,31 @@ export default function Cart({
       0
     );
 
-    // =========================
     // PRODUCTS
-    // =========================
     cart.forEach(
       (item) => {
 
+        const amount =
+          (
+            getOfferPrice(
+              item.mrp
+            ) * item.qty
+          ).toFixed(2);
+
         doc.text(
-          `${item.name || ""} (${item.weight || ""})`,
+          `${item.name} (${item.weight})`,
           25,
           y
         );
 
         doc.text(
-          `${item.qty || 1}`,
+          `${item.qty}`,
           122,
           y
         );
 
         doc.text(
-          `Rs. ${(
-            getOfferPrice(
-              item.mrp
-            ) *
-            Number(item.qty || 1)
-          ).toFixed(2)}`,
+          `Rs.${amount}`,
           155,
           y
         );
@@ -484,9 +473,7 @@ export default function Cart({
       }
     );
 
-    // =========================
     // TOTALS
-    // =========================
     y += 10;
 
     doc.line(
@@ -499,7 +486,7 @@ export default function Cart({
     y += 10;
 
     doc.text(
-      `MRP Total : Rs. ${mrpTotal.toFixed(
+      `MRP Total : Rs.${mrpTotal.toFixed(
         2
       )}`,
       120,
@@ -509,7 +496,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `Offer Discount : Rs. ${(
+      `Offer Discount : Rs.${(
         mrpTotal -
         offerTotal
       ).toFixed(2)}`,
@@ -520,7 +507,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `Coupon Discount : Rs. ${couponDiscount.toFixed(
+      `Coupon Discount : Rs.${couponDiscount.toFixed(
         2
       )}`,
       120,
@@ -530,7 +517,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `CGST (2.5%) : Rs. ${cgst.toFixed(
+      `CGST (2.5%) : Rs.${cgst.toFixed(
         2
       )}`,
       120,
@@ -540,7 +527,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `SGST (2.5%) : Rs. ${sgst.toFixed(
+      `SGST (2.5%) : Rs.${sgst.toFixed(
         2
       )}`,
       120,
@@ -550,7 +537,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `Shipping : Rs. ${shipping.toFixed(
+      `Shipping : Rs.${shipping.toFixed(
         2
       )}`,
       120,
@@ -568,16 +555,14 @@ export default function Cart({
     );
 
     doc.text(
-      `Grand Total : Rs. ${grandTotal.toFixed(
+      `Grand Total : Rs.${grandTotal.toFixed(
         2
       )}`,
-      95,
+      110,
       y
     );
 
-    // =========================
     // FOOTER
-    // =========================
     y += 25;
 
     doc.setFontSize(10);
@@ -643,9 +628,6 @@ export default function Cart({
 
       setLoading(true);
 
-      // =========================
-      // CREATE ORDER
-      // =========================
       const response =
         await fetch(
           "/api/create-order",
@@ -691,9 +673,6 @@ export default function Cart({
         return;
       }
 
-      // =========================
-      // RAZORPAY
-      // =========================
       const options = {
 
         key:
@@ -745,9 +724,6 @@ export default function Cart({
 
           try {
 
-            // =========================
-            // VERIFY PAYMENT
-            // =========================
             const verifyResponse =
               await fetch(
                 "/api/verify-payment",
@@ -786,9 +762,7 @@ export default function Cart({
               return;
             }
 
-            // =========================
             // SAVE ORDER
-            // =========================
             await addDoc(
               collection(
                 db,
@@ -800,31 +774,34 @@ export default function Cart({
                   Date.now(),
 
                 customerName:
-                  customer.name || "",
+                  customer.name,
 
                 phoneNumber:
-                  customer.phone || "",
+                  customer.phone,
 
                 address:
-                  customer.address || "",
+                  customer.address,
 
                 city:
-                  customer.city || "",
+                  customer.city,
 
                 pincode:
-                  customer.pincode || "",
+                  customer.pincode,
 
-                state:
-                  state || "",
+                state,
 
                 products:
                   cart.map(
-                    (item) => ({
+                    (
+                      item
+                    ) => ({
                       name:
-                        item.name || "",
+                        item.name ||
+                        "",
 
                       weight:
-                        item.weight || "",
+                        item.weight ||
+                        "",
 
                       qty:
                         Number(
@@ -837,12 +814,10 @@ export default function Cart({
                         ) || 0,
 
                       image:
-                        item.image || "",
+                        item.image ||
+                        "",
                     })
                   ),
-
-                totalQuantity:
-                  totalQty,
 
                 mrpTotal,
 
@@ -862,25 +837,17 @@ export default function Cart({
                   "Paid",
 
                 paymentId:
-                  response.razorpay_payment_id ||
-
-                  "",
+                  response.razorpay_payment_id,
 
                 createdAt:
                   Date.now(),
               }
             );
 
-            // =========================
-            // DOWNLOAD INVOICE
-            // =========================
             await downloadInvoice(
               response.razorpay_payment_id
             );
 
-            // =========================
-            // SUCCESS
-            // =========================
             alert(
               "🎉 Order Placed Successfully!"
             );
@@ -910,7 +877,6 @@ export default function Cart({
           } catch (error) {
 
             console.error(
-              "SAVE ERROR:",
               error
             );
 
@@ -1014,12 +980,11 @@ export default function Cart({
                   </p>
 
                   <p className="line-through text-gray-400">
-                    Rs. {item.mrp}
+                    ₹{item.mrp}
                   </p>
 
                   <p className="text-green-600 font-bold text-lg">
-                    Rs.
-                    {" "}
+                    ₹
                     {getOfferPrice(
                       item.mrp
                     ).toFixed(
@@ -1077,3 +1042,138 @@ export default function Cart({
         )}
 
       </div>
+
+      {/* ORDER SUMMARY */}
+      <div className="mt-10 border rounded-3xl p-6 bg-white shadow-sm">
+
+        <h2 className="text-2xl font-bold mb-6">
+          Order Summary
+        </h2>
+
+        <div className="space-y-3">
+
+          <div className="flex justify-between">
+            <span>
+              MRP Total
+            </span>
+
+            <span>
+              ₹
+              {mrpTotal.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Offer Total
+            </span>
+
+            <span>
+              ₹
+              {offerTotal.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Coupon Discount
+            </span>
+
+            <span className="text-red-500">
+              -₹
+              {couponDiscount.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              CGST (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {cgst.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              SGST (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {sgst.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Shipping
+            </span>
+
+            <span>
+              ₹
+              {shipping.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          {shipping === 0 && (
+            <p className="text-green-600 font-bold">
+              🎉 Free Shipping Applied
+            </p>
+          )}
+
+        </div>
+
+        <div className="border-t mt-5 pt-5 flex justify-between text-3xl font-bold text-[#31572C]">
+
+          <span>
+            Grand Total
+          </span>
+
+          <span>
+            ₹
+            {grandTotal.toFixed(
+              2
+            )}
+          </span>
+
+        </div>
+
+      </div>
+
+      {/* PAYMENT BUTTON */}
+      <div className="mt-8">
+
+        <button
+          onClick={
+            handlePayment
+          }
+          disabled={loading}
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50"
+        >
+
+          {loading
+            ? "Processing..."
+            : "Pay & Place Order"}
+
+        </button>
+
+      </div>
+
+    </section>
+  );
+}
