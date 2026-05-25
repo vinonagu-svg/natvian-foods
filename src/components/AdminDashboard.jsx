@@ -6,12 +6,9 @@ import {
 
 import {
   collection,
-  deleteDoc,
-  doc,
   getDocs,
-  orderBy,
   query,
-  updateDoc,
+  orderBy,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
@@ -30,27 +27,26 @@ export default function AdminDashboard() {
   const [search, setSearch] =
     useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState("All");
-
-  const [dateFilter, setDateFilter] =
+  const [selectedDate, setSelectedDate] =
     useState("");
 
+  const [paymentFilter, setPaymentFilter] =
+    useState("ALL");
+
   // =========================
-  // LOAD ORDERS FROM FIREBASE
+  // LOAD ORDERS
   // =========================
   useEffect(() => {
 
-    fetchOrders();
+    loadOrders();
 
   }, []);
 
-  // =========================
-  // FETCH ORDERS
-  // =========================
-  const fetchOrders = async () => {
+  const loadOrders = async () => {
 
     try {
+
+      setLoading(true);
 
       const q = query(
         collection(db, "orders"),
@@ -60,280 +56,131 @@ export default function AdminDashboard() {
         )
       );
 
-      const snapshot =
+      const querySnapshot =
         await getDocs(q);
 
-      const orderList =
-        snapshot.docs.map(
-          (docItem) => ({
+      const loadedOrders =
+        querySnapshot.docs.map(
+          (doc) => ({
 
-            firebaseId:
-              docItem.id,
+            id: doc.id,
 
-            ...docItem.data(),
+            ...doc.data(),
 
           })
         );
 
-      setOrders(orderList);
+      setOrders(loadedOrders);
 
     } catch (error) {
 
-      console.error(
-        "Error loading orders:",
-        error
+      console.error(error);
+
+      alert(
+        "Failed to load orders"
       );
 
     } finally {
 
       setLoading(false);
-
     }
   };
-
-  // =========================
-  // TOTAL SALES
-  // =========================
-  const totalSales =
-    useMemo(() => {
-
-      return orders.reduce(
-        (sum, order) => {
-
-          return (
-            sum +
-            Number(
-              order.grandTotal ||
-              order.total ||
-              0
-            )
-          );
-
-        },
-        0
-      );
-
-    }, [orders]);
-
-  // =========================
-  // TOTAL ORDERS
-  // =========================
-  const totalOrders =
-    orders.length;
-
-  // =========================
-  // PAID ORDERS
-  // =========================
-  const paidOrders =
-    orders.filter(
-      (order) =>
-        order.paymentStatus ===
-        "Paid"
-    ).length;
-
-  // =========================
-  // PENDING ORDERS
-  // =========================
-  const pendingOrders =
-    orders.filter(
-      (order) =>
-        order.paymentStatus !==
-        "Paid"
-    ).length;
-
-  // =========================
-  // TODAY ORDERS
-  // =========================
-  const todayOrders =
-    orders.filter((order) => {
-
-      if (!order.createdAt)
-        return false;
-
-      const today =
-        new Date()
-          .toISOString()
-          .split("T")[0];
-
-      const orderDate =
-        new Date(
-          order.createdAt
-        )
-          .toISOString()
-          .split("T")[0];
-
-      return today === orderDate;
-
-    }).length;
 
   // =========================
   // FILTER ORDERS
   // =========================
   const filteredOrders =
-    orders.filter((order) => {
+    useMemo(() => {
 
-      const lowerSearch =
-        search.toLowerCase();
+      return orders.filter(
+        (order) => {
 
-      const matchesSearch =
+          const searchText =
+            search.toLowerCase();
 
-        order.customerName
-          ?.toLowerCase()
-          .includes(
-            lowerSearch
-          ) ||
+          const matchesSearch =
 
-        order.phoneNumber
-          ?.includes(search) ||
+            order.customerName
+              ?.toLowerCase()
+              .includes(searchText) ||
 
-        order.orderId
-          ?.toLowerCase()
-          .includes(
-            lowerSearch
-          ) ||
+            order.phoneNumber
+              ?.includes(search) ||
 
-        order.address
-          ?.toLowerCase()
-          .includes(
-            lowerSearch
-          ) ||
+            order.state
+              ?.toLowerCase()
+              .includes(searchText) ||
 
-        order.state
-          ?.toLowerCase()
-          .includes(
-            lowerSearch
+            order.orderId
+              ?.toLowerCase()
+              .includes(searchText);
+
+          const matchesDate =
+            !selectedDate ||
+
+            order.createdAt
+              ?.slice(0, 10) ===
+              selectedDate;
+
+          const matchesPayment =
+
+            paymentFilter ===
+              "ALL" ||
+
+            order.paymentStatus ===
+              paymentFilter;
+
+          return (
+
+            matchesSearch &&
+            matchesDate &&
+            matchesPayment
+
           );
-
-      const matchesStatus =
-
-        statusFilter ===
-        "All"
-          ? true
-          : order.paymentStatus ===
-            statusFilter;
-
-      const matchesDate =
-
-        !dateFilter
-          ? true
-          : order.createdAt
-              ?.split("T")[0] ===
-            dateFilter;
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesDate
+        }
       );
 
-    });
+    }, [
+      orders,
+      search,
+      selectedDate,
+      paymentFilter,
+    ]);
 
   // =========================
-  // UPDATE PAYMENT STATUS
+  // TOTALS
   // =========================
-  const updatePaymentStatus =
-    async (
-      firebaseId,
-      status
-    ) => {
+  const totalOrders =
+    filteredOrders.length;
 
-      try {
+  const totalSales =
+    filteredOrders.reduce(
+      (sum, order) => {
 
-        await updateDoc(
-          doc(
-            db,
-            "orders",
-            firebaseId
-          ),
-          {
-            paymentStatus:
-              status,
-          }
-        );
-
-        const updatedOrders =
-          orders.map(
-            (order) => {
-
-              if (
-                order.firebaseId ===
-                firebaseId
-              ) {
-
-                return {
-                  ...order,
-                  paymentStatus:
-                    status,
-                };
-              }
-
-              return order;
-
-            }
-          );
-
-        setOrders(
-          updatedOrders
-        );
-
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-        alert(
-          "Failed to update payment status"
-        );
-      }
-    };
-
-  // =========================
-  // DELETE ORDER
-  // =========================
-  const deleteOrder =
-    async (firebaseId) => {
-
-      const confirmDelete =
-        window.confirm(
-          "Delete this order?"
-        );
-
-      if (!confirmDelete)
-        return;
-
-      try {
-
-        await deleteDoc(
-          doc(
-            db,
-            "orders",
-            firebaseId
+        return (
+          sum +
+          Number(
+            order.grandTotal || 0
           )
         );
 
-        const updatedOrders =
-          orders.filter(
-            (order) =>
-              order.firebaseId !==
-              firebaseId
-          );
+      },
+      0
+    );
 
-        setOrders(
-          updatedOrders
-        );
+  const paidOrders =
+    filteredOrders.filter(
+      (o) =>
+        o.paymentStatus ===
+        "Paid"
+    ).length;
 
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-        alert(
-          "Failed to delete order"
-        );
-      }
-    };
+  const pendingOrders =
+    filteredOrders.filter(
+      (o) =>
+        o.paymentStatus !==
+        "Paid"
+    ).length;
 
   // =========================
   // LOGOUT
@@ -349,31 +196,36 @@ export default function AdminDashboard() {
   };
 
   // =========================
-  // FORMAT DATE
+  // LOADING UI
   // =========================
-  const formatDate = (
-    date
-  ) => {
+  if (loading) {
 
-    if (!date)
-      return "-";
+    return (
 
-    return new Date(
-      date
-    ).toLocaleString(
-      "en-IN",
-      {
-        dateStyle:
-          "medium",
-        timeStyle:
-          "short",
-      }
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+
+        <div className="text-center">
+
+          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-5"></div>
+
+          <h2 className="text-2xl font-bold">
+
+            Loading Orders...
+
+          </h2>
+
+        </div>
+
+      </div>
     );
-  };
+  }
 
+  // =========================
+  // MAIN UI
+  // =========================
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 p-6">
+    <div className="min-h-screen bg-gray-100 p-6">
 
       <div className="max-w-7xl mx-auto">
 
@@ -382,19 +234,15 @@ export default function AdminDashboard() {
 
           <div>
 
-            <h1 className="text-5xl font-bold mb-3">
+            <h1 className="text-5xl font-bold text-green-700">
 
               Natvian Foods
-              Admin
 
             </h1>
 
-            <p className="text-gray-600 text-lg">
+            <p className="text-gray-600 mt-2">
 
-              Orders,
-              payments,
-              customers &
-              sales analytics
+              Admin Dashboard
 
             </p>
 
@@ -402,7 +250,7 @@ export default function AdminDashboard() {
 
           <button
             onClick={logout}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-bold"
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold"
           >
 
             Logout
@@ -412,44 +260,50 @@ export default function AdminDashboard() {
         </div>
 
         {/* STATS */}
-        <div className="grid md:grid-cols-5 gap-5 mb-10">
+        <div className="grid md:grid-cols-4 gap-5 mb-10">
 
-          <div className="bg-white rounded-3xl p-6 shadow-lg border">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-gray-500">
+
               Total Orders
+
             </p>
 
-            <h2 className="text-4xl font-bold">
+            <h2 className="text-4xl font-bold mt-2">
+
               {totalOrders}
+
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-lg border">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-gray-500">
+
               Total Sales
+
             </p>
 
-            <h2 className="text-4xl font-bold text-green-700">
+            <h2 className="text-4xl font-bold text-green-700 mt-2">
 
               ₹
-              {totalSales.toFixed(
-                2
-              )}
+              {totalSales.toFixed(2)}
 
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-lg border">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-gray-500">
+
               Paid Orders
+
             </p>
 
-            <h2 className="text-4xl font-bold text-blue-700">
+            <h2 className="text-4xl font-bold text-blue-700 mt-2">
 
               {paidOrders}
 
@@ -457,29 +311,17 @@ export default function AdminDashboard() {
 
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-lg border">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-gray-500">
+
               Pending
+
             </p>
 
-            <h2 className="text-4xl font-bold text-yellow-600">
+            <h2 className="text-4xl font-bold text-yellow-600 mt-2">
 
               {pendingOrders}
-
-            </h2>
-
-          </div>
-
-          <div className="bg-white rounded-3xl p-6 shadow-lg border">
-
-            <p className="text-gray-500 mb-2">
-              Today Orders
-            </p>
-
-            <h2 className="text-4xl font-bold text-purple-700">
-
-              {todayOrders}
 
             </h2>
 
@@ -488,83 +330,62 @@ export default function AdminDashboard() {
         </div>
 
         {/* FILTERS */}
-        <div className="bg-white rounded-3xl shadow-lg border p-6 mb-10">
+        <div className="bg-white rounded-3xl p-5 shadow mb-10 grid md:grid-cols-3 gap-4">
 
-          <div className="grid md:grid-cols-3 gap-5">
+          <input
+            type="text"
+            placeholder="Search customer, phone, state"
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          />
 
-            {/* SEARCH */}
-            <input
-              type="text"
-              placeholder="Search name, phone, state, address, order ID"
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl outline-none"
-            />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) =>
+              setSelectedDate(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          />
 
-            {/* STATUS */}
-            <select
-              value={
-                statusFilter
-              }
-              onChange={(e) =>
-                setStatusFilter(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl outline-none"
-            >
+          <select
+            value={paymentFilter}
+            onChange={(e) =>
+              setPaymentFilter(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          >
 
-              <option value="All">
-                All Status
-              </option>
+            <option value="ALL">
+              All Payments
+            </option>
 
-              <option value="Paid">
-                Paid
-              </option>
+            <option value="Paid">
+              Paid
+            </option>
 
-              <option value="Pending">
-                Pending
-              </option>
+            <option value="Pending">
+              Pending
+            </option>
 
-            </select>
-
-            {/* DATE */}
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) =>
-                setDateFilter(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl outline-none"
-            />
-
-          </div>
+          </select>
 
         </div>
 
-        {/* LOADING */}
-        {loading ? (
+        {/* EMPTY */}
+        {filteredOrders.length ===
+        0 ? (
 
-          <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
-
-            <h2 className="text-3xl font-bold">
-
-              Loading Orders...
-
-            </h2>
-
-          </div>
-
-        ) : filteredOrders.length ===
-          0 ? (
-
-          <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
+          <div className="bg-white rounded-3xl p-16 shadow text-center">
 
             <h2 className="text-3xl font-bold mb-3">
 
@@ -574,7 +395,7 @@ export default function AdminDashboard() {
 
             <p className="text-gray-500">
 
-              Orders will appear here after customers place orders.
+              Orders will appear here
 
             </p>
 
@@ -588,31 +409,48 @@ export default function AdminDashboard() {
               (order) => (
 
                 <div
-                  key={
-                    order.firebaseId
-                  }
-                  className="bg-white rounded-3xl shadow-xl border p-8"
+                  key={order.id}
+                  className="bg-white rounded-3xl shadow-xl p-8"
                 >
 
                   {/* TOP */}
                   <div className="flex flex-col lg:flex-row justify-between gap-8">
 
-                    {/* CUSTOMER */}
+                    {/* LEFT */}
                     <div className="flex-1">
 
-                      <h2 className="text-3xl font-bold mb-5">
+                      <div className="flex items-center gap-4 mb-5">
 
-                        {
-                          order.customerName
-                        }
+                        <h2 className="text-3xl font-bold">
 
-                      </h2>
+                          {
+                            order.customerName
+                          }
+
+                        </h2>
+
+                        <span
+                          className={`px-4 py-2 rounded-full text-sm font-bold ${
+                            order.paymentStatus ===
+                            "Paid"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+
+                          {
+                            order.paymentStatus
+                          }
+
+                        </span>
+
+                      </div>
 
                       <div className="grid md:grid-cols-2 gap-4">
 
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
-                          <p className="text-sm text-gray-500 mb-1">
+                          <p className="text-gray-500 text-sm mb-1">
 
                             Phone
 
@@ -630,7 +468,7 @@ export default function AdminDashboard() {
 
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
-                          <p className="text-sm text-gray-500 mb-1">
+                          <p className="text-gray-500 text-sm mb-1">
 
                             Order ID
 
@@ -646,27 +484,9 @@ export default function AdminDashboard() {
 
                         </div>
 
-                        <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
-
-                          <p className="text-sm text-gray-500 mb-1">
-
-                            Address
-
-                          </p>
-
-                          <p className="font-bold">
-
-                            {
-                              order.address
-                            }
-
-                          </p>
-
-                        </div>
-
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
-                          <p className="text-sm text-gray-500 mb-1">
+                          <p className="text-gray-500 text-sm mb-1">
 
                             State
 
@@ -674,10 +494,7 @@ export default function AdminDashboard() {
 
                           <p className="font-bold">
 
-                            {
-                              order.state ||
-                              "-"
-                            }
+                            {order.state}
 
                           </p>
 
@@ -685,35 +502,17 @@ export default function AdminDashboard() {
 
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
-                          <p className="text-sm text-gray-500 mb-1">
+                          <p className="text-gray-500 text-sm mb-1">
 
-                            Pincode
-
-                          </p>
-
-                          <p className="font-bold">
-
-                            {
-                              order.pincode
-                            }
-
-                          </p>
-
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
-
-                          <p className="text-sm text-gray-500 mb-1">
-
-                            Ordered On
+                            Date
 
                           </p>
 
                           <p className="font-bold">
 
-                            {formatDate(
+                            {new Date(
                               order.createdAt
-                            )}
+                            ).toLocaleString()}
 
                           </p>
 
@@ -721,82 +520,46 @@ export default function AdminDashboard() {
 
                       </div>
 
+                      {/* ADDRESS */}
+                      <div className="bg-gray-50 p-4 rounded-2xl mt-4">
+
+                        <p className="text-gray-500 text-sm mb-1">
+
+                          Address
+
+                        </p>
+
+                        <p className="font-bold">
+
+                          {
+                            order.address
+                          }
+
+                        </p>
+
+                      </div>
+
                     </div>
 
-                    {/* PAYMENT */}
-                    <div className="w-full lg:w-80">
+                    {/* TOTAL */}
+                    <div className="lg:w-72">
 
-                      <div className="bg-gray-50 rounded-3xl p-6">
+                      <div className="bg-green-50 rounded-3xl p-6">
 
-                        <h3 className="text-2xl font-bold mb-5">
+                        <p className="text-gray-600 mb-2">
 
-                          Payment
+                          Grand Total
 
-                        </h3>
+                        </p>
 
-                        <div className="mb-6">
+                        <h2 className="text-5xl font-bold text-green-700">
 
-                          <span
-                            className={`px-5 py-3 rounded-full font-bold ${
-                              order.paymentStatus ===
-                              "Paid"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
-                          >
+                          ₹
+                          {Number(
+                            order.grandTotal || 0
+                          ).toFixed(2)}
 
-                            {
-                              order.paymentStatus
-                            }
-
-                          </span>
-
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-
-                          <button
-                            onClick={() =>
-                              updatePaymentStatus(
-                                order.firebaseId,
-                                "Paid"
-                              )
-                            }
-                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-bold"
-                          >
-
-                            Mark Paid
-
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              updatePaymentStatus(
-                                order.firebaseId,
-                                "Pending"
-                              )
-                            }
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-3 rounded-2xl font-bold"
-                          >
-
-                            Mark Pending
-
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              deleteOrder(
-                                order.firebaseId
-                              )
-                            }
-                            className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold"
-                          >
-
-                            Delete
-
-                          </button>
-
-                        </div>
+                        </h2>
 
                       </div>
 
@@ -805,9 +568,9 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* PRODUCTS */}
-                  <div className="mt-10 border-t pt-8">
+                  <div className="mt-8">
 
-                    <h3 className="text-2xl font-bold mb-6">
+                    <h3 className="text-2xl font-bold mb-5">
 
                       Products
 
@@ -823,10 +586,10 @@ export default function AdminDashboard() {
 
                           <div
                             key={index}
-                            className="flex flex-col md:flex-row justify-between md:items-center gap-5 bg-gray-50 rounded-3xl p-5"
+                            className="flex justify-between items-center bg-gray-50 rounded-2xl p-4"
                           >
 
-                            <div className="flex items-center gap-5">
+                            <div className="flex items-center gap-4">
 
                               <img
                                 src={
@@ -840,7 +603,7 @@ export default function AdminDashboard() {
 
                               <div>
 
-                                <h4 className="font-bold text-xl">
+                                <h4 className="font-bold text-lg">
 
                                   {
                                     product.name
@@ -872,7 +635,7 @@ export default function AdminDashboard() {
 
                               </p>
 
-                              <p className="text-2xl font-bold text-green-700">
+                              <p className="text-green-700 font-bold text-2xl">
 
                                 ₹
                                 {(
@@ -896,76 +659,6 @@ export default function AdminDashboard() {
                       )}
 
                     </div>
-
-                  </div>
-
-                  {/* BILL SUMMARY */}
-                  <div className="mt-10 border-t pt-8">
-
-                    <div className="grid md:grid-cols-2 gap-5">
-
-                      <div className="bg-gray-50 rounded-2xl p-5">
-
-                        <p className="text-gray-500 mb-2">
-
-                          Total Quantity
-
-                        </p>
-
-                        <h3 className="text-3xl font-bold">
-
-                          {
-                            order.totalQuantity ||
-                            0
-                          }
-
-                        </h3>
-
-                      </div>
-
-                      <div className="bg-gray-50 rounded-2xl p-5">
-
-                        <p className="text-gray-500 mb-2">
-
-                          Shipping
-
-                        </p>
-
-                        <h3 className="text-3xl font-bold">
-
-                          ₹
-                          {
-                            order.shipping ||
-                            0
-                          }
-
-                        </h3>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  {/* TOTAL */}
-                  <div className="mt-10 border-t pt-8 flex justify-between items-center">
-
-                    <h3 className="text-2xl font-bold">
-
-                      Grand Total
-
-                    </h3>
-
-                    <h2 className="text-5xl font-bold text-green-700">
-
-                      ₹
-                      {Number(
-                        order.grandTotal ||
-                        order.total ||
-                        0
-                      ).toFixed(2)}
-
-                    </h2>
 
                   </div>
 
