@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { db } from "../firebase";
-
-import {
-  collection,
-  addDoc,
-} from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 
 export default function Cart({
   cart,
@@ -196,15 +192,11 @@ export default function Cart({
   // =========================
   // SHIPPING
   // =========================
+
+  // FREE SHIPPING ABOVE ₹999
   let shipping = 0;
 
-  if (
-    finalAfterCoupon >= 999
-  ) {
-
-    shipping = 0;
-
-  } else {
+  if (finalAfterCoupon < 999) {
 
     shipping =
       state ===
@@ -350,7 +342,7 @@ export default function Cart({
       20,
       92,
       170,
-      50,
+      45,
       "F"
     );
 
@@ -379,7 +371,7 @@ export default function Cart({
     doc.text(
       doc.splitTextToSize(
         `Address : ${customer.address}`,
-        140
+        150
       ),
       25,
       128
@@ -388,10 +380,10 @@ export default function Cart({
     doc.text(
       `${customer.city} - ${customer.pincode}`,
       25,
-      140
+      142
     );
 
-    // PRODUCT TABLE
+    // TABLE HEADER
     let y = 160;
 
     doc.setFillColor(
@@ -444,7 +436,7 @@ export default function Cart({
     cart.forEach(
       (item) => {
 
-        const amount =
+        const itemTotal =
           (
             getOfferPrice(
               item.mrp
@@ -458,14 +450,14 @@ export default function Cart({
         );
 
         doc.text(
-          `${item.qty}`,
+          String(item.qty),
           122,
           y
         );
 
         doc.text(
-          `Rs.${amount}`,
-          155,
+          `Rs. ${itemTotal}`,
+          150,
           y
         );
 
@@ -486,61 +478,61 @@ export default function Cart({
     y += 10;
 
     doc.text(
-      `MRP Total : Rs.${mrpTotal.toFixed(
+      `MRP Total : Rs. ${mrpTotal.toFixed(
         2
       )}`,
-      120,
+      110,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Offer Discount : Rs.${(
+      `Offer Discount : Rs. ${(
         mrpTotal -
         offerTotal
       ).toFixed(2)}`,
-      120,
+      110,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Coupon Discount : Rs.${couponDiscount.toFixed(
+      `Coupon Discount : Rs. ${couponDiscount.toFixed(
         2
       )}`,
-      120,
+      110,
       y
     );
 
     y += 8;
 
     doc.text(
-      `CGST (2.5%) : Rs.${cgst.toFixed(
+      `CGST (2.5%) : Rs. ${cgst.toFixed(
         2
       )}`,
-      120,
+      110,
       y
     );
 
     y += 8;
 
     doc.text(
-      `SGST (2.5%) : Rs.${sgst.toFixed(
+      `SGST (2.5%) : Rs. ${sgst.toFixed(
         2
       )}`,
-      120,
+      110,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Shipping : Rs.${shipping.toFixed(
+      `Shipping : Rs. ${shipping.toFixed(
         2
       )}`,
-      120,
+      110,
       y
     );
 
@@ -555,10 +547,10 @@ export default function Cart({
     );
 
     doc.text(
-      `Grand Total : Rs.${grandTotal.toFixed(
+      `Grand Total : Rs. ${grandTotal.toFixed(
         2
       )}`,
-      110,
+      100,
       y
     );
 
@@ -724,45 +716,6 @@ export default function Cart({
 
           try {
 
-            const verifyResponse =
-              await fetch(
-                "/api/verify-payment",
-                {
-                  method:
-                    "POST",
-
-                  headers:
-                    {
-                      "Content-Type":
-                        "application/json",
-                    },
-
-                  body:
-                    JSON.stringify(
-                      response
-                    ),
-                }
-              );
-
-            const verifyData =
-              await verifyResponse.json();
-
-            if (
-              !verifyData.success
-            ) {
-
-              alert(
-                "Payment Verification Failed ❌"
-              );
-
-              setLoading(
-                false
-              );
-
-              return;
-            }
-
-            // SAVE ORDER
             await addDoc(
               collection(
                 db,
@@ -792,9 +745,7 @@ export default function Cart({
 
                 products:
                   cart.map(
-                    (
-                      item
-                    ) => ({
+                    (item) => ({
                       name:
                         item.name ||
                         "",
@@ -844,12 +795,12 @@ export default function Cart({
               }
             );
 
-            await downloadInvoice(
-              response.razorpay_payment_id
-            );
-
             alert(
               "🎉 Order Placed Successfully!"
+            );
+
+            await downloadInvoice(
+              response.razorpay_payment_id
             );
 
             setCart([]);
@@ -933,17 +884,6 @@ export default function Cart({
       <h1 className="text-4xl font-bold mb-8 text-[#31572C]">
         Shopping Cart
       </h1>
-
-      {cart.length === 0 && (
-
-        <div className="border p-10 text-center bg-white rounded-2xl">
-
-          <h2 className="text-2xl font-bold">
-            Your Cart is Empty 🛒
-          </h2>
-
-        </div>
-      )}
 
       {/* CART ITEMS */}
       <div className="space-y-4">
@@ -1043,6 +983,141 @@ export default function Cart({
 
       </div>
 
+      {/* CUSTOMER DETAILS */}
+      <div className="mt-10 bg-white rounded-3xl p-6 border shadow-sm">
+
+        <h2 className="text-2xl font-bold mb-6">
+          Customer Details
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-4">
+
+          <input
+            type="text"
+            placeholder="Full Name"
+            className="border p-4 rounded-xl"
+            value={customer.name}
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                name:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Phone Number"
+            className="border p-4 rounded-xl"
+            value={customer.phone}
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                phone:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="City / Town"
+            className="border p-4 rounded-xl"
+            value={customer.city}
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                city:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Pincode"
+            className="border p-4 rounded-xl"
+            value={customer.pincode}
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                pincode:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <textarea
+            placeholder="Full Delivery Address"
+            className="border p-4 rounded-xl md:col-span-2 min-h-[120px]"
+            value={customer.address}
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                address:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <select
+            className="border p-4 rounded-xl"
+            value={state}
+            onChange={(e) =>
+              setState(
+                e.target
+                  .value
+              )
+            }
+          >
+
+            <option value="Tamil Nadu">
+              Tamil Nadu
+            </option>
+
+            <option value="Other State">
+              Other State
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+      {/* COUPON */}
+      <div className="mt-8 flex gap-3">
+
+        <input
+          type="text"
+          placeholder="Coupon Code"
+          className="border p-4 rounded-xl flex-1"
+          value={coupon}
+          onChange={(e) =>
+            setCoupon(
+              e.target
+                .value
+            )
+          }
+        />
+
+        <button
+          onClick={
+            applyCoupon
+          }
+          className="bg-black text-white px-6 rounded-xl"
+        >
+          Apply
+        </button>
+
+      </div>
+
       {/* ORDER SUMMARY */}
       <div className="mt-10 border rounded-3xl p-6 bg-white shadow-sm">
 
@@ -1093,32 +1168,6 @@ export default function Cart({
 
           <div className="flex justify-between">
             <span>
-              CGST (2.5%)
-            </span>
-
-            <span>
-              ₹
-              {cgst.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              SGST (2.5%)
-            </span>
-
-            <span>
-              ₹
-              {sgst.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
               Shipping
             </span>
 
@@ -1129,12 +1178,6 @@ export default function Cart({
               )}
             </span>
           </div>
-
-          {shipping === 0 && (
-            <p className="text-green-600 font-bold">
-              🎉 Free Shipping Applied
-            </p>
-          )}
 
         </div>
 
@@ -1163,7 +1206,7 @@ export default function Cart({
             handlePayment
           }
           disabled={loading}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50"
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50 w-full"
         >
 
           {loading
