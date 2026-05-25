@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   collection,
   getDocs,
@@ -16,9 +17,6 @@ export default function AdminOrders() {
   const [loading, setLoading] =
     useState(true);
 
-  // =========================
-  // FETCH ORDERS
-  // =========================
   useEffect(() => {
 
     const fetchOrders = async () => {
@@ -26,33 +24,24 @@ export default function AdminOrders() {
       try {
 
         const q = query(
-          collection(db, "orders")
+          collection(db, "orders"),
+          orderBy("createdAt", "desc")
         );
 
-        const querySnapshot =
+        const snapshot =
           await getDocs(q);
 
-        const ordersData = [];
-
-        querySnapshot.forEach((doc) => {
-
-          ordersData.push({
+        const list =
+          snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
-          });
-        });
+          }));
 
-        // Latest first
-        ordersData.reverse();
-
-        setOrders(ordersData);
+        setOrders(list);
 
       } catch (error) {
 
-        console.error(
-          "Error fetching orders:",
-          error
-        );
+        console.error(error);
 
       } finally {
 
@@ -64,27 +53,31 @@ export default function AdminOrders() {
 
   }, []);
 
-  // =========================
-  // UI
-  // =========================
+  if (loading) {
+
+    return (
+      <div className="p-10 text-2xl font-bold">
+        Loading Orders...
+      </div>
+    );
+  }
+
   return (
 
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6">
 
-      <h1 className="text-3xl font-bold mb-8 text-[#31572C]">
-        Orders Dashboard
+      <h1 className="text-3xl font-bold mb-8">
+        Orders
       </h1>
 
-      {loading && (
-        <p>Loading orders...</p>
+      {orders.length === 0 && (
+
+        <div className="text-xl">
+          No orders found
+        </div>
       )}
 
-      {!loading &&
-        orders.length === 0 && (
-          <p>No orders found.</p>
-        )}
-
-      <div className="grid gap-6">
+      <div className="space-y-6">
 
         {orders.map((order) => (
 
@@ -93,152 +86,68 @@ export default function AdminOrders() {
             className="border rounded-2xl p-6 bg-white shadow"
           >
 
-            <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold mb-2">
+              {order.customerName}
+            </h2>
 
-              <div>
+            <p>
+              Phone:
+              {" "}
+              {order.phoneNumber}
+            </p>
 
-                <h2 className="text-xl font-bold">
-                  {order.customerName}
-                </h2>
+            <p>
+              Address:
+              {" "}
+              {order.address}
+            </p>
 
-                <p>
-                  {order.phoneNumber}
-                </p>
+            <p>
+              State:
+              {" "}
+              {order.state}
+            </p>
 
-              </div>
+            <p>
+              Pincode:
+              {" "}
+              {order.pincode}
+            </p>
 
-              <div className="text-right">
+            <p className="font-bold mt-2">
+              Total:
+              {" "}
+              ₹{order.grandTotal}
+            </p>
 
-                <p className="font-bold text-green-700">
-                  ₹
-                  {order.grandTotal?.toFixed(
-                    2
-                  )}
-                </p>
+            <p>
+              Payment:
+              {" "}
+              {order.paymentStatus}
+            </p>
 
-                <p className="text-sm text-gray-500">
-                  {order.paymentStatus}
-                </p>
-
-              </div>
-
-            </div>
-
-            <div className="mb-4">
-
-              <p>
-                <strong>
-                  Address:
-                </strong>{" "}
-                {order.address}
-              </p>
-
-              <p>
-                <strong>
-                  Pincode:
-                </strong>{" "}
-                {order.pincode}
-              </p>
-
-              <p>
-                <strong>
-                  State:
-                </strong>{" "}
-                {order.state}
-              </p>
-
-            </div>
-
-            <div className="border-t pt-4">
+            <div className="mt-4">
 
               <h3 className="font-bold mb-2">
                 Products
               </h3>
 
-              <div className="space-y-2">
+              {order.products?.map(
+                (item, i) => (
 
-                {order.products?.map(
-                  (
-                    product,
-                    index
-                  ) => (
+                  <div key={i}>
 
-                    <div
-                      key={index}
-                      className="flex justify-between"
-                    >
+                    {item.name}
+                    {" "}
+                    ({item.weight})
+                    {" "}
+                    x
+                    {" "}
+                    {item.qty}
 
-                      <span>
-                        {product.name} (
-                        {
-                          product.weight
-                        }
-                        ) x{" "}
-                        {product.qty}
-                      </span>
-
-                      <span>
-                        ₹
-                        {(
-                          Number(
-                            product.mrp
-                          ) *
-                          Number(
-                            product.qty
-                          )
-                        ).toFixed(
-                          2
-                        )}
-                      </span>
-
-                    </div>
-                  )
-                )}
-
-              </div>
-
-            </div>
-
-            <div className="border-t mt-4 pt-4 grid gap-1">
-
-              <div className="flex justify-between">
-                <span>
-                  Shipping
-                </span>
-
-                <span>
-                  ₹
-                  {order.shipping?.toFixed(
-                    2
-                  )}
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span>
-                  Discount
-                </span>
-
-                <span>
-                  ₹
-                  {order.couponDiscount?.toFixed(
-                    2
-                  )}
-                </span>
-              </div>
-
-              <div className="flex justify-between font-bold text-lg mt-2">
-                <span>
-                  Grand Total
-                </span>
-
-                <span>
-                  ₹
-                  {order.grandTotal?.toFixed(
-                    2
-                  )}
-                </span>
-              </div>
+                  </div>
+                )
+              )}
 
             </div>
 

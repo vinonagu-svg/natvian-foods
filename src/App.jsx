@@ -25,7 +25,7 @@ import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 
 // =========================
-// ADMIN COMPONENT
+// ADMIN COMPONENTS
 // =========================
 import AdminOrders from "./components/AdminOrders";
 
@@ -56,19 +56,9 @@ import MurungabannerImage from "./assets/Murunga-banner.webp";
 import BananabannerImage from "./assets/Bloom-banner.webp";
 
 // =========================
-// HOME PAGE COMPONENT
+// HOME PAGE
 // =========================
 function HomePage() {
-
-  // =========================
-  // ADMIN MODE
-  // =========================
-  const [isAdmin, setIsAdmin] =
-    useState(
-      localStorage.getItem(
-        "isAdmin"
-      ) === "true"
-    );
 
   // =========================
   // DARK MODE
@@ -470,7 +460,32 @@ export default function App() {
         {/* ADMIN ORDERS */}
         <Route
           path="/admin/orders"
-          element={<AdminOrders />}
+          element={
+
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
+                  Loading Orders...
+                </div>
+              }
+            >
+
+              {isAdmin ? (
+
+                <AdminOrders />
+
+              ) : (
+
+                <AdminLogin
+                  setIsAdmin={
+                    setIsAdmin
+                  }
+                />
+
+              )}
+
+            </Suspense>
+          }
         />
 
       </Routes>
