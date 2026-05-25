@@ -19,7 +19,7 @@ import { db } from "../firebase";
 export default function AdminDashboard() {
 
   // =========================
-  // STATE
+  // STATES
   // =========================
   const [orders, setOrders] =
     useState([]);
@@ -33,17 +33,11 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] =
     useState("All");
 
-  const [stateFilter, setStateFilter] =
-    useState("All");
-
   const [dateFilter, setDateFilter] =
     useState("");
 
-  const [selectedOrder, setSelectedOrder] =
-    useState(null);
-
   // =========================
-  // LIVE FIREBASE ORDERS
+  // LOAD ORDERS REALTIME
   // =========================
   useEffect(() => {
 
@@ -57,17 +51,18 @@ export default function AdminDashboard() {
         q,
         (snapshot) => {
 
-          const orderList =
-            snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
+          const ordersData =
+            snapshot.docs.map(
+              (docItem) => ({
+                id: docItem.id,
+                ...docItem.data(),
+              })
+            );
 
-          setOrders(orderList);
+          setOrders(ordersData);
 
           setLoading(false);
         },
-
         (error) => {
 
           console.error(error);
@@ -76,26 +71,34 @@ export default function AdminDashboard() {
         }
       );
 
-    return () =>
-      unsubscribe();
+    return () => unsubscribe();
 
   }, []);
 
   // =========================
   // TOTALS
   // =========================
+  const totalSales =
+    useMemo(() => {
+
+      return orders.reduce(
+        (sum, order) => {
+
+          return (
+            sum +
+            Number(
+              order.grandTotal || 0
+            )
+          );
+
+        },
+        0
+      );
+
+    }, [orders]);
+
   const totalOrders =
     orders.length;
-
-  const totalSales =
-    orders.reduce(
-      (sum, order) =>
-        sum +
-        Number(
-          order.grandTotal || 0
-        ),
-      0
-    );
 
   const paidOrders =
     orders.filter(
@@ -111,110 +114,77 @@ export default function AdminDashboard() {
         "Paid"
     ).length;
 
-  const todayOrders =
-    orders.filter((order) => {
-
-      const today =
-        new Date()
-          .toISOString()
-          .split("T")[0];
-
-      return (
-        order.createdAt
-          ?.includes(today)
-      );
-    }).length;
-
   // =========================
-  // FILTERED ORDERS
+  // FILTERS
   // =========================
   const filteredOrders =
-    useMemo(() => {
+    orders.filter((order) => {
 
-      return orders.filter(
-        (order) => {
+      const searchMatch =
 
-          const matchesSearch =
+        order.customerName
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
 
-            order.customerName
-              ?.toLowerCase()
-              .includes(
-                search.toLowerCase()
-              ) ||
+        order.phoneNumber
+          ?.includes(search) ||
 
-            order.phoneNumber
-              ?.includes(search) ||
+        order.orderId
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
 
-            order.orderId
-              ?.toLowerCase()
-              .includes(
-                search.toLowerCase()
-              ) ||
-
-            order.address
-              ?.toLowerCase()
-              .includes(
-                search.toLowerCase()
-              );
-
-          const matchesStatus =
-            statusFilter ===
-              "All" ||
-            order.paymentStatus ===
-              statusFilter;
-
-          const matchesState =
-            stateFilter ===
-              "All" ||
-            order.state ===
-              stateFilter;
-
-          const matchesDate =
-            !dateFilter ||
-            order.createdAt
-              ?.slice(0, 10)
-              .includes(
-                dateFilter
-              );
-
-          return (
-            matchesSearch &&
-            matchesStatus &&
-            matchesState &&
-            matchesDate
+        order.address
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
           );
-        }
+
+      const statusMatch =
+        statusFilter === "All"
+          ? true
+          : order.paymentStatus ===
+            statusFilter;
+
+      const dateMatch =
+        !dateFilter
+          ? true
+          : new Date(
+              order.createdAt
+            )
+              .toISOString()
+              .split("T")[0] ===
+            dateFilter;
+
+      return (
+        searchMatch &&
+        statusMatch &&
+        dateMatch
       );
 
-    }, [
-      orders,
-      search,
-      statusFilter,
-      stateFilter,
-      dateFilter,
-    ]);
+    });
 
   // =========================
   // UPDATE STATUS
   // =========================
   const updatePaymentStatus =
-    async (
-      id,
-      status
-    ) => {
+    async (id, status) => {
 
       try {
 
         await updateDoc(
-          doc(
-            db,
-            "orders",
-            id
-          ),
+          doc(db, "orders", id),
           {
             paymentStatus:
               status,
           }
+        );
+
+        alert(
+          `Order marked ${status}`
         );
 
       } catch (error) {
@@ -222,7 +192,7 @@ export default function AdminDashboard() {
         console.error(error);
 
         alert(
-          "Failed to update status"
+          "Failed to update order"
         );
       }
     };
@@ -244,11 +214,11 @@ export default function AdminDashboard() {
       try {
 
         await deleteDoc(
-          doc(
-            db,
-            "orders",
-            id
-          )
+          doc(db, "orders", id)
+        );
+
+        alert(
+          "Order deleted"
         );
 
       } catch (error) {
@@ -260,67 +230,6 @@ export default function AdminDashboard() {
         );
       }
     };
-
-  // =========================
-  // DOWNLOAD CSV
-  // =========================
-  const downloadCSV = () => {
-
-    const headers = [
-      "Order ID",
-      "Customer",
-      "Phone",
-      "State",
-      "Amount",
-      "Payment",
-      "Date",
-    ];
-
-    const rows =
-      filteredOrders.map(
-        (o) => [
-          o.orderId,
-          o.customerName,
-          o.phoneNumber,
-          o.state,
-          o.grandTotal,
-          o.paymentStatus,
-          o.createdAt,
-        ]
-      );
-
-    const csvContent =
-      [
-        headers.join(","),
-        ...rows.map((e) =>
-          e.join(",")
-        ),
-      ].join("\n");
-
-    const blob =
-      new Blob(
-        [csvContent],
-        {
-          type:
-            "text/csv;charset=utf-8;",
-        }
-      );
-
-    const link =
-      document.createElement(
-        "a"
-      );
-
-    link.href =
-      URL.createObjectURL(
-        blob
-      );
-
-    link.download =
-      "natvian-orders.csv";
-
-    link.click();
-  };
 
   // =========================
   // LOGOUT
@@ -348,9 +257,9 @@ export default function AdminDashboard() {
 
           <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
 
-          <p className="text-xl font-bold">
+          <h2 className="text-2xl font-bold">
             Loading Orders...
-          </p>
+          </h2>
 
         </div>
 
@@ -358,63 +267,49 @@ export default function AdminDashboard() {
     );
   }
 
+  // =========================
+  // UI
+  // =========================
   return (
 
-    <div className="min-h-screen bg-gray-100 p-5">
+    <div className="min-h-screen bg-gray-100 p-6">
 
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg mb-6">
+        <div className="flex flex-col lg:flex-row justify-between gap-6 mb-10">
 
-          <div className="flex flex-col lg:flex-row justify-between gap-5">
+          <div>
 
-            <div>
+            <h1 className="text-5xl font-bold text-[#31572C]">
 
-              <h1 className="text-5xl font-black text-[#31572C]">
+              Natvian Foods Admin
 
-                Natvian Foods
+            </h1>
 
-              </h1>
+            <p className="text-gray-600 mt-2">
 
-              <p className="text-gray-500 mt-2">
-                Admin Dashboard
-              </p>
+              Manage Orders & Customers
 
-            </div>
-
-            <div className="flex gap-3 flex-wrap">
-
-              <button
-                onClick={
-                  downloadCSV
-                }
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-bold"
-              >
-
-                Export CSV
-
-              </button>
-
-              <button
-                onClick={logout}
-                className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold"
-              >
-
-                Logout
-
-              </button>
-
-            </div>
+            </p>
 
           </div>
+
+          <button
+            onClick={logout}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-bold"
+          >
+
+            Logout
+
+          </button>
 
         </div>
 
         {/* STATS */}
-        <div className="grid md:grid-cols-5 gap-5 mb-6">
+        <div className="grid md:grid-cols-4 gap-5 mb-8">
 
-          <div className="bg-white p-6 rounded-3xl shadow-lg">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
             <p className="text-gray-500">
               Total Orders
@@ -428,7 +323,7 @@ export default function AdminDashboard() {
 
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-lg">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
             <p className="text-gray-500">
               Total Sales
@@ -445,7 +340,7 @@ export default function AdminDashboard() {
 
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-lg">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
             <p className="text-gray-500">
               Paid Orders
@@ -459,10 +354,10 @@ export default function AdminDashboard() {
 
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-lg">
+          <div className="bg-white rounded-3xl p-6 shadow">
 
             <p className="text-gray-500">
-              Pending
+              Pending Orders
             </p>
 
             <h2 className="text-4xl font-bold text-yellow-600 mt-2">
@@ -473,123 +368,71 @@ export default function AdminDashboard() {
 
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-lg">
-
-            <p className="text-gray-500">
-              Today's Orders
-            </p>
-
-            <h2 className="text-4xl font-bold text-purple-700 mt-2">
-
-              {todayOrders}
-
-            </h2>
-
-          </div>
-
         </div>
 
         {/* FILTERS */}
-        <div className="bg-white rounded-3xl shadow-lg p-5 mb-8">
+        <div className="bg-white rounded-3xl shadow p-5 mb-8 grid md:grid-cols-3 gap-4">
 
-          <div className="grid lg:grid-cols-4 gap-4">
+          <input
+            type="text"
+            placeholder="Search name, phone, address..."
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          />
 
-            <input
-              type="text"
-              placeholder="Search customer / phone / address"
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl"
-            />
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          >
 
-            <select
-              value={
-                statusFilter
-              }
-              onChange={(e) =>
-                setStatusFilter(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl"
-            >
+            <option>
+              All
+            </option>
 
-              <option value="All">
-                All Status
-              </option>
+            <option>
+              Paid
+            </option>
 
-              <option value="Paid">
-                Paid
-              </option>
+            <option>
+              Pending
+            </option>
 
-              <option value="Pending">
-                Pending
-              </option>
+          </select>
 
-            </select>
-
-            <select
-              value={
-                stateFilter
-              }
-              onChange={(e) =>
-                setStateFilter(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl"
-            >
-
-              <option value="All">
-                All States
-              </option>
-
-              <option value="Tamil Nadu">
-                Tamil Nadu
-              </option>
-
-              <option value="Other State">
-                Other State
-              </option>
-
-            </select>
-
-            <input
-              type="date"
-              value={
-                dateFilter
-              }
-              onChange={(e) =>
-                setDateFilter(
-                  e.target.value
-                )
-              }
-              className="border p-4 rounded-2xl"
-            />
-
-          </div>
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) =>
+              setDateFilter(
+                e.target.value
+              )
+            }
+            className="border p-4 rounded-2xl"
+          />
 
         </div>
 
-        {/* NO ORDERS */}
+        {/* EMPTY */}
         {filteredOrders.length ===
         0 ? (
 
-          <div className="bg-white rounded-3xl shadow-lg p-16 text-center">
+          <div className="bg-white rounded-3xl p-12 text-center shadow">
 
-            <h2 className="text-4xl font-bold mb-3">
+            <h2 className="text-3xl font-bold mb-3">
 
               No Orders Found
 
             </h2>
-
-            <p className="text-gray-500">
-              Orders will appear here.
-            </p>
 
           </div>
 
@@ -602,188 +445,191 @@ export default function AdminDashboard() {
 
                 <div
                   key={order.id}
-                  className="bg-white rounded-3xl shadow-lg overflow-hidden"
+                  className="bg-white rounded-3xl shadow p-8"
                 >
 
                   {/* TOP */}
-                  <div className="p-6 border-b">
+                  <div className="flex flex-col lg:flex-row justify-between gap-6">
 
-                    <div className="flex flex-col lg:flex-row justify-between gap-6">
+                    {/* LEFT */}
+                    <div className="flex-1">
 
-                      <div className="grid md:grid-cols-2 gap-4 flex-1">
+                      <h2 className="text-3xl font-bold mb-5">
 
-                        <div>
+                        {
+                          order.customerName
+                        }
 
-                          <p className="text-gray-500 text-sm">
-                            Customer
-                          </p>
+                      </h2>
 
-                          <h2 className="text-2xl font-bold">
+                      <div className="grid md:grid-cols-2 gap-4">
 
-                            {
-                              order.customerName
-                            }
-
-                          </h2>
-
-                        </div>
-
-                        <div>
+                        <div className="bg-gray-50 p-4 rounded-2xl">
 
                           <p className="text-gray-500 text-sm">
-                            Order ID
-                          </p>
 
-                          <h2 className="font-bold">
-
-                            {
-                              order.orderId
-                            }
-
-                          </h2>
-
-                        </div>
-
-                        <div>
-
-                          <p className="text-gray-500 text-sm">
                             Phone
+
                           </p>
 
-                          <h2 className="font-bold">
+                          <p className="font-bold">
 
                             {
                               order.phoneNumber
                             }
 
-                          </h2>
+                          </p>
 
                         </div>
 
-                        <div>
+                        <div className="bg-gray-50 p-4 rounded-2xl">
 
                           <p className="text-gray-500 text-sm">
-                            Date
+
+                            Order ID
+
                           </p>
 
-                          <h2 className="font-bold">
+                          <p className="font-bold">
 
                             {
-                              order.createdAt
+                              order.orderId
                             }
 
-                          </h2>
+                          </p>
 
                         </div>
 
-                        <div className="md:col-span-2">
+                        <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
 
                           <p className="text-gray-500 text-sm">
+
                             Address
+
                           </p>
 
-                          <h2 className="font-bold">
+                          <p className="font-bold">
 
                             {
                               order.address
                             }
 
-                          </h2>
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl">
+
+                          <p className="text-gray-500 text-sm">
+
+                            State
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {
+                              order.state
+                            }
+
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl">
+
+                          <p className="text-gray-500 text-sm">
+
+                            Date
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {new Date(
+                              order.createdAt
+                            ).toLocaleString()}
+
+                          </p>
 
                         </div>
 
                       </div>
 
-                      {/* RIGHT */}
-                      <div className="lg:w-80">
+                    </div>
 
-                        <div className="bg-gray-50 rounded-3xl p-5">
+                    {/* RIGHT */}
+                    <div className="w-full lg:w-80">
 
-                          <div className="mb-4">
+                      <div className="bg-gray-50 rounded-3xl p-6">
 
-                            <span
-                              className={`px-5 py-2 rounded-full font-bold ${
-                                order.paymentStatus ===
+                        <h3 className="text-2xl font-bold mb-5">
+
+                          Payment
+
+                        </h3>
+
+                        <div className="mb-5">
+
+                          <span
+                            className={`px-5 py-3 rounded-full font-bold ${
+                              order.paymentStatus ===
+                              "Paid"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+
+                            {
+                              order.paymentStatus
+                            }
+
+                          </span>
+
+                        </div>
+
+                        <div className="space-y-3">
+
+                          <button
+                            onClick={() =>
+                              updatePaymentStatus(
+                                order.id,
                                 "Paid"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-yellow-100 text-yellow-700"
-                              }`}
-                            >
+                              )
+                            }
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-2xl font-bold"
+                          >
 
-                              {
-                                order.paymentStatus
-                              }
+                            Mark Paid
 
-                            </span>
+                          </button>
 
-                          </div>
+                          <button
+                            onClick={() =>
+                              updatePaymentStatus(
+                                order.id,
+                                "Pending"
+                              )
+                            }
+                            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-2xl font-bold"
+                          >
 
-                          <h2 className="text-4xl font-black text-green-700 mb-5">
+                            Mark Pending
 
-                            ₹
-                            {Number(
-                              order.grandTotal || 0
-                            ).toFixed(2)}
+                          </button>
 
-                          </h2>
+                          <button
+                            onClick={() =>
+                              deleteOrder(
+                                order.id
+                              )
+                            }
+                            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl font-bold"
+                          >
 
-                          <div className="space-y-3">
+                            Delete Order
 
-                            <button
-                              onClick={() =>
-                                setSelectedOrder(
-                                  order
-                                )
-                              }
-                              className="w-full bg-black text-white py-3 rounded-2xl font-bold"
-                            >
-
-                              View Details
-
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                updatePaymentStatus(
-                                  order.id,
-                                  "Paid"
-                                )
-                              }
-                              className="w-full bg-green-600 text-white py-3 rounded-2xl font-bold"
-                            >
-
-                              Mark Paid
-
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                updatePaymentStatus(
-                                  order.id,
-                                  "Pending"
-                                )
-                              }
-                              className="w-full bg-yellow-500 text-white py-3 rounded-2xl font-bold"
-                            >
-
-                              Mark Pending
-
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                deleteOrder(
-                                  order.id
-                                )
-                              }
-                              className="w-full bg-red-600 text-white py-3 rounded-2xl font-bold"
-                            >
-
-                              Delete
-
-                            </button>
-
-                          </div>
+                          </button>
 
                         </div>
 
@@ -794,7 +640,7 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* PRODUCTS */}
-                  <div className="p-6">
+                  <div className="mt-8 border-t pt-6">
 
                     <h3 className="text-2xl font-bold mb-5">
 
@@ -812,54 +658,42 @@ export default function AdminDashboard() {
 
                           <div
                             key={index}
-                            className="bg-gray-50 rounded-2xl p-4 flex flex-col md:flex-row justify-between gap-4"
+                            className="flex justify-between items-center bg-gray-50 rounded-2xl p-4"
                           >
 
-                            <div className="flex items-center gap-4">
+                            <div>
 
-                              <img
-                                src={
-                                  product.image
-                                }
-                                alt={
+                              <h4 className="font-bold text-lg">
+
+                                {
                                   product.name
                                 }
-                                className="w-20 h-20 rounded-2xl object-cover"
-                              />
 
-                              <div>
+                              </h4>
 
-                                <h4 className="font-bold text-xl">
+                              <p className="text-gray-500">
 
-                                  {
-                                    product.name
-                                  }
+                                {
+                                  product.weight
+                                }
 
-                                </h4>
-
-                                <p className="text-gray-500">
-
-                                  {
-                                    product.weight
-                                  }
-
-                                </p>
-
-                              </div>
+                              </p>
 
                             </div>
 
                             <div className="text-right">
 
-                              <p className="font-bold">
+                              <p>
+
                                 Qty:
                                 {" "}
                                 {
                                   product.qty
                                 }
+
                               </p>
 
-                              <h2 className="text-2xl font-bold text-green-700">
+                              <p className="font-bold text-green-700 text-xl">
 
                                 ₹
                                 {(
@@ -873,7 +707,7 @@ export default function AdminDashboard() {
                                   2
                                 )}
 
-                              </h2>
+                              </p>
 
                             </div>
 
@@ -884,122 +718,32 @@ export default function AdminDashboard() {
 
                     </div>
 
+                    {/* TOTAL */}
+                    <div className="mt-8 border-t pt-6 flex justify-between items-center">
+
+                      <h2 className="text-2xl font-bold">
+
+                        Grand Total
+
+                      </h2>
+
+                      <h2 className="text-4xl font-bold text-green-700">
+
+                        ₹
+                        {Number(
+                          order.grandTotal || 0
+                        ).toFixed(2)}
+
+                      </h2>
+
+                    </div>
+
                   </div>
 
                 </div>
 
               )
             )}
-
-          </div>
-
-        )}
-
-        {/* ORDER MODAL */}
-        {selectedOrder && (
-
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-
-            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-
-              <div className="flex justify-between items-center mb-6">
-
-                <h2 className="text-3xl font-bold">
-
-                  Order Details
-
-                </h2>
-
-                <button
-                  onClick={() =>
-                    setSelectedOrder(
-                      null
-                    )
-                  }
-                  className="text-3xl"
-                >
-
-                  ×
-
-                </button>
-
-              </div>
-
-              <div className="space-y-4">
-
-                <div className="bg-gray-100 p-4 rounded-2xl">
-
-                  <p className="text-gray-500">
-                    Customer
-                  </p>
-
-                  <h3 className="font-bold text-xl">
-
-                    {
-                      selectedOrder.customerName
-                    }
-
-                  </h3>
-
-                </div>
-
-                <div className="bg-gray-100 p-4 rounded-2xl">
-
-                  <p className="text-gray-500">
-                    Full Address
-                  </p>
-
-                  <h3 className="font-bold">
-
-                    {
-                      selectedOrder.address
-                    }
-
-                  </h3>
-
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-
-                  <div className="bg-gray-100 p-4 rounded-2xl">
-
-                    <p className="text-gray-500">
-                      GST
-                    </p>
-
-                    <h3 className="font-bold">
-
-                      ₹
-                      {Number(
-                        selectedOrder.cgst || 0
-                      ).toFixed(2)}
-
-                    </h3>
-
-                  </div>
-
-                  <div className="bg-gray-100 p-4 rounded-2xl">
-
-                    <p className="text-gray-500">
-                      Shipping
-                    </p>
-
-                    <h3 className="font-bold">
-
-                      ₹
-                      {Number(
-                        selectedOrder.shipping || 0
-                      ).toFixed(2)}
-
-                    </h3>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
 
           </div>
 
