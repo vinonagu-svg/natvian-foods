@@ -5,7 +5,6 @@ import {
 } from "react";
 
 import {
-  BrowserRouter,
   Routes,
   Route,
 } from "react-router-dom";
@@ -69,9 +68,6 @@ function HomePage() {
   const [cart, setCart] =
     useState([]);
 
-  // =========================
-  // OFFER CONFIG
-  // =========================
   const OFFER_CONFIG = {
     name: "Launching Offer",
     type: "PERCENT",
@@ -79,12 +75,7 @@ function HomePage() {
     isActive: true,
   };
 
-  // =========================
-  // OFFER PRICE
-  // =========================
-  const getOfferPrice = (
-    mrp
-  ) => {
+  const getOfferPrice = (mrp) => {
 
     const price =
       Number(mrp) || 0;
@@ -132,6 +123,7 @@ function HomePage() {
   ) => {
 
     const safeVariant = {
+
       weight:
         variant?.weight ||
         "100g",
@@ -145,8 +137,10 @@ function HomePage() {
     const existingIndex =
       cart.findIndex(
         (item) =>
+
           item.id ===
             product.id &&
+
           item.weight ===
             safeVariant.weight
       );
@@ -168,17 +162,18 @@ function HomePage() {
     }
 
     setCart((prev) => [
+
       ...prev,
+
       {
         id: product.id,
         name: product.name,
         image: product.image,
-        weight:
-          safeVariant.weight,
-        mrp:
-          safeVariant.mrp,
+        weight: safeVariant.weight,
+        mrp: safeVariant.mrp,
         qty: 1,
       },
+
     ]);
   };
 
@@ -231,9 +226,6 @@ function HomePage() {
       0
     );
 
-  // =========================
-  // MAIN WEBSITE
-  // =========================
   return (
 
     <div
@@ -244,7 +236,6 @@ function HomePage() {
       }
     >
 
-      {/* NAVBAR */}
       <Navbar
         darkMode={darkMode}
         setDarkMode={
@@ -259,7 +250,6 @@ function HomePage() {
         }
       />
 
-      {/* HERO */}
       <section id="home">
 
         <Hero
@@ -274,10 +264,8 @@ function HomePage() {
 
       </section>
 
-      {/* FEATURES */}
       <Features />
 
-      {/* PRODUCTS */}
       <section
         id="products"
         className="max-w-7xl mx-auto px-6 py-20"
@@ -292,7 +280,6 @@ function HomePage() {
 
       </section>
 
-      {/* CART */}
       <section
         id="cart"
         className="max-w-7xl mx-auto px-6 py-20"
@@ -324,15 +311,12 @@ function HomePage() {
 
       </section>
 
-      {/* ABOUT */}
       <section id="about">
         <About />
       </section>
 
-      {/* FAQ */}
       <FAQ />
 
-      {/* TESTIMONIALS */}
       <Suspense
         fallback={
           <div className="text-center py-20 text-2xl font-bold">
@@ -345,12 +329,10 @@ function HomePage() {
 
       </Suspense>
 
-      {/* CONTACT */}
       <section id="contact">
         <Contact />
       </section>
 
-      {/* FOOTER */}
       <Footer />
 
     </div>
@@ -371,72 +353,73 @@ export default function App() {
 
   return (
 
-    <BrowserRouter>
+    <Routes>
 
-      <Routes>
+      <Route
+        path="/"
+        element={<HomePage />}
+      />
 
-        {/* HOME */}
-        <Route
-          path="/"
-          element={<HomePage />}
-        />
+      <Route
+        path="/admin"
+        element={
 
-        {/* ADMIN */}
-        <Route
-          path="/admin"
-          element={
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
+                Loading Admin...
+              </div>
+            }
+          >
 
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
-                  Loading Admin...
-                </div>
-              }
-            >
+            {isAdmin ? (
 
-              {isAdmin ? (
-                <AdminDashboard />
-              ) : (
-                <AdminLogin
-                  setIsAdmin={
-                    setIsAdmin
-                  }
-                />
-              )}
+              <AdminDashboard />
 
-            </Suspense>
-          }
-        />
+            ) : (
 
-        {/* ADMIN ORDERS */}
-        <Route
-          path="/admin/orders"
-          element={
+              <AdminLogin
+                setIsAdmin={
+                  setIsAdmin
+                }
+              />
 
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
-                  Loading Orders...
-                </div>
-              }
-            >
+            )}
 
-              {isAdmin ? (
-                <AdminOrders />
-              ) : (
-                <AdminLogin
-                  setIsAdmin={
-                    setIsAdmin
-                  }
-                />
-              )}
+          </Suspense>
+        }
+      />
 
-            </Suspense>
-          }
-        />
+      <Route
+        path="/admin/orders"
+        element={
 
-      </Routes>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
+                Loading Orders...
+              </div>
+            }
+          >
 
-    </BrowserRouter>
+            {isAdmin ? (
+
+              <AdminOrders />
+
+            ) : (
+
+              <AdminLogin
+                setIsAdmin={
+                  setIsAdmin
+                }
+              />
+
+            )}
+
+          </Suspense>
+        }
+      />
+
+    </Routes>
   );
 }
