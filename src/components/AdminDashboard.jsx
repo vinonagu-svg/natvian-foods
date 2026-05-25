@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   collection,
@@ -18,15 +22,21 @@ export default function AdminDashboard() {
   const [orders, setOrders] =
     useState([]);
 
-  const [search, setSearch] =
-    useState("");
-
   const [loading, setLoading] =
     useState(true);
+
+  const [search, setSearch] =
+    useState("");
 
   // =========================
   // LOAD ORDERS FROM FIREBASE
   // =========================
+  useEffect(() => {
+
+    loadOrders();
+
+  }, []);
+
   const loadOrders = async () => {
 
     try {
@@ -40,8 +50,7 @@ export default function AdminDashboard() {
         querySnapshot.docs.map(
           (docItem) => ({
 
-            firestoreId:
-              docItem.id,
+            docId: docItem.id,
 
             ...docItem.data(),
 
@@ -60,14 +69,9 @@ export default function AdminDashboard() {
     } finally {
 
       setLoading(false);
+
     }
   };
-
-  useEffect(() => {
-
-    loadOrders();
-
-  }, []);
 
   // =========================
   // TOTAL SALES
@@ -76,25 +80,27 @@ export default function AdminDashboard() {
     useMemo(() => {
 
       return orders.reduce(
-        (sum, order) =>
-          sum +
-          Number(
-            order.grandTotal || 0
-          ),
+        (sum, order) => {
+
+          return (
+            sum +
+            Number(
+              order.grandTotal || 0
+            )
+          );
+
+        },
         0
       );
 
     }, [orders]);
 
   // =========================
-  // TOTAL ORDERS
+  // COUNTS
   // =========================
   const totalOrders =
     orders.length;
 
-  // =========================
-  // PAID ORDERS
-  // =========================
   const paidOrders =
     orders.filter(
       (order) =>
@@ -102,9 +108,6 @@ export default function AdminDashboard() {
         "Paid"
     ).length;
 
-  // =========================
-  // PENDING ORDERS
-  // =========================
   const pendingOrders =
     orders.filter(
       (order) =>
@@ -113,7 +116,7 @@ export default function AdminDashboard() {
     ).length;
 
   // =========================
-  // FILTER ORDERS
+  // SEARCH FILTER
   // =========================
   const filteredOrders =
     orders.filter((order) => {
@@ -136,6 +139,7 @@ export default function AdminDashboard() {
           )
 
       );
+
     });
 
   // =========================
@@ -143,21 +147,14 @@ export default function AdminDashboard() {
   // =========================
   const updatePaymentStatus =
     async (
-      firestoreId,
+      docId,
       status
     ) => {
 
       try {
 
-        const orderRef =
-          doc(
-            db,
-            "orders",
-            firestoreId
-          );
-
         await updateDoc(
-          orderRef,
+          doc(db, "orders", docId),
           {
             paymentStatus:
               status,
@@ -168,10 +165,8 @@ export default function AdminDashboard() {
 
       } catch (error) {
 
-        console.error(
-          "Update failed:",
-          error
-        );
+        console.error(error);
+
       }
     };
 
@@ -179,9 +174,7 @@ export default function AdminDashboard() {
   // DELETE ORDER
   // =========================
   const deleteOrder =
-    async (
-      firestoreId
-    ) => {
+    async (docId) => {
 
       const confirmDelete =
         window.confirm(
@@ -197,7 +190,7 @@ export default function AdminDashboard() {
           doc(
             db,
             "orders",
-            firestoreId
+            docId
           )
         );
 
@@ -205,10 +198,8 @@ export default function AdminDashboard() {
 
       } catch (error) {
 
-        console.error(
-          "Delete failed:",
-          error
-        );
+        console.error(error);
+
       }
     };
 
@@ -237,6 +228,7 @@ export default function AdminDashboard() {
         Loading Orders...
 
       </div>
+
     );
   }
 
@@ -259,7 +251,7 @@ export default function AdminDashboard() {
 
             <p className="text-gray-600">
 
-              Manage customer orders & payments
+              Manage orders & payments
 
             </p>
 
@@ -286,7 +278,9 @@ export default function AdminDashboard() {
             </p>
 
             <h2 className="text-4xl font-bold">
+
               {totalOrders}
+
             </h2>
 
           </div>
@@ -300,7 +294,9 @@ export default function AdminDashboard() {
             <h2 className="text-4xl font-bold text-green-700">
 
               ₹
-              {totalSales.toFixed(2)}
+              {totalSales.toFixed(
+                2
+              )}
 
             </h2>
 
@@ -341,7 +337,7 @@ export default function AdminDashboard() {
 
           <input
             type="text"
-            placeholder="Search customer, phone or order ID"
+            placeholder="Search orders..."
             value={search}
             onChange={(e) =>
               setSearch(
@@ -353,11 +349,11 @@ export default function AdminDashboard() {
 
         </div>
 
-        {/* EMPTY */}
+        {/* NO ORDERS */}
         {filteredOrders.length ===
         0 ? (
 
-          <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
+          <div className="bg-white p-12 rounded-3xl shadow-lg text-center">
 
             <h2 className="text-3xl font-bold mb-3">
 
@@ -377,54 +373,149 @@ export default function AdminDashboard() {
               .map((order) => (
 
                 <div
-                  key={
-                    order.firestoreId
-                  }
+                  key={order.docId}
                   className="bg-white rounded-3xl shadow-xl border p-8"
                 >
 
-                  {/* CUSTOMER */}
-                  <div className="mb-8">
+                  <div className="flex justify-between items-start flex-col lg:flex-row gap-8">
 
-                    <h2 className="text-3xl font-bold mb-5">
+                    <div className="flex-1">
 
-                      {
-                        order.customerName
-                      }
+                      <h2 className="text-3xl font-bold mb-5">
 
-                    </h2>
+                        {
+                          order.customerName
+                        }
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                      </h2>
 
-                      <div className="bg-gray-50 p-4 rounded-2xl">
+                      <div className="space-y-3">
 
-                        <p className="text-sm text-gray-500 mb-1">
-                          Phone
+                        <p>
+                          <strong>
+                            Order ID:
+                          </strong>
+                          {" "}
+                          {
+                            order.orderId
+                          }
                         </p>
 
-                        <p className="font-bold">
-
+                        <p>
+                          <strong>
+                            Phone:
+                          </strong>
+                          {" "}
                           {
                             order.phoneNumber
                           }
+                        </p>
 
+                        <p>
+                          <strong>
+                            Address:
+                          </strong>
+                          {" "}
+                          {
+                            order.address
+                          }
+                        </p>
+
+                        <p>
+                          <strong>
+                            State:
+                          </strong>
+                          {" "}
+                          {order.state}
+                        </p>
+
+                        <p>
+                          <strong>
+                            Pincode:
+                          </strong>
+                          {" "}
+                          {
+                            order.pincode
+                          }
                         </p>
 
                       </div>
 
-                      <div className="bg-gray-50 p-4 rounded-2xl">
+                    </div>
 
-                        <p className="text-sm text-gray-500 mb-1">
-                          Order ID
-                        </p>
+                    <div className="w-full lg:w-80">
 
-                        <p className="font-bold">
+                      <div className="bg-gray-50 p-6 rounded-3xl">
 
-                          {
-                            order.orderId
-                          }
+                        <h3 className="text-2xl font-bold mb-5">
 
-                        </p>
+                          Payment
+
+                        </h3>
+
+                        <div className="mb-5">
+
+                          <span
+                            className={`px-5 py-3 rounded-full font-bold ${
+                              order.paymentStatus ===
+                              "Paid"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+
+                            {
+                              order.paymentStatus
+                            }
+
+                          </span>
+
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+
+                          <button
+                            onClick={() =>
+                              updatePaymentStatus(
+                                order.docId,
+                                "Paid"
+                              )
+                            }
+                            className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-bold"
+                          >
+
+                            Mark Paid
+
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              updatePaymentStatus(
+                                order.docId,
+                                "Pending"
+                              )
+                            }
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-3 rounded-2xl font-bold"
+                          >
+
+                            Mark Pending
+
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              deleteOrder(
+                                order.docId
+                              )
+                            }
+                            className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold"
+                          >
+
+                            Delete
+
+                          </button>
+
+                        </div>
 
                       </div>
 
@@ -433,148 +524,101 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* PRODUCTS */}
-                  <div className="space-y-4">
+                  <div className="mt-10 border-t pt-8">
 
-                    {order.products?.map(
-                      (
-                        product,
-                        index
-                      ) => (
+                    <h3 className="text-2xl font-bold mb-6">
 
-                        <div
-                          key={index}
-                          className="flex justify-between items-center bg-gray-50 p-5 rounded-2xl"
-                        >
+                      Products
 
-                          <div>
+                    </h3>
 
-                            <h3 className="font-bold text-xl">
+                    <div className="space-y-4">
 
-                              {
-                                product.name
-                              }
+                      {order.products?.map(
+                        (
+                          product,
+                          index
+                        ) => (
 
-                            </h3>
+                          <div
+                            key={index}
+                            className="flex justify-between items-center bg-gray-50 p-5 rounded-3xl"
+                          >
 
-                            <p className="text-gray-500">
+                            <div className="flex items-center gap-5">
 
-                              {
-                                product.weight
-                              }
+                              <img
+                                src={
+                                  product.image
+                                }
+                                alt={
+                                  product.name
+                                }
+                                className="w-20 h-20 rounded-2xl object-cover"
+                              />
 
-                            </p>
+                              <div>
 
-                          </div>
+                                <h4 className="font-bold text-xl">
 
-                          <div className="text-right">
+                                  {
+                                    product.name
+                                  }
 
-                            <p>
+                                </h4>
 
-                              Qty:
-                              {" "}
-                              {
-                                product.qty
-                              }
+                                <p className="text-gray-500">
 
-                            </p>
+                                  {
+                                    product.weight
+                                  }
 
-                            <p className="font-bold text-green-700">
+                                </p>
 
-                              ₹
-                              {(
-                                Number(
-                                  product.mrp
-                                ) *
-                                Number(
+                              </div>
+
+                            </div>
+
+                            <div className="text-right">
+
+                              <p className="font-bold">
+
+                                Qty:
+                                {" "}
+                                {
                                   product.qty
-                                )
-                              ).toFixed(2)}
+                                }
 
-                            </p>
+                              </p>
+
+                            </div>
 
                           </div>
 
-                        </div>
-                      )
-                    )}
+                        )
+                      )}
+
+                    </div>
 
                   </div>
 
-                  {/* FOOTER */}
-                  <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-5">
+                  {/* TOTAL */}
+                  <div className="mt-10 border-t pt-8 flex justify-between items-center">
 
-                    <div>
+                    <h3 className="text-2xl font-bold">
 
-                      <p className="text-lg">
+                      Grand Total
 
-                        Payment:
-                        {" "}
+                    </h3>
 
-                        <span className="font-bold">
+                    <h2 className="text-5xl font-bold text-green-700">
 
-                          {
-                            order.paymentStatus
-                          }
+                      ₹
+                      {Number(
+                        order.grandTotal || 0
+                      ).toFixed(2)}
 
-                        </span>
-
-                      </p>
-
-                      <h2 className="text-4xl font-bold text-green-700 mt-2">
-
-                        ₹
-                        {Number(
-                          order.grandTotal || 0
-                        ).toFixed(2)}
-
-                      </h2>
-
-                    </div>
-
-                    <div className="flex gap-3 flex-wrap">
-
-                      <button
-                        onClick={() =>
-                          updatePaymentStatus(
-                            order.firestoreId,
-                            "Paid"
-                          )
-                        }
-                        className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-bold"
-                      >
-
-                        Mark Paid
-
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          updatePaymentStatus(
-                            order.firestoreId,
-                            "Pending"
-                          )
-                        }
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-3 rounded-2xl font-bold"
-                      >
-
-                        Mark Pending
-
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          deleteOrder(
-                            order.firestoreId
-                          )
-                        }
-                        className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold"
-                      >
-
-                        Delete
-
-                      </button>
-
-                    </div>
+                    </h2>
 
                   </div>
 
