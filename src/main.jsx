@@ -7,8 +7,6 @@ import ReactDOM from "react-dom/client";
 
 import {
   BrowserRouter,
-  Routes,
-  Route,
 } from "react-router-dom";
 
 import "./index.css";
@@ -20,23 +18,10 @@ const App = lazy(() =>
   import("./App")
 );
 
-const AdminLogin = lazy(() =>
-  import("./components/AdminLogin")
-);
-
-const AdminDashboard = lazy(() =>
-  import("./components/AdminDashboard")
-);
-
 // =========================
 // ROOT COMPONENT
 // =========================
 function Root() {
-
-  const isAdmin =
-    localStorage.getItem(
-      "isAdmin"
-    ) === "true";
 
   return (
 
@@ -53,40 +38,7 @@ function Root() {
         }
       >
 
-        <Routes>
-
-          {/* =========================
-              MAIN WEBSITE
-          ========================= */}
-          <Route
-            path="/"
-            element={<App />}
-          />
-
-          {/* =========================
-              ADMIN PAGE
-          ========================= */}
-          <Route
-            path="/admin"
-            element={
-
-              isAdmin ? (
-
-                <AdminDashboard />
-
-              ) : (
-
-                <AdminLogin
-                  setIsAdmin={() =>
-                    window.location.reload()
-                  }
-                />
-
-              )
-            }
-          />
-
-        </Routes>
+        <App />
 
       </Suspense>
 

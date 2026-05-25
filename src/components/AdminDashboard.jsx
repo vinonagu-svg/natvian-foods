@@ -19,14 +19,26 @@ export default function AdminDashboard() {
   // =========================
   useEffect(() => {
 
-    const savedOrders =
-      JSON.parse(
-        localStorage.getItem(
-          "orders"
-        )
-      ) || [];
+    try {
 
-    setOrders(savedOrders);
+      const savedOrders =
+        JSON.parse(
+          localStorage.getItem(
+            "orders"
+          )
+        ) || [];
+
+      setOrders(savedOrders);
+
+    } catch (error) {
+
+      console.error(
+        "Failed to load orders",
+        error
+      );
+
+      setOrders([]);
+    }
 
   }, []);
 
@@ -37,8 +49,14 @@ export default function AdminDashboard() {
     useMemo(() => {
 
       return orders.reduce(
-        (sum, order) =>
-          sum + Number(order.total),
+        (sum, order) => {
+
+          return (
+            sum +
+            Number(order.total || 0)
+          );
+
+        },
         0
       );
 
@@ -66,8 +84,8 @@ export default function AdminDashboard() {
   const pendingOrders =
     orders.filter(
       (order) =>
-        order.paymentStatus ===
-        "Pending"
+        order.paymentStatus !==
+        "Paid"
     ).length;
 
   // =========================
@@ -77,6 +95,7 @@ export default function AdminDashboard() {
     orders.filter((order) => {
 
       return (
+
         order.customerName
           ?.toLowerCase()
           .includes(
@@ -91,7 +110,9 @@ export default function AdminDashboard() {
           .includes(
             search.toLowerCase()
           )
+
       );
+
     });
 
   // =========================
@@ -108,13 +129,16 @@ export default function AdminDashboard() {
         if (order.id === id) {
 
           return {
+
             ...order,
+
             paymentStatus:
-              status
+              status,
           };
         }
 
         return order;
+
       });
 
     setOrders(updatedOrders);
@@ -165,41 +189,38 @@ export default function AdminDashboard() {
       "isAdmin"
     );
 
-    window.location.reload();
+    window.location.href =
+      "/admin";
   };
 
   return (
 
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 p-6">
 
-      {/* HEADER */}
       <div className="max-w-7xl mx-auto">
 
-        {/* TOP BAR */}
+        {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-5 mb-10">
 
           <div>
 
             <h1 className="text-5xl font-bold mb-3">
 
-              Natvian Foods
-              Admin Dashboard
+              Natvian Foods Admin
 
             </h1>
 
             <p className="text-gray-600">
 
-              Manage customer orders,
-              payment status & sales
+              Manage orders, payments & customers
 
             </p>
 
           </div>
 
-          {/* LOGOUT */}
           <button
             onClick={logout}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-bold h-fit"
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-bold"
           >
 
             Logout
@@ -211,7 +232,6 @@ export default function AdminDashboard() {
         {/* STATS */}
         <div className="grid md:grid-cols-4 gap-5 mb-10">
 
-          {/* TOTAL ORDERS */}
           <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
             <p className="text-gray-500 mb-2">
@@ -224,7 +244,6 @@ export default function AdminDashboard() {
 
           </div>
 
-          {/* SALES */}
           <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
             <p className="text-gray-500 mb-2">
@@ -233,13 +252,15 @@ export default function AdminDashboard() {
 
             <h2 className="text-4xl font-bold text-green-700">
 
-              ₹{totalSales.toFixed(2)}
+              ₹
+              {totalSales.toFixed(
+                2
+              )}
 
             </h2>
 
           </div>
 
-          {/* PAID */}
           <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
             <p className="text-gray-500 mb-2">
@@ -254,7 +275,6 @@ export default function AdminDashboard() {
 
           </div>
 
-          {/* PENDING */}
           <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
             <p className="text-gray-500 mb-2">
@@ -276,7 +296,7 @@ export default function AdminDashboard() {
 
           <input
             type="text"
-            placeholder="Search by customer name, phone or order ID"
+            placeholder="Search customer, phone or order ID"
             value={search}
             onChange={(e) =>
               setSearch(
@@ -288,25 +308,31 @@ export default function AdminDashboard() {
 
         </div>
 
-        {/* ORDERS */}
-        <div className="space-y-8">
+        {/* EMPTY */}
+        {filteredOrders.length ===
+        0 ? (
 
-          {filteredOrders.length ===
-          0 ? (
+          <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
 
-            <div className="bg-white p-10 rounded-3xl shadow-lg text-center">
+            <h2 className="text-3xl font-bold mb-3">
 
-              <p className="text-gray-500 text-lg">
+              No Orders Found
 
-                No orders found
+            </h2>
 
-              </p>
+            <p className="text-gray-500">
 
-            </div>
+              Orders will appear here after customers place orders.
 
-          ) : (
+            </p>
 
-            filteredOrders
+          </div>
+
+        ) : (
+
+          <div className="space-y-8">
+
+            {filteredOrders
               .slice()
               .reverse()
               .map((order) => (
@@ -325,23 +351,29 @@ export default function AdminDashboard() {
                       <h2 className="text-3xl font-bold mb-5">
 
                         {
-                          order.customerName
+                          order.customerName ||
+                          "Customer"
                         }
 
                       </h2>
 
-                      <div className="grid md:grid-cols-2 gap-4 text-gray-700">
+                      <div className="grid md:grid-cols-2 gap-4">
 
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
                           <p className="text-sm text-gray-500 mb-1">
-                            Phone Number
+
+                            Phone
+
                           </p>
 
                           <p className="font-bold">
+
                             {
-                              order.phoneNumber
+                              order.phoneNumber ||
+                              "-"
                             }
+
                           </p>
 
                         </div>
@@ -349,11 +381,15 @@ export default function AdminDashboard() {
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
                           <p className="text-sm text-gray-500 mb-1">
+
                             Order ID
+
                           </p>
 
                           <p className="font-bold">
+
                             {order.id}
+
                           </p>
 
                         </div>
@@ -361,11 +397,18 @@ export default function AdminDashboard() {
                         <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
 
                           <p className="text-sm text-gray-500 mb-1">
-                            Shipping Address
+
+                            Address
+
                           </p>
 
                           <p className="font-bold">
-                            {order.address}
+
+                            {
+                              order.address ||
+                              "-"
+                            }
+
                           </p>
 
                         </div>
@@ -373,13 +416,18 @@ export default function AdminDashboard() {
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
                           <p className="text-sm text-gray-500 mb-1">
+
                             Pincode
+
                           </p>
 
                           <p className="font-bold">
+
                             {
-                              order.pincode
+                              order.pincode ||
+                              "-"
                             }
+
                           </p>
 
                         </div>
@@ -387,13 +435,18 @@ export default function AdminDashboard() {
                         <div className="bg-gray-50 p-4 rounded-2xl">
 
                           <p className="text-sm text-gray-500 mb-1">
-                            Order Date
+
+                            Date
+
                           </p>
 
                           <p className="font-bold">
+
                             {
-                              order.createdAt
+                              order.createdAt ||
+                              new Date().toLocaleDateString()
                             }
+
                           </p>
 
                         </div>
@@ -407,9 +460,9 @@ export default function AdminDashboard() {
 
                       <div className="bg-gray-50 rounded-3xl p-6">
 
-                        <h3 className="text-xl font-bold mb-5">
+                        <h3 className="text-2xl font-bold mb-5">
 
-                          Payment Status
+                          Payment
 
                         </h3>
 
@@ -425,14 +478,14 @@ export default function AdminDashboard() {
                           >
 
                             {
-                              order.paymentStatus
+                              order.paymentStatus ||
+                              "Pending"
                             }
 
                           </span>
 
                         </div>
 
-                        {/* ACTIONS */}
                         <div className="flex flex-col gap-3">
 
                           <button
@@ -445,7 +498,7 @@ export default function AdminDashboard() {
                             className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-bold"
                           >
 
-                            Mark as Paid
+                            Mark Paid
 
                           </button>
 
@@ -459,7 +512,7 @@ export default function AdminDashboard() {
                             className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-3 rounded-2xl font-bold"
                           >
 
-                            Mark as Pending
+                            Mark Pending
 
                           </button>
 
@@ -472,7 +525,7 @@ export default function AdminDashboard() {
                             className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold"
                           >
 
-                            Delete Order
+                            Delete
 
                           </button>
 
@@ -489,7 +542,7 @@ export default function AdminDashboard() {
 
                     <h3 className="text-2xl font-bold mb-6">
 
-                      Products Ordered
+                      Products
 
                     </h3>
 
@@ -542,7 +595,7 @@ export default function AdminDashboard() {
 
                             <div className="text-right">
 
-                              <p className="font-bold text-lg">
+                              <p className="font-bold">
 
                                 Qty:
                                 {" "}
@@ -552,15 +605,15 @@ export default function AdminDashboard() {
 
                               </p>
 
-                              <p className="text-green-700 font-bold text-2xl">
+                              <p className="text-2xl font-bold text-green-700">
 
                                 ₹
                                 {(
                                   Number(
-                                    product.mrp
+                                    product.mrp || 0
                                   ) *
                                   Number(
-                                    product.qty
+                                    product.qty || 1
                                   )
                                 ).toFixed(
                                   2
@@ -571,6 +624,7 @@ export default function AdminDashboard() {
                             </div>
 
                           </div>
+
                         )
                       )}
 
@@ -591,7 +645,7 @@ export default function AdminDashboard() {
 
                       ₹
                       {Number(
-                        order.total
+                        order.total || 0
                       ).toFixed(2)}
 
                     </h2>
@@ -599,10 +653,12 @@ export default function AdminDashboard() {
                   </div>
 
                 </div>
-              ))
-          )}
 
-        </div>
+              ))}
+
+          </div>
+
+        )}
 
       </div>
 

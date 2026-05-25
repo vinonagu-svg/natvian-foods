@@ -26,10 +26,10 @@ import Footer from "./components/Footer";
 // =========================
 // ADMIN COMPONENTS
 // =========================
-import AdminOrders from "./components/AdminOrders";
+import AdminDashboard from "./components/AdminDashboard";
 
 // =========================
-// LAZY LOADED COMPONENTS
+// LAZY COMPONENTS
 // =========================
 const Cart = lazy(() =>
   import("./components/Cart")
@@ -39,16 +39,12 @@ const Testimonials = lazy(() =>
   import("./components/Testimonials")
 );
 
-const AdminDashboard = lazy(() =>
-  import("./components/AdminDashboard")
-);
-
 const AdminLogin = lazy(() =>
   import("./components/AdminLogin")
 );
 
 // =========================
-// WEBP IMAGES
+// IMAGES
 // =========================
 import MurungabannerImage from "./assets/Murunga-banner.webp";
 
@@ -68,14 +64,26 @@ function HomePage() {
   const [cart, setCart] =
     useState([]);
 
+  // =========================
+  // OFFER CONFIG
+  // =========================
   const OFFER_CONFIG = {
+
     name: "Launching Offer",
+
     type: "PERCENT",
+
     value: 10,
+
     isActive: true,
   };
 
-  const getOfferPrice = (mrp) => {
+  // =========================
+  // OFFER PRICE
+  // =========================
+  const getOfferPrice = (
+    mrp
+  ) => {
 
     const price =
       Number(mrp) || 0;
@@ -83,6 +91,7 @@ function HomePage() {
     if (
       !OFFER_CONFIG.isActive
     ) {
+
       return price;
     }
 
@@ -145,6 +154,7 @@ function HomePage() {
             safeVariant.weight
       );
 
+    // EXISTING PRODUCT
     if (
       existingIndex !== -1
     ) {
@@ -161,6 +171,7 @@ function HomePage() {
       return;
     }
 
+    // NEW PRODUCT
     setCart((prev) => [
 
       ...prev,
@@ -236,6 +247,7 @@ function HomePage() {
       }
     >
 
+      {/* NAVBAR */}
       <Navbar
         darkMode={darkMode}
         setDarkMode={
@@ -250,6 +262,7 @@ function HomePage() {
         }
       />
 
+      {/* HERO */}
       <section id="home">
 
         <Hero
@@ -264,8 +277,10 @@ function HomePage() {
 
       </section>
 
+      {/* FEATURES */}
       <Features />
 
+      {/* PRODUCTS */}
       <section
         id="products"
         className="max-w-7xl mx-auto px-6 py-20"
@@ -280,6 +295,7 @@ function HomePage() {
 
       </section>
 
+      {/* CART */}
       <section
         id="cart"
         className="max-w-7xl mx-auto px-6 py-20"
@@ -311,12 +327,17 @@ function HomePage() {
 
       </section>
 
+      {/* ABOUT */}
       <section id="about">
+
         <About />
+
       </section>
 
+      {/* FAQ */}
       <FAQ />
 
+      {/* TESTIMONIALS */}
       <Suspense
         fallback={
           <div className="text-center py-20 text-2xl font-bold">
@@ -329,10 +350,14 @@ function HomePage() {
 
       </Suspense>
 
+      {/* CONTACT */}
       <section id="contact">
+
         <Contact />
+
       </section>
 
+      {/* FOOTER */}
       <Footer />
 
     </div>
@@ -355,11 +380,13 @@ export default function App() {
 
     <Routes>
 
+      {/* HOME */}
       <Route
         path="/"
         element={<HomePage />}
       />
 
+      {/* ADMIN */}
       <Route
         path="/admin"
         element={
@@ -389,37 +416,6 @@ export default function App() {
           </Suspense>
         }
       />
-
-      <Route
-        path="/admin/orders"
-        element={
-
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
-                Loading Orders...
-              </div>
-            }
-          >
-
-            {isAdmin ? (
-
-              <AdminOrders />
-
-            ) : (
-
-              <AdminLogin
-                setIsAdmin={
-                  setIsAdmin
-                }
-              />
-
-            )}
-
-          </Suspense>
-        }
-      />
-
     </Routes>
   );
 }
