@@ -6,10 +6,12 @@ import {
 
 import {
   collection,
-  getDocs,
-  doc,
-  updateDoc,
   deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
@@ -28,36 +30,52 @@ export default function AdminDashboard() {
   const [search, setSearch] =
     useState("");
 
+  const [statusFilter, setStatusFilter] =
+    useState("All");
+
+  const [dateFilter, setDateFilter] =
+    useState("");
+
   // =========================
   // LOAD ORDERS FROM FIREBASE
   // =========================
   useEffect(() => {
 
-    loadOrders();
+    fetchOrders();
 
   }, []);
 
-  const loadOrders = async () => {
+  // =========================
+  // FETCH ORDERS
+  // =========================
+  const fetchOrders = async () => {
 
     try {
 
-      const querySnapshot =
-        await getDocs(
-          collection(db, "orders")
-        );
+      const q = query(
+        collection(db, "orders"),
+        orderBy(
+          "createdAt",
+          "desc"
+        )
+      );
 
-      const ordersData =
-        querySnapshot.docs.map(
+      const snapshot =
+        await getDocs(q);
+
+      const orderList =
+        snapshot.docs.map(
           (docItem) => ({
 
-            docId: docItem.id,
+            firebaseId:
+              docItem.id,
 
             ...docItem.data(),
 
           })
         );
 
-      setOrders(ordersData);
+      setOrders(orderList);
 
     } catch (error) {
 
@@ -85,7 +103,9 @@ export default function AdminDashboard() {
           return (
             sum +
             Number(
-              order.grandTotal || 0
+              order.grandTotal ||
+              order.total ||
+              0
             )
           );
 
@@ -96,11 +116,14 @@ export default function AdminDashboard() {
     }, [orders]);
 
   // =========================
-  // COUNTS
+  // TOTAL ORDERS
   // =========================
   const totalOrders =
     orders.length;
 
+  // =========================
+  // PAID ORDERS
+  // =========================
   const paidOrders =
     orders.filter(
       (order) =>
@@ -108,6 +131,9 @@ export default function AdminDashboard() {
         "Paid"
     ).length;
 
+  // =========================
+  // PENDING ORDERS
+  // =========================
   const pendingOrders =
     orders.filter(
       (order) =>
@@ -116,17 +142,45 @@ export default function AdminDashboard() {
     ).length;
 
   // =========================
-  // SEARCH FILTER
+  // TODAY ORDERS
+  // =========================
+  const todayOrders =
+    orders.filter((order) => {
+
+      if (!order.createdAt)
+        return false;
+
+      const today =
+        new Date()
+          .toISOString()
+          .split("T")[0];
+
+      const orderDate =
+        new Date(
+          order.createdAt
+        )
+          .toISOString()
+          .split("T")[0];
+
+      return today === orderDate;
+
+    }).length;
+
+  // =========================
+  // FILTER ORDERS
   // =========================
   const filteredOrders =
     orders.filter((order) => {
 
-      return (
+      const lowerSearch =
+        search.toLowerCase();
+
+      const matchesSearch =
 
         order.customerName
           ?.toLowerCase()
           .includes(
-            search.toLowerCase()
+            lowerSearch
           ) ||
 
         order.phoneNumber
@@ -135,9 +189,41 @@ export default function AdminDashboard() {
         order.orderId
           ?.toLowerCase()
           .includes(
-            search.toLowerCase()
-          )
+            lowerSearch
+          ) ||
 
+        order.address
+          ?.toLowerCase()
+          .includes(
+            lowerSearch
+          ) ||
+
+        order.state
+          ?.toLowerCase()
+          .includes(
+            lowerSearch
+          );
+
+      const matchesStatus =
+
+        statusFilter ===
+        "All"
+          ? true
+          : order.paymentStatus ===
+            statusFilter;
+
+      const matchesDate =
+
+        !dateFilter
+          ? true
+          : order.createdAt
+              ?.split("T")[0] ===
+            dateFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesDate
       );
 
     });
@@ -147,26 +233,58 @@ export default function AdminDashboard() {
   // =========================
   const updatePaymentStatus =
     async (
-      docId,
+      firebaseId,
       status
     ) => {
 
       try {
 
         await updateDoc(
-          doc(db, "orders", docId),
+          doc(
+            db,
+            "orders",
+            firebaseId
+          ),
           {
             paymentStatus:
               status,
           }
         );
 
-        loadOrders();
+        const updatedOrders =
+          orders.map(
+            (order) => {
+
+              if (
+                order.firebaseId ===
+                firebaseId
+              ) {
+
+                return {
+                  ...order,
+                  paymentStatus:
+                    status,
+                };
+              }
+
+              return order;
+
+            }
+          );
+
+        setOrders(
+          updatedOrders
+        );
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
+        alert(
+          "Failed to update payment status"
+        );
       }
     };
 
@@ -174,7 +292,7 @@ export default function AdminDashboard() {
   // DELETE ORDER
   // =========================
   const deleteOrder =
-    async (docId) => {
+    async (firebaseId) => {
 
       const confirmDelete =
         window.confirm(
@@ -190,16 +308,30 @@ export default function AdminDashboard() {
           doc(
             db,
             "orders",
-            docId
+            firebaseId
           )
         );
 
-        loadOrders();
+        const updatedOrders =
+          orders.filter(
+            (order) =>
+              order.firebaseId !==
+              firebaseId
+          );
+
+        setOrders(
+          updatedOrders
+        );
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
+        alert(
+          "Failed to delete order"
+        );
       }
     };
 
@@ -217,20 +349,27 @@ export default function AdminDashboard() {
   };
 
   // =========================
-  // LOADING
+  // FORMAT DATE
   // =========================
-  if (loading) {
+  const formatDate = (
+    date
+  ) => {
 
-    return (
+    if (!date)
+      return "-";
 
-      <div className="min-h-screen flex items-center justify-center text-3xl font-bold">
-
-        Loading Orders...
-
-      </div>
-
+    return new Date(
+      date
+    ).toLocaleString(
+      "en-IN",
+      {
+        dateStyle:
+          "medium",
+        timeStyle:
+          "short",
+      }
     );
-  }
+  };
 
   return (
 
@@ -239,19 +378,23 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-5 mb-10">
+        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-5 mb-10">
 
           <div>
 
             <h1 className="text-5xl font-bold mb-3">
 
-              Natvian Foods Admin
+              Natvian Foods
+              Admin
 
             </h1>
 
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-lg">
 
-              Manage orders & payments
+              Orders,
+              payments,
+              customers &
+              sales analytics
 
             </p>
 
@@ -269,7 +412,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* STATS */}
-        <div className="grid md:grid-cols-4 gap-5 mb-10">
+        <div className="grid md:grid-cols-5 gap-5 mb-10">
 
           <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
@@ -278,9 +421,7 @@ export default function AdminDashboard() {
             </p>
 
             <h2 className="text-4xl font-bold">
-
               {totalOrders}
-
             </h2>
 
           </div>
@@ -319,7 +460,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
             <p className="text-gray-500 mb-2">
-              Pending Orders
+              Pending
             </p>
 
             <h2 className="text-4xl font-bold text-yellow-600">
@@ -330,30 +471,100 @@ export default function AdminDashboard() {
 
           </div>
 
-        </div>
+          <div className="bg-white rounded-3xl p-6 shadow-lg border">
 
-        {/* SEARCH */}
-        <div className="bg-white rounded-3xl p-5 shadow-lg border mb-10">
+            <p className="text-gray-500 mb-2">
+              Today Orders
+            </p>
 
-          <input
-            type="text"
-            placeholder="Search orders..."
-            value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-            className="w-full border p-4 rounded-2xl outline-none"
-          />
+            <h2 className="text-4xl font-bold text-purple-700">
+
+              {todayOrders}
+
+            </h2>
+
+          </div>
 
         </div>
 
-        {/* NO ORDERS */}
-        {filteredOrders.length ===
-        0 ? (
+        {/* FILTERS */}
+        <div className="bg-white rounded-3xl shadow-lg border p-6 mb-10">
 
-          <div className="bg-white p-12 rounded-3xl shadow-lg text-center">
+          <div className="grid md:grid-cols-3 gap-5">
+
+            {/* SEARCH */}
+            <input
+              type="text"
+              placeholder="Search name, phone, state, address, order ID"
+              value={search}
+              onChange={(e) =>
+                setSearch(
+                  e.target.value
+                )
+              }
+              className="border p-4 rounded-2xl outline-none"
+            />
+
+            {/* STATUS */}
+            <select
+              value={
+                statusFilter
+              }
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value
+                )
+              }
+              className="border p-4 rounded-2xl outline-none"
+            >
+
+              <option value="All">
+                All Status
+              </option>
+
+              <option value="Paid">
+                Paid
+              </option>
+
+              <option value="Pending">
+                Pending
+              </option>
+
+            </select>
+
+            {/* DATE */}
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) =>
+                setDateFilter(
+                  e.target.value
+                )
+              }
+              className="border p-4 rounded-2xl outline-none"
+            />
+
+          </div>
+
+        </div>
+
+        {/* LOADING */}
+        {loading ? (
+
+          <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
+
+            <h2 className="text-3xl font-bold">
+
+              Loading Orders...
+
+            </h2>
+
+          </div>
+
+        ) : filteredOrders.length ===
+          0 ? (
+
+          <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
 
             <h2 className="text-3xl font-bold mb-3">
 
@@ -361,24 +572,32 @@ export default function AdminDashboard() {
 
             </h2>
 
+            <p className="text-gray-500">
+
+              Orders will appear here after customers place orders.
+
+            </p>
+
           </div>
 
         ) : (
 
           <div className="space-y-8">
 
-            {filteredOrders
-              .slice()
-              .reverse()
-              .map((order) => (
+            {filteredOrders.map(
+              (order) => (
 
                 <div
-                  key={order.docId}
+                  key={
+                    order.firebaseId
+                  }
                   className="bg-white rounded-3xl shadow-xl border p-8"
                 >
 
-                  <div className="flex justify-between items-start flex-col lg:flex-row gap-8">
+                  {/* TOP */}
+                  <div className="flex flex-col lg:flex-row justify-between gap-8">
 
+                    {/* CUSTOMER */}
                     <div className="flex-1">
 
                       <h2 className="text-3xl font-bold mb-5">
@@ -389,63 +608,125 @@ export default function AdminDashboard() {
 
                       </h2>
 
-                      <div className="space-y-3">
+                      <div className="grid md:grid-cols-2 gap-4">
 
-                        <p>
-                          <strong>
-                            Order ID:
-                          </strong>
-                          {" "}
-                          {
-                            order.orderId
-                          }
-                        </p>
+                        <div className="bg-gray-50 p-4 rounded-2xl">
 
-                        <p>
-                          <strong>
-                            Phone:
-                          </strong>
-                          {" "}
-                          {
-                            order.phoneNumber
-                          }
-                        </p>
+                          <p className="text-sm text-gray-500 mb-1">
 
-                        <p>
-                          <strong>
-                            Address:
-                          </strong>
-                          {" "}
-                          {
-                            order.address
-                          }
-                        </p>
+                            Phone
 
-                        <p>
-                          <strong>
-                            State:
-                          </strong>
-                          {" "}
-                          {order.state}
-                        </p>
+                          </p>
 
-                        <p>
-                          <strong>
-                            Pincode:
-                          </strong>
-                          {" "}
-                          {
-                            order.pincode
-                          }
-                        </p>
+                          <p className="font-bold">
+
+                            {
+                              order.phoneNumber
+                            }
+
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl">
+
+                          <p className="text-sm text-gray-500 mb-1">
+
+                            Order ID
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {
+                              order.orderId
+                            }
+
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
+
+                          <p className="text-sm text-gray-500 mb-1">
+
+                            Address
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {
+                              order.address
+                            }
+
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl">
+
+                          <p className="text-sm text-gray-500 mb-1">
+
+                            State
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {
+                              order.state ||
+                              "-"
+                            }
+
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl">
+
+                          <p className="text-sm text-gray-500 mb-1">
+
+                            Pincode
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {
+                              order.pincode
+                            }
+
+                          </p>
+
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-2xl md:col-span-2">
+
+                          <p className="text-sm text-gray-500 mb-1">
+
+                            Ordered On
+
+                          </p>
+
+                          <p className="font-bold">
+
+                            {formatDate(
+                              order.createdAt
+                            )}
+
+                          </p>
+
+                        </div>
 
                       </div>
 
                     </div>
 
+                    {/* PAYMENT */}
                     <div className="w-full lg:w-80">
 
-                      <div className="bg-gray-50 p-6 rounded-3xl">
+                      <div className="bg-gray-50 rounded-3xl p-6">
 
                         <h3 className="text-2xl font-bold mb-5">
 
@@ -453,7 +734,7 @@ export default function AdminDashboard() {
 
                         </h3>
 
-                        <div className="mb-5">
+                        <div className="mb-6">
 
                           <span
                             className={`px-5 py-3 rounded-full font-bold ${
@@ -477,7 +758,7 @@ export default function AdminDashboard() {
                           <button
                             onClick={() =>
                               updatePaymentStatus(
-                                order.docId,
+                                order.firebaseId,
                                 "Paid"
                               )
                             }
@@ -491,7 +772,7 @@ export default function AdminDashboard() {
                           <button
                             onClick={() =>
                               updatePaymentStatus(
-                                order.docId,
+                                order.firebaseId,
                                 "Pending"
                               )
                             }
@@ -505,7 +786,7 @@ export default function AdminDashboard() {
                           <button
                             onClick={() =>
                               deleteOrder(
-                                order.docId
+                                order.firebaseId
                               )
                             }
                             className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold"
@@ -542,7 +823,7 @@ export default function AdminDashboard() {
 
                           <div
                             key={index}
-                            className="flex justify-between items-center bg-gray-50 p-5 rounded-3xl"
+                            className="flex flex-col md:flex-row justify-between md:items-center gap-5 bg-gray-50 rounded-3xl p-5"
                           >
 
                             <div className="flex items-center gap-5">
@@ -591,12 +872,76 @@ export default function AdminDashboard() {
 
                               </p>
 
+                              <p className="text-2xl font-bold text-green-700">
+
+                                ₹
+                                {(
+                                  Number(
+                                    product.mrp
+                                  ) *
+                                  Number(
+                                    product.qty
+                                  )
+                                ).toFixed(
+                                  2
+                                )}
+
+                              </p>
+
                             </div>
 
                           </div>
 
                         )
                       )}
+
+                    </div>
+
+                  </div>
+
+                  {/* BILL SUMMARY */}
+                  <div className="mt-10 border-t pt-8">
+
+                    <div className="grid md:grid-cols-2 gap-5">
+
+                      <div className="bg-gray-50 rounded-2xl p-5">
+
+                        <p className="text-gray-500 mb-2">
+
+                          Total Quantity
+
+                        </p>
+
+                        <h3 className="text-3xl font-bold">
+
+                          {
+                            order.totalQuantity ||
+                            0
+                          }
+
+                        </h3>
+
+                      </div>
+
+                      <div className="bg-gray-50 rounded-2xl p-5">
+
+                        <p className="text-gray-500 mb-2">
+
+                          Shipping
+
+                        </p>
+
+                        <h3 className="text-3xl font-bold">
+
+                          ₹
+                          {
+                            order.shipping ||
+                            0
+                          }
+
+                        </h3>
+
+                      </div>
 
                     </div>
 
@@ -615,7 +960,9 @@ export default function AdminDashboard() {
 
                       ₹
                       {Number(
-                        order.grandTotal || 0
+                        order.grandTotal ||
+                        order.total ||
+                        0
                       ).toFixed(2)}
 
                     </h2>
@@ -624,7 +971,8 @@ export default function AdminDashboard() {
 
                 </div>
 
-              ))}
+              )
+            )}
 
           </div>
 

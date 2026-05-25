@@ -9,14 +9,40 @@ export default function Cart({
 }) {
 
   // =========================
+  // COMPANY DETAILS
+  // =========================
+  const COMPANY = {
+    name: "Natvian Foods",
+
+    address:
+      "3/147A, Chettiyar Thottam, Periyathiottampudur, Karamadai Block, Coimbatore, Tamil Nadu - 638459",
+
+    gstin:
+      "33ATHPN4463C1ZW",
+
+    fssai:
+      "22426402000209",
+
+    pan:
+      "ATHPN4463C",
+
+    phone:
+      "+91 9788857645",
+
+    website:
+      "https://www.thenativefood.com",
+  };
+
+  // =========================
   // CUSTOMER DETAILS
   // =========================
-  const [customer, setCustomer] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    pincode: "",
-  });
+  const [customer, setCustomer] =
+    useState({
+      name: "",
+      phone: "",
+      address: "",
+      pincode: "",
+    });
 
   // =========================
   // STATE
@@ -62,18 +88,22 @@ export default function Cart({
         offerTotal * 0.1
       );
 
-      alert("Coupon Applied ✅");
+      alert(
+        "Coupon Applied ✅"
+      );
 
     } else {
 
       setCouponDiscount(0);
 
-      alert("Invalid Coupon ❌");
+      alert(
+        "Invalid Coupon ❌"
+      );
     }
   };
 
   // =========================
-  // QTY
+  // QUANTITY
   // =========================
   const increaseQty = (i) => {
 
@@ -89,6 +119,7 @@ export default function Cart({
     const updated = [...cart];
 
     if (updated[i].qty > 1) {
+
       updated[i].qty -= 1;
     }
 
@@ -100,22 +131,29 @@ export default function Cart({
   // =========================
   const mrpTotal = cart.reduce(
     (sum, item) =>
+
       sum +
       Number(item.mrp) *
-      Number(item.qty),
+        Number(item.qty),
+
     0
   );
 
   const offerTotal = cart.reduce(
     (sum, item) =>
+
       sum +
-      getOfferPrice(item.mrp) *
-      item.qty,
+      getOfferPrice(
+        item.mrp
+      ) *
+        item.qty,
+
     0
   );
 
   const finalAfterCoupon =
-    offerTotal - couponDiscount;
+    offerTotal -
+    couponDiscount;
 
   // =========================
   // GST
@@ -124,10 +162,14 @@ export default function Cart({
 
   const totalGST =
     finalAfterCoupon -
-    finalAfterCoupon / (1 + GST);
+    finalAfterCoupon /
+      (1 + GST);
 
-  const cgst = totalGST / 2;
-  const sgst = totalGST / 2;
+  const cgst =
+    totalGST / 2;
+
+  const sgst =
+    totalGST / 2;
 
   // =========================
   // SHIPPING
@@ -139,7 +181,8 @@ export default function Cart({
   );
 
   const shipping =
-    state === "Tamil Nadu"
+    state ===
+    "Tamil Nadu"
       ? totalQty * 60
       : totalQty * 100;
 
@@ -147,7 +190,8 @@ export default function Cart({
   // GRAND TOTAL
   // =========================
   const grandTotal =
-    finalAfterCoupon + shipping;
+    finalAfterCoupon +
+    shipping;
 
   // =========================
   // DOWNLOAD INVOICE
@@ -158,68 +202,202 @@ export default function Cart({
     const { default: jsPDF } =
       await import("jspdf");
 
-    const doc = new jsPDF();
+    const doc =
+      new jsPDF();
 
+    // HEADER
     doc.setFontSize(22);
 
     doc.text(
-      "NATVIAN FOODS",
+      COMPANY.name,
       20,
       20
     );
 
-    doc.setFontSize(12);
+    doc.setFontSize(11);
 
     doc.text(
-      `Customer: ${customer.name}`,
+      COMPANY.address,
       20,
-      40
+      30
     );
 
     doc.text(
-      `Phone: ${customer.phone}`,
+      `GSTIN: ${COMPANY.gstin}`,
       20,
-      50
+      38
     );
 
     doc.text(
-      `Address: ${customer.address}`,
+      `FSSAI: ${COMPANY.fssai}`,
       20,
-      60
+      46
     );
 
     doc.text(
-      `Pincode: ${customer.pincode}`,
+      `PAN: ${COMPANY.pan}`,
+      20,
+      54
+    );
+
+    // INVOICE INFO
+    doc.setFontSize(13);
+
+    doc.text(
+      `Invoice No: INV-${Date.now()}`,
       20,
       70
     );
 
     doc.text(
-      `State: ${state}`,
+      `Date: ${new Date().toLocaleDateString()}`,
       20,
-      80
+      78
     );
 
-    let y = 100;
+    // CUSTOMER DETAILS
+    doc.setFontSize(12);
+
+    doc.text(
+      `Customer: ${customer.name}`,
+      20,
+      95
+    );
+
+    doc.text(
+      `Phone: ${customer.phone}`,
+      20,
+      103
+    );
+
+    doc.text(
+      `Address: ${customer.address}`,
+      20,
+      111
+    );
+
+    doc.text(
+      `Pincode: ${customer.pincode}`,
+      20,
+      119
+    );
+
+    doc.text(
+      `State: ${state}`,
+      20,
+      127
+    );
+
+    // PRODUCTS
+    let y = 145;
+
+    doc.setFontSize(14);
+
+    doc.text(
+      "Products",
+      20,
+      y
+    );
+
+    y += 10;
+
+    doc.setFontSize(11);
 
     cart.forEach((item) => {
 
       doc.text(
-        `${item.name} (${item.weight}) x ${item.qty} = ₹${(
-          getOfferPrice(item.mrp) *
-          item.qty
-        ).toFixed(2)}`,
+        `${item.name} (${item.weight}) x ${item.qty}`,
         20,
+        y
+      );
+
+      doc.text(
+        `₹${(
+          getOfferPrice(
+            item.mrp
+          ) * item.qty
+        ).toFixed(2)}`,
+        160,
         y
       );
 
       y += 10;
     });
 
+    // TOTALS
     y += 10;
 
     doc.text(
+      `MRP Total: ₹${mrpTotal.toFixed(2)}`,
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `Offer Total: ₹${offerTotal.toFixed(2)}`,
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `Coupon Discount: ₹${couponDiscount.toFixed(2)}`,
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `CGST (2.5%): ₹${cgst.toFixed(2)}`,
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `SGST (2.5%): ₹${sgst.toFixed(2)}`,
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      `Shipping: ₹${shipping.toFixed(2)}`,
+      20,
+      y
+    );
+
+    y += 12;
+
+    doc.setFontSize(16);
+
+    doc.text(
       `Grand Total: ₹${grandTotal.toFixed(2)}`,
+      20,
+      y
+    );
+
+    // FOOTER
+    y += 20;
+
+    doc.setFontSize(10);
+
+    doc.text(
+      "Thank you for shopping with Natvian Foods",
+      20,
+      y
+    );
+
+    y += 8;
+
+    doc.text(
+      "This is a computer generated invoice",
       20,
       y
     );
@@ -251,16 +429,15 @@ export default function Cart({
 
     if (cart.length === 0) {
 
-      alert("Cart is empty");
+      alert(
+        "Cart is empty"
+      );
 
       return;
     }
 
     try {
 
-      // =========================
-      // CREATE ORDER
-      // =========================
       const response =
         await fetch(
           "/api/create-order",
@@ -299,9 +476,6 @@ export default function Cart({
         return;
       }
 
-      // =========================
-      // RAZORPAY OPTIONS
-      // =========================
       const options = {
 
         key:
@@ -352,9 +526,6 @@ export default function Cart({
 
           try {
 
-            // =========================
-            // VERIFY PAYMENT
-            // =========================
             const verifyResponse =
               await fetch(
                 "/api/verify-payment",
@@ -388,9 +559,7 @@ export default function Cart({
               return;
             }
 
-            // =========================
             // SAVE ORDER
-            // =========================
             await addDoc(
               collection(
                 db,
@@ -442,7 +611,7 @@ export default function Cart({
                   response.razorpay_payment_id,
 
                 createdAt:
-                  new Date().toISOString(),
+                  new Date().toLocaleString(),
               }
             );
 
@@ -456,7 +625,9 @@ export default function Cart({
 
           } catch (error) {
 
-            console.error(error);
+            console.error(
+              error
+            );
 
             alert(
               "Order save failed"
@@ -474,7 +645,9 @@ export default function Cart({
 
     } catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
 
       alert(
         "Something went wrong"
@@ -487,24 +660,23 @@ export default function Cart({
   // =========================
   return (
 
-    <section
-      className="max-w-5xl mx-auto p-6"
-    >
+    <section className="max-w-5xl mx-auto p-6">
 
-      <h1 className="text-3xl font-bold mb-8 text-[#31572C]">
+      <h1 className="text-4xl font-bold mb-8 text-[#31572C]">
         Shopping Cart
       </h1>
 
       {cart.length === 0 && (
 
         <div className="border p-10 text-center bg-white rounded-2xl">
-          <h2>
+
+          <h2 className="text-2xl font-bold">
             Your Cart is Empty 🛒
           </h2>
+
         </div>
       )}
 
-      {/* CART ITEMS */}
       <div className="space-y-4">
 
         {cart.map((item, i) => (
@@ -574,178 +746,6 @@ export default function Cart({
 
           </div>
         ))}
-      </div>
-
-      {/* CUSTOMER DETAILS */}
-      <div className="mt-10 grid gap-4">
-
-        <input
-          type="text"
-          placeholder="Full Name"
-          className="border p-3 rounded-xl"
-          value={customer.name}
-          onChange={(e) =>
-            setCustomer({
-              ...customer,
-              name:
-                e.target.value,
-            })
-          }
-        />
-
-        <input
-          type="text"
-          placeholder="Phone Number"
-          className="border p-3 rounded-xl"
-          value={customer.phone}
-          onChange={(e) =>
-            setCustomer({
-              ...customer,
-              phone:
-                e.target.value,
-            })
-          }
-        />
-
-        <textarea
-          placeholder="Full Address"
-          className="border p-3 rounded-xl"
-          value={customer.address}
-          onChange={(e) =>
-            setCustomer({
-              ...customer,
-              address:
-                e.target.value,
-            })
-          }
-        />
-
-        <input
-          type="text"
-          placeholder="Pincode"
-          className="border p-3 rounded-xl"
-          value={customer.pincode}
-          onChange={(e) =>
-            setCustomer({
-              ...customer,
-              pincode:
-                e.target.value,
-            })
-          }
-        />
-
-        {/* STATE */}
-        <select
-          className="border p-3 rounded-xl"
-          value={state}
-          onChange={(e) =>
-            setState(
-              e.target.value
-            )
-          }
-        >
-
-          <option value="Tamil Nadu">
-            Tamil Nadu
-          </option>
-
-          <option value="Other State">
-            Other State
-          </option>
-
-        </select>
-
-      </div>
-
-      {/* COUPON */}
-      <div className="mt-8 flex gap-3">
-
-        <input
-          type="text"
-          placeholder="Coupon Code"
-          className="border p-3 rounded-xl flex-1"
-          value={coupon}
-          onChange={(e) =>
-            setCoupon(
-              e.target.value
-            )
-          }
-        />
-
-        <button
-          onClick={applyCoupon}
-          className="bg-black text-white px-6 rounded-xl"
-        >
-          Apply
-        </button>
-
-      </div>
-
-      {/* TOTAL */}
-      <div className="mt-10 border rounded-2xl p-6 bg-white">
-
-        <div className="flex justify-between mb-2">
-          <span>
-            Offer Total
-          </span>
-
-          <span>
-            ₹{offerTotal.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between mb-2">
-          <span>
-            Shipping
-          </span>
-
-          <span>
-            ₹{shipping.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between mb-2">
-          <span>
-            Discount
-          </span>
-
-          <span>
-            -₹{couponDiscount.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between text-2xl font-bold mt-4">
-          <span>
-            Grand Total
-          </span>
-
-          <span>
-            ₹{grandTotal.toFixed(2)}
-          </span>
-        </div>
-
-      </div>
-
-      {/* BUTTONS */}
-      <div className="mt-8 flex gap-4">
-
-        <button
-          onClick={
-            handlePayment
-          }
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold"
-        >
-          Pay & Place Order
-        </button>
-
-        <button
-          onClick={
-            downloadInvoice
-          }
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold"
-        >
-          Download Invoice
-        </button>
 
       </div>
 
