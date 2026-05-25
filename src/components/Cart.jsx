@@ -42,6 +42,7 @@ export default function Cart({
       phone: "",
       address: "",
       pincode: "",
+      city: "",
     });
 
   // =========================
@@ -56,17 +57,28 @@ export default function Cart({
   const [coupon, setCoupon] =
     useState("");
 
-  const [couponDiscount, setCouponDiscount] =
-    useState(0);
+  const [
+    couponDiscount,
+    setCouponDiscount,
+  ] = useState(0);
+
+  // =========================
+  // LOADING
+  // =========================
+  const [loading, setLoading] =
+    useState(false);
 
   // =========================
   // OFFER
   // =========================
   const OFFER = 10;
 
-  const getOfferPrice = (mrp) => {
+  const getOfferPrice = (
+    mrp
+  ) => {
 
-    const price = Number(mrp) || 0;
+    const price =
+      Number(mrp) || 0;
 
     return (
       price -
@@ -80,7 +92,9 @@ export default function Cart({
   const applyCoupon = () => {
 
     if (
-      coupon.trim().toUpperCase() ===
+      coupon
+        .trim()
+        .toUpperCase() ===
       "SAVE10"
     ) {
 
@@ -118,7 +132,9 @@ export default function Cart({
 
     const updated = [...cart];
 
-    if (updated[i].qty > 1) {
+    if (
+      updated[i].qty > 1
+    ) {
 
       updated[i].qty -= 1;
     }
@@ -129,27 +145,29 @@ export default function Cart({
   // =========================
   // TOTALS
   // =========================
-  const mrpTotal = cart.reduce(
-    (sum, item) =>
+  const mrpTotal =
+    cart.reduce(
+      (sum, item) =>
 
-      sum +
-      Number(item.mrp) *
-        Number(item.qty),
+        sum +
+        Number(item.mrp) *
+          Number(item.qty),
 
-    0
-  );
+      0
+    );
 
-  const offerTotal = cart.reduce(
-    (sum, item) =>
+  const offerTotal =
+    cart.reduce(
+      (sum, item) =>
 
-      sum +
-      getOfferPrice(
-        item.mrp
-      ) *
-        item.qty,
+        sum +
+        getOfferPrice(
+          item.mrp
+        ) *
+          item.qty,
 
-    0
-  );
+      0
+    );
 
   const finalAfterCoupon =
     offerTotal -
@@ -174,11 +192,12 @@ export default function Cart({
   // =========================
   // SHIPPING
   // =========================
-  const totalQty = cart.reduce(
-    (sum, item) =>
-      sum + item.qty,
-    0
-  );
+  const totalQty =
+    cart.reduce(
+      (sum, item) =>
+        sum + item.qty,
+      0
+    );
 
   const shipping =
     state ===
@@ -197,16 +216,44 @@ export default function Cart({
   // DOWNLOAD INVOICE
   // =========================
   const downloadInvoice =
-    async () => {
+    async (
+      paymentId =
+        "COD"
+    ) => {
 
-    const { default: jsPDF } =
-      await import("jspdf");
+    const {
+      default: jsPDF,
+    } = await import(
+      "jspdf"
+    );
 
     const doc =
       new jsPDF();
 
+    // =========================
     // HEADER
-    doc.setFontSize(22);
+    // =========================
+    doc.setFillColor(
+      49,
+      87,
+      44
+    );
+
+    doc.rect(
+      0,
+      0,
+      220,
+      35,
+      "F"
+    );
+
+    doc.setTextColor(
+      255,
+      255,
+      255
+    );
+
+    doc.setFontSize(24);
 
     doc.text(
       COMPANY.name,
@@ -217,176 +264,316 @@ export default function Cart({
     doc.setFontSize(11);
 
     doc.text(
-      COMPANY.address,
+      "TAX INVOICE",
       20,
-      30
+      29
     );
 
-    doc.text(
-      `GSTIN: ${COMPANY.gstin}`,
-      20,
-      38
+    // =========================
+    // COMPANY DETAILS
+    // =========================
+    doc.setTextColor(
+      0,
+      0,
+      0
     );
-
-    doc.text(
-      `FSSAI: ${COMPANY.fssai}`,
-      20,
-      46
-    );
-
-    doc.text(
-      `PAN: ${COMPANY.pan}`,
-      20,
-      54
-    );
-
-    // INVOICE INFO
-    doc.setFontSize(13);
-
-    doc.text(
-      `Invoice No: INV-${Date.now()}`,
-      20,
-      70
-    );
-
-    doc.text(
-      `Date: ${new Date().toLocaleDateString()}`,
-      20,
-      78
-    );
-
-    // CUSTOMER DETAILS
-    doc.setFontSize(12);
-
-    doc.text(
-      `Customer: ${customer.name}`,
-      20,
-      95
-    );
-
-    doc.text(
-      `Phone: ${customer.phone}`,
-      20,
-      103
-    );
-
-    doc.text(
-      `Address: ${customer.address}`,
-      20,
-      111
-    );
-
-    doc.text(
-      `Pincode: ${customer.pincode}`,
-      20,
-      119
-    );
-
-    doc.text(
-      `State: ${state}`,
-      20,
-      127
-    );
-
-    // PRODUCTS
-    let y = 145;
-
-    doc.setFontSize(14);
-
-    doc.text(
-      "Products",
-      20,
-      y
-    );
-
-    y += 10;
 
     doc.setFontSize(11);
 
-    cart.forEach((item) => {
+    doc.text(
+      COMPANY.address,
+      20,
+      48
+    );
 
-      doc.text(
-        `${item.name} (${item.weight}) x ${item.qty}`,
-        20,
-        y
-      );
+    doc.text(
+      `GSTIN : ${COMPANY.gstin}`,
+      20,
+      58
+    );
 
-      doc.text(
-        `₹${(
-          getOfferPrice(
-            item.mrp
-          ) * item.qty
-        ).toFixed(2)}`,
-        160,
-        y
-      );
+    doc.text(
+      `FSSAI : ${COMPANY.fssai}`,
+      20,
+      66
+    );
 
-      y += 10;
-    });
+    doc.text(
+      `PAN : ${COMPANY.pan}`,
+      20,
+      74
+    );
 
+    doc.text(
+      `Phone : ${COMPANY.phone}`,
+      20,
+      82
+    );
+
+    // =========================
+    // INVOICE DETAILS
+    // =========================
+    const invoiceNo =
+      "INV-" +
+      Date.now();
+
+    doc.setFontSize(12);
+
+    doc.text(
+      `Invoice No : ${invoiceNo}`,
+      130,
+      48
+    );
+
+    doc.text(
+      `Date : ${new Date().toLocaleDateString()}`,
+      130,
+      58
+    );
+
+    doc.text(
+      `Payment ID : ${paymentId}`,
+      130,
+      68
+    );
+
+    // =========================
+    // CUSTOMER DETAILS
+    // =========================
+    doc.setFillColor(
+      240,
+      240,
+      240
+    );
+
+    doc.rect(
+      20,
+      92,
+      170,
+      45,
+      "F"
+    );
+
+    doc.setFontSize(13);
+
+    doc.text(
+      "Bill To",
+      25,
+      102
+    );
+
+    doc.setFontSize(11);
+
+    doc.text(
+      `Name : ${customer.name}`,
+      25,
+      112
+    );
+
+    doc.text(
+      `Phone : ${customer.phone}`,
+      25,
+      120
+    );
+
+    doc.text(
+      `Address : ${customer.address}`,
+      25,
+      128
+    );
+
+    doc.text(
+      `${customer.city} - ${customer.pincode}`,
+      25,
+      136
+    );
+
+    // =========================
+    // PRODUCT TABLE HEADER
+    // =========================
+    let y = 155;
+
+    doc.setFillColor(
+      49,
+      87,
+      44
+    );
+
+    doc.rect(
+      20,
+      y,
+      170,
+      10,
+      "F"
+    );
+
+    doc.setTextColor(
+      255,
+      255,
+      255
+    );
+
+    doc.text(
+      "Product",
+      25,
+      y + 7
+    );
+
+    doc.text(
+      "Qty",
+      120,
+      y + 7
+    );
+
+    doc.text(
+      "Amount",
+      155,
+      y + 7
+    );
+
+    y += 18;
+
+    doc.setTextColor(
+      0,
+      0,
+      0
+    );
+
+    // =========================
+    // PRODUCTS
+    // =========================
+    cart.forEach(
+      (item) => {
+
+        doc.text(
+          `${item.name} (${item.weight})`,
+          25,
+          y
+        );
+
+        doc.text(
+          `${item.qty}`,
+          122,
+          y
+        );
+
+        doc.text(
+          `₹${(
+            getOfferPrice(
+              item.mrp
+            ) * item.qty
+          ).toFixed(2)}`,
+          155,
+          y
+        );
+
+        y += 10;
+      }
+    );
+
+    // =========================
     // TOTALS
+    // =========================
+    y += 10;
+
+    doc.line(
+      20,
+      y,
+      190,
+      y
+    );
+
     y += 10;
 
     doc.text(
-      `MRP Total: ₹${mrpTotal.toFixed(2)}`,
-      20,
+      `MRP Total : ₹${mrpTotal.toFixed(
+        2
+      )}`,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Offer Total: ₹${offerTotal.toFixed(2)}`,
-      20,
+      `Offer Discount : ₹${(
+        mrpTotal -
+        offerTotal
+      ).toFixed(2)}`,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Coupon Discount: ₹${couponDiscount.toFixed(2)}`,
-      20,
+      `Coupon Discount : ₹${couponDiscount.toFixed(
+        2
+      )}`,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `CGST (2.5%): ₹${cgst.toFixed(2)}`,
-      20,
+      `CGST (2.5%) : ₹${cgst.toFixed(
+        2
+      )}`,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `SGST (2.5%): ₹${sgst.toFixed(2)}`,
-      20,
+      `SGST (2.5%) : ₹${sgst.toFixed(
+        2
+      )}`,
+      120,
       y
     );
 
     y += 8;
 
     doc.text(
-      `Shipping: ₹${shipping.toFixed(2)}`,
-      20,
+      `Shipping : ₹${shipping.toFixed(
+        2
+      )}`,
+      120,
       y
     );
 
-    y += 12;
+    y += 15;
 
     doc.setFontSize(16);
 
+    doc.setTextColor(
+      49,
+      87,
+      44
+    );
+
     doc.text(
-      `Grand Total: ₹${grandTotal.toFixed(2)}`,
-      20,
+      `Grand Total : ₹${grandTotal.toFixed(
+        2
+      )}`,
+      110,
       y
     );
 
+    // =========================
     // FOOTER
-    y += 20;
+    // =========================
+    y += 25;
 
     doc.setFontSize(10);
+
+    doc.setTextColor(
+      80,
+      80,
+      80
+    );
 
     doc.text(
       "Thank you for shopping with Natvian Foods",
@@ -397,13 +584,13 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      "This is a computer generated invoice",
+      "This is a computer generated invoice.",
       20,
       y
     );
 
     doc.save(
-      `Invoice-${Date.now()}.pdf`
+      `${invoiceNo}.pdf`
     );
   };
 
@@ -417,7 +604,8 @@ export default function Cart({
       !customer.name ||
       !customer.phone ||
       !customer.address ||
-      !customer.pincode
+      !customer.pincode ||
+      !customer.city
     ) {
 
       alert(
@@ -427,7 +615,9 @@ export default function Cart({
       return;
     }
 
-    if (cart.length === 0) {
+    if (
+      cart.length === 0
+    ) {
 
       alert(
         "Cart is empty"
@@ -438,6 +628,11 @@ export default function Cart({
 
     try {
 
+      setLoading(true);
+
+      // =========================
+      // CREATE ORDER
+      // =========================
       const response =
         await fetch(
           "/api/create-order",
@@ -449,18 +644,23 @@ export default function Cart({
                 "application/json",
             },
 
-            body: JSON.stringify({
-              amount:
-                Math.round(
-                  grandTotal * 100
-                ),
+            body:
+              JSON.stringify(
+                {
+                  amount:
+                    Math.round(
+                      grandTotal *
+                        100
+                    ),
 
-              currency: "INR",
+                  currency:
+                    "INR",
 
-              receipt:
-                "receipt_" +
-                Date.now(),
-            }),
+                  receipt:
+                    "receipt_" +
+                    Date.now(),
+                }
+              ),
           }
         );
 
@@ -469,6 +669,8 @@ export default function Cart({
 
       if (!order.id) {
 
+        setLoading(false);
+
         alert(
           "Order creation failed"
         );
@@ -476,6 +678,9 @@ export default function Cart({
         return;
       }
 
+      // =========================
+      // RAZORPAY
+      // =========================
       const options = {
 
         key:
@@ -516,7 +721,8 @@ export default function Cart({
         },
 
         theme: {
-          color: "#31572C",
+          color:
+            "#31572C",
         },
 
         handler:
@@ -526,6 +732,9 @@ export default function Cart({
 
           try {
 
+            // =========================
+            // VERIFY PAYMENT
+            // =========================
             const verifyResponse =
               await fetch(
                 "/api/verify-payment",
@@ -533,10 +742,11 @@ export default function Cart({
                   method:
                     "POST",
 
-                  headers: {
-                    "Content-Type":
-                      "application/json",
-                  },
+                  headers:
+                    {
+                      "Content-Type":
+                        "application/json",
+                    },
 
                   body:
                     JSON.stringify(
@@ -556,10 +766,16 @@ export default function Cart({
                 "Payment Verification Failed ❌"
               );
 
+              setLoading(
+                false
+              );
+
               return;
             }
 
+            // =========================
             // SAVE ORDER
+            // =========================
             await addDoc(
               collection(
                 db,
@@ -578,6 +794,9 @@ export default function Cart({
 
                 address:
                   customer.address,
+
+                city:
+                  customer.city,
 
                 pincode:
                   customer.pincode,
@@ -611,7 +830,7 @@ export default function Cart({
                   response.razorpay_payment_id,
 
                 createdAt:
-                  new Date().toLocaleString(),
+                  new Date().toISOString(),
               }
             );
 
@@ -619,9 +838,31 @@ export default function Cart({
               "🎉 Order Placed Successfully!"
             );
 
-            await downloadInvoice();
+            await downloadInvoice(
+              response.razorpay_payment_id
+            );
 
             setCart([]);
+
+            setCustomer({
+              name: "",
+              phone: "",
+              address:
+                "",
+              pincode:
+                "",
+              city: "",
+            });
+
+            setCoupon("");
+
+            setCouponDiscount(
+              0
+            );
+
+            setLoading(
+              false
+            );
 
           } catch (error) {
 
@@ -629,10 +870,25 @@ export default function Cart({
               error
             );
 
+            setLoading(
+              false
+            );
+
             alert(
               "Order save failed"
             );
           }
+        },
+
+        modal: {
+
+          ondismiss:
+            function () {
+
+            setLoading(
+              false
+            );
+          },
         },
       };
 
@@ -648,6 +904,8 @@ export default function Cart({
       console.error(
         error
       );
+
+      setLoading(false);
 
       alert(
         "Something went wrong"
@@ -677,75 +935,381 @@ export default function Cart({
         </div>
       )}
 
+      {/* CART ITEMS */}
       <div className="space-y-4">
 
-        {cart.map((item, i) => (
+        {cart.map(
+          (item, i) => (
 
-          <div
-            key={i}
-            className="border rounded-2xl p-4 flex justify-between items-center bg-white"
+            <div
+              key={i}
+              className="border rounded-2xl p-4 flex flex-col md:flex-row justify-between md:items-center bg-white gap-4"
+            >
+
+              <div className="flex gap-4 items-center">
+
+                <img
+                  src={
+                    item.image
+                  }
+                  alt={
+                    item.name
+                  }
+                  className="w-24 h-24 object-cover rounded-2xl border"
+                />
+
+                <div>
+
+                  <h3 className="font-bold text-lg">
+                    {item.name}
+                  </h3>
+
+                  <p>
+                    {item.weight}
+                  </p>
+
+                  <p className="line-through text-gray-400">
+                    ₹{item.mrp}
+                  </p>
+
+                  <p className="text-green-600 font-bold text-lg">
+                    ₹
+                    {getOfferPrice(
+                      item.mrp
+                    ).toFixed(
+                      2
+                    )}
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="flex items-center gap-3">
+
+                <button
+                  onClick={() =>
+                    decreaseQty(
+                      i
+                    )
+                  }
+                  className="bg-gray-200 w-10 h-10 rounded-xl font-bold"
+                >
+                  -
+                </button>
+
+                <span className="font-bold text-lg">
+                  {item.qty}
+                </span>
+
+                <button
+                  onClick={() =>
+                    increaseQty(
+                      i
+                    )
+                  }
+                  className="bg-gray-200 w-10 h-10 rounded-xl font-bold"
+                >
+                  +
+                </button>
+
+                <button
+                  onClick={() =>
+                    removeFromCart(
+                      i
+                    )
+                  }
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl"
+                >
+                  Remove
+                </button>
+
+              </div>
+
+            </div>
+          )
+        )}
+
+      </div>
+
+      {/* CUSTOMER DETAILS */}
+      <div className="mt-10 bg-white rounded-3xl p-6 border shadow-sm">
+
+        <h2 className="text-2xl font-bold mb-6">
+          Customer Details
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-4">
+
+          <input
+            type="text"
+            placeholder="Full Name"
+            className="border p-4 rounded-xl"
+            value={
+              customer.name
+            }
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                name:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Phone Number"
+            className="border p-4 rounded-xl"
+            value={
+              customer.phone
+            }
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                phone:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="City / Town"
+            className="border p-4 rounded-xl"
+            value={
+              customer.city
+            }
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                city:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Pincode"
+            className="border p-4 rounded-xl"
+            value={
+              customer.pincode
+            }
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                pincode:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <textarea
+            placeholder="Full Delivery Address"
+            className="border p-4 rounded-xl md:col-span-2 min-h-[120px]"
+            value={
+              customer.address
+            }
+            onChange={(e) =>
+              setCustomer({
+                ...customer,
+                address:
+                  e.target
+                    .value,
+              })
+            }
+          />
+
+          <select
+            className="border p-4 rounded-xl"
+            value={state}
+            onChange={(e) =>
+              setState(
+                e.target
+                  .value
+              )
+            }
           >
 
-            <div>
+            <option value="Tamil Nadu">
+              Tamil Nadu
+            </option>
 
-              <h3 className="font-bold text-lg">
-                {item.name}
-              </h3>
+            <option value="Other State">
+              Other State
+            </option>
 
-              <p>
-                {item.weight}
-              </p>
+          </select>
 
-              <p className="line-through text-gray-400">
-                ₹{item.mrp}
-              </p>
+        </div>
 
-              <p className="text-green-600 font-bold">
-                ₹
-                {getOfferPrice(
-                  item.mrp
-                ).toFixed(2)}
-              </p>
+      </div>
 
-            </div>
+      {/* COUPON */}
+      <div className="mt-8 flex gap-3">
 
-            <div className="flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="Coupon Code"
+          className="border p-4 rounded-xl flex-1"
+          value={coupon}
+          onChange={(e) =>
+            setCoupon(
+              e.target
+                .value
+            )
+          }
+        />
 
-              <button
-                onClick={() =>
-                  decreaseQty(i)
-                }
-                className="bg-gray-200 px-3 py-1 rounded"
-              >
-                -
-              </button>
+        <button
+          onClick={
+            applyCoupon
+          }
+          className="bg-black text-white px-6 rounded-xl"
+        >
+          Apply
+        </button>
 
-              <span>
-                {item.qty}
-              </span>
+      </div>
 
-              <button
-                onClick={() =>
-                  increaseQty(i)
-                }
-                className="bg-gray-200 px-3 py-1 rounded"
-              >
-                +
-              </button>
+      {/* TOTALS */}
+      <div className="mt-10 border rounded-3xl p-6 bg-white shadow-sm">
 
-              <button
-                onClick={() =>
-                  removeFromCart(i)
-                }
-                className="bg-red-500 text-white px-3 py-1 rounded"
-              >
-                Remove
-              </button>
+        <h2 className="text-2xl font-bold mb-6">
+          Order Summary
+        </h2>
 
-            </div>
+        <div className="space-y-3">
 
+          <div className="flex justify-between">
+            <span>
+              MRP Total
+            </span>
+
+            <span>
+              ₹
+              {mrpTotal.toFixed(
+                2
+              )}
+            </span>
           </div>
-        ))}
+
+          <div className="flex justify-between">
+            <span>
+              Offer Total
+            </span>
+
+            <span>
+              ₹
+              {offerTotal.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Coupon Discount
+            </span>
+
+            <span className="text-red-500">
+              -₹
+              {couponDiscount.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              CGST
+              (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {cgst.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              SGST
+              (2.5%)
+            </span>
+
+            <span>
+              ₹
+              {sgst.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>
+              Shipping
+            </span>
+
+            <span>
+              ₹
+              {shipping.toFixed(
+                2
+              )}
+            </span>
+          </div>
+
+        </div>
+
+        <div className="border-t mt-5 pt-5 flex justify-between text-3xl font-bold text-[#31572C]">
+
+          <span>
+            Grand Total
+          </span>
+
+          <span>
+            ₹
+            {grandTotal.toFixed(
+              2
+            )}
+          </span>
+
+        </div>
+
+      </div>
+
+      {/* BUTTONS */}
+      <div className="mt-8 flex flex-col md:flex-row gap-4">
+
+        <button
+          onClick={
+            handlePayment
+          }
+          disabled={loading}
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50"
+        >
+
+          {loading
+            ? "Processing..."
+            : "Pay & Place Order"}
+
+        </button>
+
+        <button
+          onClick={() =>
+            downloadInvoice()
+          }
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold"
+        >
+          Download Invoice
+        </button>
 
       </div>
 
