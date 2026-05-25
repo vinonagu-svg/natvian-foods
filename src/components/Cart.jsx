@@ -359,7 +359,7 @@ export default function Cart({
       20,
       105,
       170,
-      50,
+      55,
       "F"
     );
 
@@ -388,7 +388,7 @@ export default function Cart({
     doc.text(
       doc.splitTextToSize(
         `Address : ${customer.address}`,
-        150
+        145
       ),
       25,
       141
@@ -397,7 +397,7 @@ export default function Cart({
     doc.text(
       `${customer.city} - ${customer.pincode}`,
       25,
-      155
+      156
     );
 
     // =========================
@@ -470,7 +470,7 @@ export default function Cart({
         );
 
         doc.text(
-          `₹${(
+          `Rs. ${(
             getOfferPrice(
               item.mrp
             ) *
@@ -499,7 +499,7 @@ export default function Cart({
     y += 10;
 
     doc.text(
-      `MRP Total : ₹${mrpTotal.toFixed(
+      `MRP Total : Rs. ${mrpTotal.toFixed(
         2
       )}`,
       120,
@@ -509,7 +509,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `Offer Discount : ₹${(
+      `Offer Discount : Rs. ${(
         mrpTotal -
         offerTotal
       ).toFixed(2)}`,
@@ -520,7 +520,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `Coupon Discount : ₹${couponDiscount.toFixed(
+      `Coupon Discount : Rs. ${couponDiscount.toFixed(
         2
       )}`,
       120,
@@ -530,7 +530,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `CGST (2.5%) : ₹${cgst.toFixed(
+      `CGST (2.5%) : Rs. ${cgst.toFixed(
         2
       )}`,
       120,
@@ -540,7 +540,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `SGST (2.5%) : ₹${sgst.toFixed(
+      `SGST (2.5%) : Rs. ${sgst.toFixed(
         2
       )}`,
       120,
@@ -550,7 +550,7 @@ export default function Cart({
     y += 8;
 
     doc.text(
-      `Shipping : ₹${shipping.toFixed(
+      `Shipping : Rs. ${shipping.toFixed(
         2
       )}`,
       120,
@@ -568,10 +568,10 @@ export default function Cart({
     );
 
     doc.text(
-      `Grand Total : ₹${grandTotal.toFixed(
+      `Grand Total : Rs. ${grandTotal.toFixed(
         2
       )}`,
-      110,
+      95,
       y
     );
 
@@ -872,12 +872,15 @@ export default function Cart({
             );
 
             // =========================
-            // SUCCESS
+            // DOWNLOAD INVOICE
             // =========================
             await downloadInvoice(
               response.razorpay_payment_id
             );
 
+            // =========================
+            // SUCCESS
+            // =========================
             alert(
               "🎉 Order Placed Successfully!"
             );
@@ -907,6 +910,7 @@ export default function Cart({
           } catch (error) {
 
             console.error(
+              "SAVE ERROR:",
               error
             );
 
@@ -1010,11 +1014,12 @@ export default function Cart({
                   </p>
 
                   <p className="line-through text-gray-400">
-                    ₹{item.mrp}
+                    Rs. {item.mrp}
                   </p>
 
                   <p className="text-green-600 font-bold text-lg">
-                    ₹
+                    Rs.
+                    {" "}
                     {getOfferPrice(
                       item.mrp
                     ).toFixed(
@@ -1072,279 +1077,3 @@ export default function Cart({
         )}
 
       </div>
-
-      {/* CUSTOMER DETAILS */}
-      <div className="mt-10 bg-white rounded-3xl p-6 border shadow-sm">
-
-        <h2 className="text-2xl font-bold mb-6">
-          Customer Details
-        </h2>
-
-        <div className="grid md:grid-cols-2 gap-4">
-
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="border p-4 rounded-xl"
-            value={
-              customer.name
-            }
-            onChange={(e) =>
-              setCustomer({
-                ...customer,
-                name:
-                  e.target
-                    .value,
-              })
-            }
-          />
-
-          <input
-            type="text"
-            placeholder="Phone Number"
-            className="border p-4 rounded-xl"
-            value={
-              customer.phone
-            }
-            onChange={(e) =>
-              setCustomer({
-                ...customer,
-                phone:
-                  e.target
-                    .value,
-              })
-            }
-          />
-
-          <input
-            type="text"
-            placeholder="City / Town"
-            className="border p-4 rounded-xl"
-            value={
-              customer.city
-            }
-            onChange={(e) =>
-              setCustomer({
-                ...customer,
-                city:
-                  e.target
-                    .value,
-              })
-            }
-          />
-
-          <input
-            type="text"
-            placeholder="Pincode"
-            className="border p-4 rounded-xl"
-            value={
-              customer.pincode
-            }
-            onChange={(e) =>
-              setCustomer({
-                ...customer,
-                pincode:
-                  e.target
-                    .value,
-              })
-            }
-          />
-
-          <textarea
-            placeholder="Full Delivery Address"
-            className="border p-4 rounded-xl md:col-span-2 min-h-[120px]"
-            value={
-              customer.address
-            }
-            onChange={(e) =>
-              setCustomer({
-                ...customer,
-                address:
-                  e.target
-                    .value,
-              })
-            }
-          />
-
-          <select
-            className="border p-4 rounded-xl"
-            value={state}
-            onChange={(e) =>
-              setState(
-                e.target
-                  .value
-              )
-            }
-          >
-
-            <option value="Tamil Nadu">
-              Tamil Nadu
-            </option>
-
-            <option value="Other State">
-              Other State
-            </option>
-
-          </select>
-
-        </div>
-
-      </div>
-
-      {/* COUPON */}
-      <div className="mt-8 flex gap-3">
-
-        <input
-          type="text"
-          placeholder="Coupon Code"
-          className="border p-4 rounded-xl flex-1"
-          value={coupon}
-          onChange={(e) =>
-            setCoupon(
-              e.target
-                .value
-            )
-          }
-        />
-
-        <button
-          onClick={
-            applyCoupon
-          }
-          className="bg-black text-white px-6 rounded-xl"
-        >
-          Apply
-        </button>
-
-      </div>
-
-      {/* TOTALS */}
-      <div className="mt-10 border rounded-3xl p-6 bg-white shadow-sm">
-
-        <h2 className="text-2xl font-bold mb-6">
-          Order Summary
-        </h2>
-
-        <div className="space-y-3">
-
-          <div className="flex justify-between">
-            <span>
-              MRP Total
-            </span>
-
-            <span>
-              ₹
-              {mrpTotal.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              Offer Total
-            </span>
-
-            <span>
-              ₹
-              {offerTotal.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              Coupon Discount
-            </span>
-
-            <span className="text-red-500">
-              -₹
-              {couponDiscount.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              CGST
-              (2.5%)
-            </span>
-
-            <span>
-              ₹
-              {cgst.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              SGST
-              (2.5%)
-            </span>
-
-            <span>
-              ₹
-              {sgst.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>
-              Shipping
-            </span>
-
-            <span>
-              ₹
-              {shipping.toFixed(
-                2
-              )}
-            </span>
-          </div>
-
-        </div>
-
-        <div className="border-t mt-5 pt-5 flex justify-between text-3xl font-bold text-[#31572C]">
-
-          <span>
-            Grand Total
-          </span>
-
-          <span>
-            ₹
-            {grandTotal.toFixed(
-              2
-            )}
-          </span>
-
-        </div>
-
-      </div>
-
-      {/* BUTTON */}
-      <div className="mt-8">
-
-        <button
-          onClick={
-            handlePayment
-          }
-          disabled={loading}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold disabled:opacity-50"
-        >
-
-          {loading
-            ? "Processing..."
-            : "Pay & Place Order"}
-
-        </button>
-
-      </div>
-
-    </section>
-  );
-}
