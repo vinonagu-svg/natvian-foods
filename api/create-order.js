@@ -1,37 +1,46 @@
-// api/create-order.js
-
 import Razorpay from "razorpay";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
 export default async function handler(req, res) {
+
+  console.log("API HIT");
+
+  console.log(
+    "KEY ID:",
+    process.env.RAZORPAY_KEY_ID
+  );
+
+  console.log(
+    "SECRET EXISTS:",
+    !!process.env.RAZORPAY_KEY_SECRET
+  );
+
   if (req.method !== "POST") {
     return res.status(405).json({
-      success: false,
-      message: "Method not allowed",
+      error: "Method not allowed",
     });
   }
 
   try {
-    const { amount, currency = "INR" } = req.body;
 
-    if (!amount || amount < 100) {
-      return res.status(400).json({
-        success: false,
-        message: "Minimum amount is 100 paise",
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret:
+        process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const { amount } = req.body;
+
+    console.log("AMOUNT:", amount);
+
+    const order =
+      await razorpay.orders.create({
+        amount,
+        currency: "INR",
+        receipt:
+          "receipt_" + Date.now(),
       });
-    }
 
-    const options = {
-      amount,
-      currency,
-      receipt: `receipt_${Date.now()}`,
-    };
-
-    const order = await razorpay.orders.create(options);
+    console.log("ORDER:", order);
 
     return res.status(200).json({
       success: true,
@@ -41,18 +50,15 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.log("Create Order Error:", error);
 
-    if (error.statusCode === 401) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication failed",
-      });
-    }
+    console.log(
+      "FULL RAZORPAY ERROR:",
+      JSON.stringify(error, null, 2)
+    );
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      error: error.message,
     });
   }
 }
