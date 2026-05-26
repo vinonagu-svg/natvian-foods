@@ -629,12 +629,12 @@ export default function Cart({
             },
 
            body: JSON.stringify({
-  amount: 1,
-  currency: "INR",
-  receipt:
-    "receipt_" +
-    Date.now(),
-}),
+            amount: grandTotal,
+            currency: "INR",
+            receipt:
+            "receipt_" +
+           Date.now(),
+            }),
           }
         );
 
