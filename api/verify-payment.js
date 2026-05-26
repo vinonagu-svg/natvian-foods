@@ -1,7 +1,8 @@
+// api/verify-payment.js
+
 import crypto from "crypto";
 
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
@@ -10,47 +11,52 @@ export default async function handler(req, res) {
   }
 
   try {
-
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
     } = req.body;
 
-    const generated_signature = crypto
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing payment fields",
+      });
+    }
+
+    const body =
+      razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
       .createHmac(
         "sha256",
         process.env.RAZORPAY_KEY_SECRET
       )
-      .update(
-        razorpay_order_id +
-        "|" +
-        razorpay_payment_id
-      )
+      .update(body.toString())
       .digest("hex");
 
-    if (
-      generated_signature ===
-      razorpay_signature
-    ) {
-
-      return res.status(200).json({
-        success: true,
-      });
-
-    } else {
-
+    if (expectedSignature !== razorpay_signature) {
       return res.status(400).json({
         success: false,
+        message: "Invalid signature",
       });
     }
 
-  } catch (error) {
+    return res.status(200).json({
+      success: true,
+      message: "Payment verified successfully",
+    });
 
-    console.log(error);
+  } catch (error) {
+    console.log("Verify Payment Error:", error);
 
     return res.status(500).json({
       success: false,
+      message: error.message,
     });
   }
 }

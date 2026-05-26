@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import {
   useState,
   lazy,
@@ -27,6 +29,11 @@ import Footer from "./components/Footer";
 // ADMIN COMPONENTS
 // =========================
 import AdminDashboard from "./components/AdminDashboard";
+
+// =========================
+// RAZORPAY BUTTON
+// =========================
+import RazorpayButton from "./RazorpayButton";
 
 // =========================
 // LAZY COMPONENTS
@@ -324,6 +331,13 @@ function HomePage() {
           />
 
         </Suspense>
+
+        {/* PAYMENT BUTTON */}
+        <div className="flex justify-center mt-10">
+
+          <RazorpayButton />
+
+        </div>
 
       </section>
 
