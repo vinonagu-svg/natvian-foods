@@ -628,30 +628,24 @@ export default function Cart({
                 "application/json",
             },
 
-            body:
-              JSON.stringify(
-                {
-                  amount:
-                    Math.round(
-                      grandTotal *
-                        100
-                    ),
+            body: JSON.stringify({
+            amount: Number(
+             grandTotal.toFixed(2)
+           ),
 
-                  currency:
-                    "INR",
+           currency: "INR",
 
-                  receipt:
-                    "receipt_" +
-                    Date.now(),
-                }
-              ),
+            receipt:
+            "receipt_" +
+            Date.now(),
+          }),
           }
         );
 
       const order =
         await response.json();
 
-      if (!order.id) {
+      if (!order.order_id) {
 
         setLoading(false);
 
@@ -675,7 +669,7 @@ export default function Cart({
           order.currency,
 
         order_id:
-          order.id,
+          order.order_id,
 
         name:
           "Natvian Foods",
