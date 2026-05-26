@@ -11,12 +11,12 @@ export default function RazorpayButton() {
 
     return new Promise((resolve) => {
 
+      // Avoid loading script twice
       const existingScript =
         document.getElementById(
           "razorpay-script"
         );
 
-      // Avoid loading twice
       if (existingScript) {
         resolve(true);
         return;
@@ -32,6 +32,7 @@ export default function RazorpayButton() {
         "https://checkout.razorpay.com/v1/checkout.js";
 
       script.onload = () => {
+
         console.log(
           "Razorpay SDK Loaded"
         );
@@ -40,6 +41,7 @@ export default function RazorpayButton() {
       };
 
       script.onerror = () => {
+
         console.log(
           "Failed to load Razorpay SDK"
         );
@@ -76,8 +78,6 @@ export default function RazorpayButton() {
       // =========================
       // CREATE ORDER
       // =========================
-      const amount = 100;
-
       const response =
         await fetch(
           "/api/create-order",
@@ -90,7 +90,7 @@ export default function RazorpayButton() {
             },
 
             body: JSON.stringify({
-              amount,
+              amount: 100,
             }),
           }
         );
@@ -99,16 +99,22 @@ export default function RazorpayButton() {
         await response.json();
 
       console.log(
-        "ORDER RESPONSE:",
+        "CREATE ORDER RESPONSE:",
         data
       );
 
-      // Backend error
-      if (!response.ok) {
+      // =========================
+      // IMPORTANT FIX
+      // =========================
+      const orderId =
+        data.order_id || data.id;
+
+      if (!orderId) {
 
         alert(
           data.message ||
-            "Order creation failed"
+          data.error ||
+          "Order creation failed"
         );
 
         return;
@@ -123,13 +129,14 @@ export default function RazorpayButton() {
           import.meta.env
             .VITE_RAZORPAY_KEY_ID,
 
-        amount: data.amount,
+        amount:
+          data.amount,
 
         currency:
           data.currency,
 
         order_id:
-          data.order_id,
+          orderId,
 
         name:
           "The Native Food",
@@ -224,7 +231,8 @@ export default function RazorpayButton() {
 
         prefill: {
 
-          name: "Customer",
+          name:
+            "Customer",
 
           email:
             "customer@example.com",
@@ -240,7 +248,8 @@ export default function RazorpayButton() {
         },
 
         theme: {
-          color: "#000000",
+          color:
+            "#000000",
         },
       };
 
@@ -265,7 +274,7 @@ export default function RazorpayButton() {
 
           alert(
             response.error.description ||
-              "Payment Failed"
+            "Payment Failed"
           );
         }
       );
