@@ -4,111 +4,239 @@ import React from "react";
 
 export default function RazorpayButton() {
 
+  // =========================
+  // LOAD RAZORPAY SDK
+  // =========================
   const loadScript = () => {
+
     return new Promise((resolve) => {
-      const script = document.createElement("script");
+
+      const existingScript =
+        document.getElementById(
+          "razorpay-script"
+        );
+
+      // Avoid loading twice
+      if (existingScript) {
+        resolve(true);
+        return;
+      }
+
+      const script =
+        document.createElement("script");
+
+      script.id =
+        "razorpay-script";
 
       script.src =
         "https://checkout.razorpay.com/v1/checkout.js";
 
       script.onload = () => {
+        console.log(
+          "Razorpay SDK Loaded"
+        );
+
         resolve(true);
       };
 
       script.onerror = () => {
+        console.log(
+          "Failed to load Razorpay SDK"
+        );
+
         resolve(false);
       };
 
-      document.body.appendChild(script);
+      document.body.appendChild(
+        script
+      );
     });
   };
 
+  // =========================
+  // HANDLE PAYMENT
+  // =========================
   const handlePayment = async () => {
-
-    const scriptLoaded = await loadScript();
-
-    if (!scriptLoaded) {
-      alert("Failed to load Razorpay SDK");
-      return;
-    }
 
     try {
 
-      const amount = 100;
+      // Load SDK
+      const scriptLoaded =
+        await loadScript();
 
-      const response = await fetch(
-        "/api/create-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount,
-          }),
-        }
-      );
+      if (!scriptLoaded) {
 
-      const data = await response.json();
+        alert(
+          "Failed to load Razorpay SDK"
+        );
 
-      if (!data.success) {
-        alert(data.message || "Order creation failed");
         return;
       }
 
+      // =========================
+      // CREATE ORDER
+      // =========================
+      const amount = 100;
+
+      const response =
+        await fetch(
+          "/api/create-order",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              amount,
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      console.log(
+        "ORDER RESPONSE:",
+        data
+      );
+
+      // Backend error
+      if (!response.ok) {
+
+        alert(
+          data.message ||
+            "Order creation failed"
+        );
+
+        return;
+      }
+
+      // =========================
+      // RAZORPAY OPTIONS
+      // =========================
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+
+        key:
+          import.meta.env
+            .VITE_RAZORPAY_KEY_ID,
 
         amount: data.amount,
-        currency: data.currency,
-        order_id: data.order_id,
 
-        name: "The Native Food",
+        currency:
+          data.currency,
 
-        description: "Order Payment",
+        order_id:
+          data.order_id,
 
-        handler: async function (response) {
+        name:
+          "The Native Food",
 
-          const verifyResponse = await fetch(
-            "/api/verify-payment",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                razorpay_order_id:
-                  response.razorpay_order_id,
+        description:
+          "Order Payment",
 
-                razorpay_payment_id:
-                  response.razorpay_payment_id,
+        image:
+          "https://www.thenativefood.com/favicon.ico",
 
-                razorpay_signature:
-                  response.razorpay_signature,
-              }),
+        handler:
+          async function (
+            response
+          ) {
+
+            try {
+
+              // =========================
+              // VERIFY PAYMENT
+              // =========================
+              const verifyResponse =
+                await fetch(
+                  "/api/verify-payment",
+                  {
+                    method: "POST",
+
+                    headers: {
+                      "Content-Type":
+                        "application/json",
+                    },
+
+                    body:
+                      JSON.stringify({
+                        razorpay_order_id:
+                          response.razorpay_order_id,
+
+                        razorpay_payment_id:
+                          response.razorpay_payment_id,
+
+                        razorpay_signature:
+                          response.razorpay_signature,
+                      }),
+                  }
+                );
+
+              const verifyData =
+                await verifyResponse.json();
+
+              console.log(
+                "VERIFY RESPONSE:",
+                verifyData
+              );
+
+              if (
+                verifyData.success
+              ) {
+
+                alert(
+                  "Payment Successful"
+                );
+
+              } else {
+
+                alert(
+                  "Payment Verification Failed"
+                );
+              }
+
+            } catch (error) {
+
+              console.log(
+                "VERIFY ERROR:",
+                error
+              );
+
+              alert(
+                "Verification Failed"
+              );
             }
-          );
-
-          const verifyData =
-            await verifyResponse.json();
-
-          if (verifyData.success) {
-            alert("Payment Successful");
-          } else {
-            alert("Payment Verification Failed");
-          }
-        },
+          },
 
         modal: {
-          ondismiss: function () {
-            alert("Payment popup closed");
-          },
+
+          ondismiss:
+            function () {
+
+              alert(
+                "Payment popup closed"
+              );
+            },
         },
 
         prefill: {
+
           name: "Customer",
-          email: "customer@example.com",
-          contact: "9876543210",
+
+          email:
+            "customer@example.com",
+
+          contact:
+            "9876543210",
+        },
+
+        notes: {
+
+          business:
+            "The Native Food",
         },
 
         theme: {
@@ -116,29 +244,52 @@ export default function RazorpayButton() {
         },
       };
 
+      // =========================
+      // OPEN RAZORPAY
+      // =========================
       const paymentObject =
-        new window.Razorpay(options);
+        new window.Razorpay(
+          options
+        );
 
+      // Payment Failed Event
       paymentObject.on(
         "payment.failed",
+
         function (response) {
-          console.log(response.error);
-          alert("Payment Failed");
+
+          console.log(
+            "PAYMENT FAILED:",
+            response.error
+          );
+
+          alert(
+            response.error.description ||
+              "Payment Failed"
+          );
         }
       );
 
       paymentObject.open();
 
     } catch (error) {
-      console.log(error);
-      alert("Something went wrong");
+
+      console.log(
+        "PAYMENT ERROR:",
+        error
+      );
+
+      alert(
+        "Something went wrong"
+      );
     }
   };
 
   return (
+
     <button
       onClick={handlePayment}
-      className="bg-black text-white px-6 py-3 rounded-lg"
+      className="bg-black text-white px-6 py-3 rounded-lg hover:opacity-90 transition"
     >
       Pay Now
     </button>
