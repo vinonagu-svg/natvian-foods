@@ -628,17 +628,13 @@ export default function Cart({
                 "application/json",
             },
 
-            body: JSON.stringify({
-            amount: Number(
-             grandTotal.toFixed(2)
-           ),
-
-           currency: "INR",
-
-            receipt:
-            "receipt_" +
-            Date.now(),
-          }),
+           body: JSON.stringify({
+  amount: 1,
+  currency: "INR",
+  receipt:
+    "receipt_" +
+    Date.now(),
+}),
           }
         );
 
