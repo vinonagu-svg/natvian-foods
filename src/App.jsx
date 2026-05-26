@@ -31,11 +31,6 @@ import Footer from "./components/Footer";
 import AdminDashboard from "./components/AdminDashboard";
 
 // =========================
-// RAZORPAY BUTTON
-// =========================
-import RazorpayButton from "./RazorpayButton";
-
-// =========================
 // LAZY COMPONENTS
 // =========================
 const Cart = lazy(() =>
@@ -331,13 +326,6 @@ function HomePage() {
           />
 
         </Suspense>
-
-        {/* PAYMENT BUTTON */}
-        <div className="flex justify-center mt-10">
-
-          <RazorpayButton />
-
-        </div>
 
       </section>
 
