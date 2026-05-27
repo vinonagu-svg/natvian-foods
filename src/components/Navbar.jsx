@@ -34,18 +34,18 @@ export default function Navbar({
             </h1>
 
             {/* SUBTEXT */}
-            <p className="text-sm md:text-base text-[#4F772D] font-medium mt-1">
+            <p className="text-sm md:text-[15px] text-[#4F772D] font-medium mt-1">
 
              Healthy Traditional Foods
 
             </p>
 
               {/* TRUST BADGES */}
-                <div className="flex items-center gap-2 mt-2 text-xs text-[#4F772D] font-medium opacity-80 flex-wrap">
+                <div className="flex items-center gap-3 mt-2 text-[13px] text-[#4F772D] font-medium opacity-80 flex-wrap">
 
                   <span>🌿 100% Natural</span>
 
-                 <span>•</span>
+                 <span className="text-[#C2A878]">•</span>
 
                 <span>🌾 Millet Based</span>
 
@@ -62,7 +62,7 @@ export default function Navbar({
         {/* =========================
             NAVIGATION
         ========================= */}
-        <div className="hidden lg:flex items-center gap-8 ml-auto">
+        <div className="hidden lg:flex items-center gap-6 ml-16">
 
           {/* HOME */}
           <a
