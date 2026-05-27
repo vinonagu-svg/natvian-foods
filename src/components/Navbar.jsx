@@ -21,7 +21,7 @@ export default function Navbar({
           <img
             src="/Logo.webp"
             alt="Natvian Foods"
-            className="h-14 md:h-16 w-auto object-contain"
+            className="h-16 md:h-20 w-auto object-contain"
           />
 
           {/* BRAND */}
@@ -41,7 +41,7 @@ export default function Navbar({
             </p>
 
               {/* TRUST BADGES */}
-                <div className="hidden xl:flex items-center gap-2 mt-2 text-xs text-[#4F772D] font-medium opacity-80">
+                <div className="flex items-center gap-2 mt-2 text-xs text-[#4F772D] font-medium opacity-80 flex-wrap">
 
                   <span>🌿 100% Natural</span>
 
