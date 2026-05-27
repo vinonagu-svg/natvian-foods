@@ -15,7 +15,7 @@ export default function Navbar({
         {/* =========================
             LOGO + BRAND
         ========================= */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3">
 
           {/* LOGO */}
           <img
@@ -67,7 +67,7 @@ export default function Navbar({
           {/* HOME */}
           <a
             href="#home"
-            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
             Home
           </a>
@@ -75,7 +75,7 @@ export default function Navbar({
           {/* PRODUCTS */}
           <a
             href="#products"
-            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
             Products
           </a>
@@ -83,7 +83,7 @@ export default function Navbar({
           {/* ABOUT */}
           <a
             href="#about"
-            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
             About
           </a>
@@ -91,7 +91,7 @@ export default function Navbar({
           {/* CONTACT */}
           <a
             href="#contact"
-            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
             Contact
           </a>
@@ -99,7 +99,7 @@ export default function Navbar({
           {/* CART */}
           <a
             href="#cart"
-            className="bg-[#31572C] text-white px-4 py-2 rounded-2xl font-semibold shadow-md hover:bg-[#4F772D] hover:scale-105 transition duration-300"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
             🛒 Cart ({cartCount})
           </a>
@@ -109,7 +109,7 @@ export default function Navbar({
             onClick={() =>
               setDarkMode(!darkMode)
             }
-            className="bg-[#EEF4E7] text-[#31572C] hover:bg-[#DCE8CF] px-4 py-2 rounded-2xl font-medium hover:scale-105 transition duration-300 shadow-sm"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
 
             {darkMode
@@ -127,7 +127,7 @@ export default function Navbar({
                   : "en"
               )
             }
-            className="bg-[#31572C] hover:bg-[#4F772D] text-white px-5 py-2.5 rounded-2xl font-medium hover:bg-[#4F772D] transition duration-300 shadow-sm"
+            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
           >
 
             {language === "en"
