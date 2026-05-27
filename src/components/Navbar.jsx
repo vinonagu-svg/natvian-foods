@@ -10,7 +10,7 @@ export default function Navbar({
 
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
 
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         {/* =========================
             LOGO + BRAND
@@ -19,29 +19,44 @@ export default function Navbar({
 
           {/* LOGO */}
           <img
-            src="/Logo.png"
+            src="/Logo.webp"
             alt="Natvian Foods"
             className="h-20 md:h-24 w-auto object-contain"
           />
 
           {/* BRAND */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-start">
 
-            <h1 className="text-3xl md:text-5xl font-extrabold text-[#31572C] leading-tight tracking-tight text-center">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-[#31572C] leading-tight tracking-tight">
 
               Natvian Foods
 
             </h1>
 
             {/* LINE */}
-            <div className="h-[2px] bg-[#4F772D] rounded-full mt-2 mb-2 w-full opacity-80"></div>
+            <div className="h-[2px] bg-[#4F772D] rounded-full mt-2 mb-3 w-full opacity-70"></div>
 
             {/* SUBTEXT */}
-            <p className="text-xs md:text-lg text-[#4F772D] tracking-wide font-medium text-center">
+            <p className="text-sm md:text-xl text-[#4F772D] tracking-wide font-semibold leading-relaxed">
 
-              Powered By Thenativefood.com
+             Traditional Tamil Foods. Made Healthy. Made Easy.
 
             </p>
+
+              {/* TRUST BADGES */}
+                <div className="hidden md:flex items-center gap-3 mt-3 text-sm text-[#4F772D] font-medium opacity-90 flex-wrap">
+
+                  <span>🌿 100% Natural</span>
+
+                 <span>•</span>
+
+                <span>🌾 Millet Based</span>
+
+               <span>•</span>
+
+              <span>💚 No Preservatives</span>
+
+            </div>
 
           </div>
 
@@ -50,12 +65,12 @@ export default function Navbar({
         {/* =========================
             NAVIGATION
         ========================= */}
-        <div className="hidden md:flex items-center gap-8 ml-auto">
+        <div className="hidden lg:flex items-center gap-8 ml-auto">
 
           {/* HOME */}
           <a
             href="#home"
-            className="text-gray-700 hover:text-[#4F772D] font-medium transition duration-300"
+            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
           >
             Home
           </a>
@@ -63,7 +78,7 @@ export default function Navbar({
           {/* PRODUCTS */}
           <a
             href="#products"
-            className="text-gray-700 hover:text-[#4F772D] font-medium transition duration-300"
+            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
           >
             Products
           </a>
@@ -71,7 +86,7 @@ export default function Navbar({
           {/* ABOUT */}
           <a
             href="#about"
-            className="text-gray-700 hover:text-[#4F772D] font-medium transition duration-300"
+            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
           >
             About
           </a>
@@ -79,7 +94,7 @@ export default function Navbar({
           {/* CONTACT */}
           <a
             href="#contact"
-            className="text-gray-700 hover:text-[#4F772D] font-medium transition duration-300"
+            className="text-gray-700 hover:text-[#4F772D] font-semibold tracking-wide transition duration-300"
           >
             Contact
           </a>
@@ -87,7 +102,7 @@ export default function Navbar({
           {/* CART */}
           <a
             href="#cart"
-            className="bg-[#31572C] text-white px-5 py-2.5 rounded-2xl font-medium shadow-sm hover:bg-[#4F772D] transition duration-300"
+            className="bg-[#31572C] text-white px-6 py-3 rounded-2xl font-semibold shadow-md hover:bg-[#4F772D] hover:scale-105 transition duration-300"
           >
             🛒 Cart ({cartCount})
           </a>
@@ -97,7 +112,7 @@ export default function Navbar({
             onClick={() =>
               setDarkMode(!darkMode)
             }
-            className="bg-[#EEF4E7] text-[#31572C] px-5 py-2.5 rounded-2xl font-medium hover:bg-[#DCE8CF] transition duration-300 shadow-sm"
+            className="bg-[#EEF4E7] text-[#31572C] hover:bg-[#DCE8CF] px-5 py-2.5 rounded-2xl font-medium hover:scale-105 transition duration-300 shadow-sm"
           >
 
             {darkMode
@@ -115,7 +130,7 @@ export default function Navbar({
                   : "en"
               )
             }
-            className="bg-[#31572C] text-white px-5 py-2.5 rounded-2xl font-medium hover:bg-[#4F772D] transition duration-300 shadow-sm"
+            className="bg-[#31572C] hover:bg-[#4F772D] text-white px-5 py-2.5 rounded-2xl font-medium hover:bg-[#4F772D] transition duration-300 shadow-sm"
           >
 
             {language === "en"
