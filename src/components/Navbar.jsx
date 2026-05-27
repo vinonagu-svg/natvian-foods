@@ -21,30 +21,27 @@ export default function Navbar({
           <img
             src="/Logo.webp"
             alt="Natvian Foods"
-            className="h-20 md:h-24 w-auto object-contain"
+            className="h-14 md:h-16 w-auto object-contain"
           />
 
           {/* BRAND */}
-          <div className="flex flex-col items-start">
+          <div className="flex flex-col justify-center">
 
-            <h1 className="text-3xl md:text-5xl font-extrabold text-[#31572C] leading-tight tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-[#31572C] leading-tight tracking-tight">
 
               Natvian Foods
 
             </h1>
 
-            {/* LINE */}
-            <div className="h-[2px] bg-[#4F772D] rounded-full mt-2 mb-3 w-full opacity-70"></div>
-
             {/* SUBTEXT */}
-            <p className="text-sm md:text-xl text-[#4F772D] tracking-wide font-semibold leading-relaxed">
+            <p className="text-sm md:text-base text-[#4F772D] font-medium mt-1">
 
              Healthy Traditional Foods
 
             </p>
 
               {/* TRUST BADGES */}
-                <div className="hidden md:flex items-center gap-3 mt-3 text-sm text-[#4F772D] font-medium opacity-90 flex-wrap">
+                <div className="hidden xl:flex items-center gap-2 mt-2 text-xs text-[#4F772D] font-medium opacity-80">
 
                   <span>🌿 100% Natural</span>
 
@@ -102,7 +99,7 @@ export default function Navbar({
           {/* CART */}
           <a
             href="#cart"
-            className="bg-[#31572C] text-white px-5 py-2.5 rounded-2xl font-semibold shadow-md hover:bg-[#4F772D] hover:scale-105 transition duration-300"
+            className="bg-[#31572C] text-white px-4 py-2 rounded-2xl font-semibold shadow-md hover:bg-[#4F772D] hover:scale-105 transition duration-300"
           >
             🛒 Cart ({cartCount})
           </a>
@@ -112,7 +109,7 @@ export default function Navbar({
             onClick={() =>
               setDarkMode(!darkMode)
             }
-            className="bg-[#EEF4E7] text-[#31572C] hover:bg-[#DCE8CF] px-5 py-2.5 rounded-2xl font-medium hover:scale-105 transition duration-300 shadow-sm"
+            className="bg-[#EEF4E7] text-[#31572C] hover:bg-[#DCE8CF] px-4 py-2 rounded-2xl font-medium hover:scale-105 transition duration-300 shadow-sm"
           >
 
             {darkMode
