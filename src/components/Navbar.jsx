@@ -10,7 +10,7 @@ export default function Navbar({
 
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
 
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
 
         {/* =========================
             LOGO + BRAND
@@ -27,7 +27,7 @@ export default function Navbar({
           {/* BRAND */}
           <div className="flex flex-col items-start">
 
-            <h1 className="text-4xl md:text-6xl font-extrabold text-[#31572C] leading-tight tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-[#31572C] leading-tight tracking-tight">
 
               Natvian Foods
 
@@ -39,7 +39,7 @@ export default function Navbar({
             {/* SUBTEXT */}
             <p className="text-sm md:text-xl text-[#4F772D] tracking-wide font-semibold leading-relaxed">
 
-             Traditional Tamil Foods. Made Healthy. Made Easy.
+             Healthy Traditional Foods
 
             </p>
 
@@ -102,7 +102,7 @@ export default function Navbar({
           {/* CART */}
           <a
             href="#cart"
-            className="bg-[#31572C] text-white px-6 py-3 rounded-2xl font-semibold shadow-md hover:bg-[#4F772D] hover:scale-105 transition duration-300"
+            className="bg-[#31572C] text-white px-5 py-2.5 rounded-2xl font-semibold shadow-md hover:bg-[#4F772D] hover:scale-105 transition duration-300"
           >
             🛒 Cart ({cartCount})
           </a>
