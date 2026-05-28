@@ -17,8 +17,11 @@ export default function AddProduct({
       name: "",
       category: "",
       description: "",
-      imageUrl: "",
 
+      // MULTIPLE IMAGES
+      images: [""],
+
+      // VARIANTS
       variants: [
         {
           weight: "",
@@ -39,6 +42,67 @@ export default function AddProduct({
 
       [e.target.name]:
         e.target.value,
+    });
+  };
+
+  // =========================
+  // HANDLE IMAGE CHANGE
+  // =========================
+  const handleImageChange = (
+    index,
+    value
+  ) => {
+
+    const updatedImages =
+      [...form.images];
+
+    updatedImages[index] =
+      value;
+
+    setForm({
+
+      ...form,
+
+      images:
+        updatedImages,
+    });
+  };
+
+  // =========================
+  // ADD IMAGE FIELD
+  // =========================
+  const addImageField = () => {
+
+    setForm({
+
+      ...form,
+
+      images: [
+        ...form.images,
+        ""
+      ]
+    });
+  };
+
+  // =========================
+  // REMOVE IMAGE
+  // =========================
+  const removeImage = (
+    index
+  ) => {
+
+    const updatedImages =
+      form.images.filter(
+        (_, i) =>
+          i !== index
+      );
+
+    setForm({
+
+      ...form,
+
+      images:
+        updatedImages,
     });
   };
 
@@ -90,6 +154,28 @@ export default function AddProduct({
   };
 
   // =========================
+  // REMOVE VARIANT
+  // =========================
+  const removeVariant = (
+    index
+  ) => {
+
+    const updatedVariants =
+      form.variants.filter(
+        (_, i) =>
+          i !== index
+      );
+
+    setForm({
+
+      ...form,
+
+      variants:
+        updatedVariants,
+    });
+  };
+
+  // =========================
   // SUBMIT
   // =========================
   const handleSubmit =
@@ -99,6 +185,7 @@ export default function AddProduct({
 
       try {
 
+        // CLEAN VARIANTS
         const cleanVariants =
           form.variants.map(
             (variant) => ({
@@ -118,6 +205,14 @@ export default function AddProduct({
             })
           );
 
+        // REMOVE EMPTY IMAGES
+        const cleanImages =
+          form.images.filter(
+            (img) =>
+              img.trim() !== ""
+          );
+
+        // ADD TO FIRESTORE
         await addDoc(
           collection(
             db,
@@ -134,8 +229,8 @@ export default function AddProduct({
             description:
               form.description,
 
-            imageUrl:
-              form.imageUrl,
+            images:
+              cleanImages,
 
             variants:
               cleanVariants,
@@ -143,8 +238,26 @@ export default function AddProduct({
         );
 
         alert(
-          "Product Added"
+          "Product Added Successfully"
         );
+
+        // RESET FORM
+        setForm({
+
+          name: "",
+          category: "",
+          description: "",
+
+          images: [""],
+
+          variants: [
+            {
+              weight: "",
+              price: "",
+              stock: "",
+            }
+          ]
+        });
 
         refreshProducts();
 
@@ -177,6 +290,7 @@ export default function AddProduct({
           type="text"
           name="name"
           placeholder="Product Name"
+          value={form.name}
           onChange={handleChange}
           className="border p-3 rounded"
           required
@@ -186,14 +300,7 @@ export default function AddProduct({
           type="text"
           name="category"
           placeholder="Category"
-          onChange={handleChange}
-          className="border p-3 rounded"
-        />
-
-        <input
-          type="text"
-          name="imageUrl"
-          placeholder="Image URL"
+          value={form.category}
           onChange={handleChange}
           className="border p-3 rounded"
         />
@@ -201,10 +308,64 @@ export default function AddProduct({
         <textarea
           name="description"
           placeholder="Description"
+          value={form.description}
           onChange={handleChange}
           className="border p-3 rounded"
           rows="4"
         />
+
+      </div>
+
+      {/* PRODUCT IMAGES */}
+
+      <h3 className="text-2xl font-bold mb-4">
+        Product Images
+      </h3>
+
+      <div className="space-y-4 mb-6">
+
+        {form.images.map(
+          (img, index) => (
+
+            <div
+              key={index}
+              className="flex gap-3"
+            >
+
+              <input
+                type="text"
+                placeholder="Image URL"
+                value={img}
+                onChange={(e) =>
+                  handleImageChange(
+                    index,
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded w-full"
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  removeImage(index)
+                }
+                className="bg-red-500 text-white px-4 rounded"
+              >
+                Remove
+              </button>
+
+            </div>
+          )
+        )}
+
+        <button
+          type="button"
+          onClick={addImageField}
+          className="bg-gray-200 px-5 py-3 rounded"
+        >
+          + Add Image
+        </button>
 
       </div>
 
@@ -221,7 +382,7 @@ export default function AddProduct({
 
             <div
               key={index}
-              className="grid grid-cols-3 gap-4"
+              className="grid grid-cols-4 gap-4"
             >
 
               <input
@@ -265,6 +426,16 @@ export default function AddProduct({
                 }
                 className="border p-3 rounded"
               />
+
+              <button
+                type="button"
+                onClick={() =>
+                  removeVariant(index)
+                }
+                className="bg-red-500 text-white rounded px-4"
+              >
+                Remove
+              </button>
 
             </div>
           )
