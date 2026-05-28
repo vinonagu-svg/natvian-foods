@@ -30,6 +30,13 @@ export default function ProductCard({
     setShowGallery] =
     useState(false);
 
+  // =========================
+  // ZOOM STATE
+  // =========================
+  const [zoom,
+    setZoom] =
+    useState(1);
+
   return (
 
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -44,9 +51,12 @@ export default function ProductCard({
             "https://via.placeholder.com/500"
           }
           alt={product.name}
-          onClick={() =>
-            setShowGallery(true)
-          }
+          onClick={() => {
+
+            setShowGallery(true);
+
+            setZoom(1);
+          }}
           className="
             w-full
             h-64
@@ -207,12 +217,12 @@ export default function ProductCard({
           className="
             fixed
             inset-0
-            bg-black/90
+            bg-black/95
             z-50
             flex
             items-center
             justify-center
-            p-4
+            overflow-hidden
           "
         >
 
@@ -235,18 +245,99 @@ export default function ProductCard({
             ×
           </button>
 
-          {/* LARGE IMAGE */}
+          {/* ZOOM CONTROLS */}
 
-          <img
-            src={selectedImage}
-            alt="Fullscreen"
+          <div
             className="
-              max-w-full
-              max-h-[80vh]
-              rounded-xl
-              object-contain
+              absolute
+              top-5
+              left-5
+              flex
+              gap-3
+              z-50
             "
-          />
+          >
+
+            {/* ZOOM IN */}
+
+            <button
+              onClick={() =>
+                setZoom(
+                  (prev) =>
+                    prev + 0.2
+                )
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-2
+                rounded-lg
+                text-2xl
+                font-bold
+              "
+            >
+              +
+            </button>
+
+            {/* ZOOM OUT */}
+
+            <button
+              onClick={() =>
+                setZoom(
+                  (prev) =>
+                    Math.max(
+                      1,
+                      prev - 0.2
+                    )
+                )
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-2
+                rounded-lg
+                text-2xl
+                font-bold
+              "
+            >
+              -
+            </button>
+
+          </div>
+
+          {/* IMAGE CONTAINER */}
+
+          <div
+            className="
+              overflow-auto
+              w-full
+              h-full
+              flex
+              items-center
+              justify-center
+              p-10
+            "
+          >
+
+            <img
+              src={selectedImage}
+              alt="Fullscreen"
+              style={{
+                transform: `scale(${zoom})`,
+              }}
+              className="
+                max-w-full
+                max-h-[85vh]
+                object-contain
+                transition-transform
+                duration-200
+                cursor-grab
+              "
+            />
+
+          </div>
 
           {/* THUMBNAILS */}
 
@@ -274,11 +365,14 @@ export default function ProductCard({
                   key={index}
                   src={image}
                   alt={`thumb-${index}`}
-                  onClick={() =>
+                  onClick={() => {
+
                     setSelectedImage(
                       image
-                    )
-                  }
+                    );
+
+                    setZoom(1);
+                  }}
                   className={`
                     w-20
                     h-20
