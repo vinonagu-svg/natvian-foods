@@ -45,151 +45,100 @@ import Settings from "./pages/admin/Settings";
 // =========================
 // LAZY COMPONENTS
 // =========================
-const Cart = lazy(() =>
-  import("./components/Cart")
-);
-
-const Testimonials = lazy(() =>
-  import("./components/Testimonials")
-);
-
-const AdminLogin = lazy(() =>
-  import("./pages/admin/AdminLogin")
-);
+const Cart = lazy(() => import("./components/Cart"));
+const Testimonials = lazy(() => import("./components/Testimonials"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 
 // =========================
 // IMAGES
 // =========================
 import MurungabannerImage from "./assets/Murunga-banner.webp";
-
 import BananabannerImage from "./assets/Bloom-banner.webp";
 
 // =========================
-// PROTECTED ADMIN ROUTE
+// PROTECTED ROUTE
 // =========================
-function ProtectedRoute({
-  children,
-}) {
-
-  const isAdmin =
-    localStorage.getItem(
-      "admin"
-    ) === "true";
-
-  return isAdmin
-    ? children
-    : <Navigate to="/admin" />;
+function ProtectedRoute({ children }) {
+  const isAdmin = localStorage.getItem("admin") === "true";
+  return isAdmin ? children : <Navigate to="/admin" />;
 }
 
 // =========================
 // HOME PAGE
 // =========================
 function HomePage() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [language, setLanguage] = useState("en");
 
-  const [darkMode, setDarkMode] =
-    useState(false);
+  const [cart, setCart] = useState([]);
+  const [products, setProducts] = useState([]);
 
-  const [language, setLanguage] =
-    useState("en");
-
-  const [cart, setCart] =
-    useState([]);
-
-  const [products, setProducts] =
-    useState([]);
+  // =========================
+  // COUPON STATES (NEW)
+  // =========================
+  const [coupons, setCoupons] = useState([]);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   // =========================
   // FETCH PRODUCTS
   // =========================
   useEffect(() => {
+    const fetchProducts = async () => {
+      const snapshot = await getDocs(collection(db, "products"));
 
-    const fetchProducts =
-      async () => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-        try {
-
-          const snapshot =
-            await getDocs(
-              collection(
-                db,
-                "products"
-              )
-            );
-
-          const data =
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            );
-
-          setProducts(data);
-
-        } catch (err) {
-
-          console.error(err);
-        }
-      };
+      setProducts(data);
+    };
 
     fetchProducts();
+  }, []);
 
+  // =========================
+  // FETCH COUPONS (NEW)
+  // =========================
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      const snap = await getDocs(collection(db, "coupons"));
+
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setCoupons(data);
+    };
+
+    fetchCoupons();
   }, []);
 
   // =========================
   // OFFER CONFIG
   // =========================
   const OFFER_CONFIG = {
-
     name: "Launching Offer",
-
     type: "PERCENT",
-
     value: 10,
-
     isActive: true,
   };
 
   // =========================
   // OFFER PRICE
   // =========================
-  const getOfferPrice = (
-    price
-  ) => {
+  const getOfferPrice = (price) => {
+    const safePrice = Number(price) || 0;
 
-    const safePrice =
-      Number(price) || 0;
+    if (!OFFER_CONFIG.isActive) return safePrice;
 
-    if (
-      !OFFER_CONFIG.isActive
-    ) {
-
-      return safePrice;
+    if (OFFER_CONFIG.type === "PERCENT") {
+      return safePrice - (safePrice * OFFER_CONFIG.value) / 100;
     }
 
-    if (
-      OFFER_CONFIG.type ===
-      "PERCENT"
-    ) {
-
-      return (
-        safePrice -
-        (
-          safePrice *
-          OFFER_CONFIG.value
-        ) / 100
-      );
-    }
-
-    if (
-      OFFER_CONFIG.type ===
-      "FIXED"
-    ) {
-
-      return (
-        safePrice -
-        OFFER_CONFIG.value
-      );
+    if (OFFER_CONFIG.type === "FIXED") {
+      return safePrice - OFFER_CONFIG.value;
     }
 
     return safePrice;
@@ -198,125 +147,105 @@ function HomePage() {
   // =========================
   // ADD TO CART
   // =========================
-  const addToCart = (
-    product,
-    variant
-  ) => {
-
+  const addToCart = (product, variant) => {
     const safeVariant = {
-
-      weight:
-        variant?.weight ||
-        "100g",
-
-      price:
-        Number(
-          variant?.price
-        ) || 0,
+      weight: variant?.weight || "100g",
+      price: Number(variant?.price) || 0,
     };
 
-    const existingIndex =
-      cart.findIndex(
-        (item) =>
+    const existingIndex = cart.findIndex(
+      (item) =>
+        item.id === product.id &&
+        item.weight === safeVariant.weight
+    );
 
-          item.id ===
-            product.id &&
-
-          item.weight ===
-            safeVariant.weight
-      );
-
-    // EXISTING
-    if (
-      existingIndex !== -1
-    ) {
-
-      const updatedCart =
-        [...cart];
-
-      updatedCart[
-        existingIndex
-      ].qty += 1;
-
-      setCart(updatedCart);
-
+    if (existingIndex !== -1) {
+      const updated = [...cart];
+      updated[existingIndex].qty += 1;
+      setCart(updated);
       return;
     }
 
-    // NEW
     setCart((prev) => [
-
       ...prev,
-
       {
         id: product.id,
         name: product.name,
-        image:
-          product.imageUrl,
-
-        weight:
-          safeVariant.weight,
-
-        mrp:
-          safeVariant.price,
-
+        image: product.imageUrl,
+        weight: safeVariant.weight,
+        mrp: safeVariant.price,
         qty: 1,
       },
-
     ]);
   };
 
   // =========================
   // REMOVE FROM CART
   // =========================
-  const removeFromCart = (
-    index
-  ) => {
-
-    const updatedCart =
-      [...cart];
-
-    updatedCart.splice(
-      index,
-      1
-    );
-
-    setCart(updatedCart);
+  const removeFromCart = (index) => {
+    const updated = [...cart];
+    updated.splice(index, 1);
+    setCart(updated);
   };
 
   // =========================
   // TOTAL PRICE
   // =========================
-  const totalPrice =
-    cart.reduce(
-      (total, item) => {
+  const totalPrice = cart.reduce((total, item) => {
+    const mrp = Number(item.mrp) || 0;
+    const qty = Number(item.qty) || 1;
 
-        const mrp =
-          Number(
-            item.mrp
-          ) || 0;
+    return total + getOfferPrice(mrp) * qty;
+  }, 0);
 
-        const qty =
-          Number(
-            item.qty
-          ) || 1;
+  // =========================
+  // COUPON LOGIC (NEW)
+  // =========================
+  const isCouponValid = (coupon) => {
+    const today = new Date();
 
-        const offerPrice =
-          getOfferPrice(
-            mrp
-          );
+    const expiry = coupon.expiryDate?.toDate
+      ? coupon.expiryDate.toDate()
+      : new Date(coupon.expiryDate);
 
-        return (
-          total +
-          offerPrice * qty
-        );
+    return coupon.isActive === true && expiry >= today;
+  };
 
-      },
-      0
+  const discount = appliedCoupon
+    ? appliedCoupon.type === "PERCENT"
+      ? (totalPrice * appliedCoupon.value) / 100
+      : appliedCoupon.value
+    : 0;
+
+  const finalPrice = totalPrice - discount;
+
+  // =========================
+  // APPLY COUPON FUNCTION (used inside Cart)
+  // =========================
+  const applyCoupon = (code) => {
+    const coupon = coupons.find(
+      (c) => c.code.toLowerCase() === code.toLowerCase()
     );
 
-  return (
+    if (!coupon) {
+      alert("Invalid coupon");
+      return;
+    }
 
+    if (!isCouponValid(coupon)) {
+      alert("Coupon expired or inactive");
+      return;
+    }
+
+    if (totalPrice < coupon.minCartValue) {
+      alert(`Minimum cart value is ₹${coupon.minCartValue}`);
+      return;
+    }
+
+    setAppliedCoupon(coupon);
+  };
+
+  return (
     <div
       className={
         darkMode
@@ -324,206 +253,94 @@ function HomePage() {
           : "bg-[#F8F7F2] text-gray-800 min-h-screen"
       }
     >
-
-      {/* NAVBAR */}
       <Navbar
         darkMode={darkMode}
-        setDarkMode={
-          setDarkMode
-        }
+        setDarkMode={setDarkMode}
         language={language}
-        setLanguage={
-          setLanguage
-        }
-        cartCount={
-          cart.length
-        }
+        setLanguage={setLanguage}
+        cartCount={cart.length}
       />
 
-      {/* HERO */}
-      <section id="home">
+      <Hero
+        language={language}
+        MurungabannerImage={MurungabannerImage}
+        BananabannerImage={BananabannerImage}
+      />
 
-        <Hero
-          language={language}
-          MurungabannerImage={
-            MurungabannerImage
-          }
-          BananabannerImage={
-            BananabannerImage
-          }
-        />
-
-      </section>
-
-      {/* FEATURES */}
       <Features />
 
-      {/* PRODUCTS */}
-      <section
-        id="products"
-        className="max-w-7xl mx-auto px-6 py-20"
-      >
-
-        <ProductGrid
-          products={products}
-          addToCart={
-            addToCart
-          }
-        />
-
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <ProductGrid products={products} addToCart={addToCart} />
       </section>
 
-      {/* CART */}
-      <section
-        id="cart"
-        className="max-w-7xl mx-auto px-6 py-20"
-      >
-
-        <Suspense
-          fallback={
-            <div className="text-center py-20 text-2xl font-bold">
-              Loading Cart...
-            </div>
-          }
-        >
-
+      {/* CART SECTION */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <Suspense fallback={<div>Loading Cart...</div>}>
           <Cart
             cart={cart}
             setCart={setCart}
-            removeFromCart={
-              removeFromCart
-            }
-            totalPrice={
-              totalPrice
-            }
-            offerConfig={
-              OFFER_CONFIG
-            }
+            removeFromCart={removeFromCart}
+            totalPrice={totalPrice}
+            finalPrice={finalPrice}        // ✅ NEW
+            discount={discount}            // ✅ NEW
+            applyCoupon={applyCoupon}      // ✅ NEW
+            appliedCoupon={appliedCoupon}  // ✅ NEW
           />
-
         </Suspense>
-
       </section>
 
-      {/* ABOUT */}
-      <section id="about">
-        <About />
-      </section>
-
-      {/* FAQ */}
+      <About />
       <FAQ />
 
-      {/* TESTIMONIALS */}
-      <Suspense
-        fallback={
-          <div className="text-center py-20 text-2xl font-bold">
-            Loading Testimonials...
-          </div>
-        }
-      >
-
+      <Suspense fallback={<div>Loading Testimonials...</div>}>
         <Testimonials />
-
       </Suspense>
 
-      {/* CONTACT */}
-      <section id="contact">
-        <Contact />
-      </section>
-
-      {/* FOOTER */}
+      <Contact />
       <Footer />
-
     </div>
   );
 }
 
 // =========================
-// APP ROUTER
+// ROUTER
 // =========================
 export default function App() {
-
   return (
-
     <Routes>
+      <Route path="/" element={<HomePage />} />
 
-      <Route
-        path="/"
-        element={<HomePage />}
-      />
-
-      <Route
-        path="/admin"
-        element={
-
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center min-h-screen text-2xl font-bold">
-                Loading Admin...
-              </div>
-            }
-          >
-
-            <AdminLogin />
-
-          </Suspense>
-        }
-      />
+      <Route path="/admin" element={<AdminLogin />} />
 
       <Route
         path="/admin/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
       />
 
       <Route
         path="/admin/products"
-        element={
-          <ProtectedRoute>
-            <Products />
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><Products /></ProtectedRoute>}
       />
 
       <Route
         path="/admin/orders"
-        element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><Orders /></ProtectedRoute>}
       />
 
       <Route
         path="/admin/analytics"
-        element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><Analytics /></ProtectedRoute>}
       />
 
       <Route
         path="/admin/coupons"
-        element={
-          <ProtectedRoute>
-            <Coupons />
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><Coupons /></ProtectedRoute>}
       />
 
       <Route
         path="/admin/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><Settings /></ProtectedRoute>}
       />
-
     </Routes>
   );
 }
