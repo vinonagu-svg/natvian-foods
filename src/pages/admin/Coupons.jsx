@@ -9,8 +9,6 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  query,
-  orderBy,
   getDocs,
 } from "firebase/firestore";
 
@@ -21,10 +19,14 @@ export default function Coupons() {
   // =========================
   // STATE
   // =========================
-  const [coupons, setCoupons] = useState([]);
+  const [coupons, setCoupons] =
+    useState([]);
 
   const [loading, setLoading] =
     useState(false);
+
+  const [fetching, setFetching] =
+    useState(true);
 
   const [form, setForm] =
     useState({
@@ -37,17 +39,13 @@ export default function Coupons() {
     });
 
   // =========================
-  // LIVE FETCH
+  // LIVE FETCH COUPONS
   // =========================
   useEffect(() => {
 
-    const q = query(
-      collection(db, "coupons"),
-      orderBy("createdAt", "desc")
-    );
-
     const unsub = onSnapshot(
-      q,
+      collection(db, "coupons"),
+
       (snap) => {
 
         const data =
@@ -56,7 +54,26 @@ export default function Coupons() {
             ...d.data(),
           }));
 
+        // newest first
+        data.sort(
+          (a, b) =>
+            (b.createdAt || 0) -
+            (a.createdAt || 0)
+        );
+
         setCoupons(data);
+
+        setFetching(false);
+      },
+
+      (err) => {
+
+        console.error(
+          "Fetch error:",
+          err
+        );
+
+        setFetching(false);
       }
     );
 
@@ -67,111 +84,147 @@ export default function Coupons() {
   // =========================
   // CREATE COUPON
   // =========================
-  const createCoupon = async () => {
+  const createCoupon =
+    async () => {
 
-    try {
+      try {
 
-      if (!form.code.trim()) {
+        if (!form.code.trim()) {
 
-        alert("Enter coupon code");
+          alert(
+            "Enter coupon code"
+          );
 
-        return;
-      }
+          return;
+        }
 
-      setLoading(true);
+        if (!form.expiryDate) {
 
-      // CHECK DUPLICATE
-      const existing =
-        await getDocs(
-          collection(db, "coupons")
+          alert(
+            "Select expiry date"
+          );
+
+          return;
+        }
+
+        setLoading(true);
+
+        // CHECK DUPLICATE
+        const existing =
+          await getDocs(
+            collection(
+              db,
+              "coupons"
+            )
+          );
+
+        const alreadyExists =
+          existing.docs.some(
+            (d) =>
+              d
+                .data()
+                .code
+                ?.toUpperCase() ===
+              form.code.toUpperCase()
+          );
+
+        if (alreadyExists) {
+
+          alert(
+            "Coupon already exists"
+          );
+
+          setLoading(false);
+
+          return;
+        }
+
+        // SAFE DATE
+        const expiry =
+          new Date(
+            form.expiryDate +
+              "T23:59:59"
+          );
+
+        await addDoc(
+          collection(
+            db,
+            "coupons"
+          ),
+          {
+            code:
+              form.code
+                .trim()
+                .toUpperCase(),
+
+            type: form.type,
+
+            value:
+              Number(
+                form.value
+              ),
+
+            minCartValue:
+              Number(
+                form.minCartValue
+              ),
+
+            expiryDate:
+              expiry,
+
+            isActive:
+              form.isActive,
+
+            createdAt:
+              Date.now(),
+          }
         );
 
-      const alreadyExists =
-        existing.docs.some(
-          (d) =>
-            d.data().code?.toUpperCase() ===
-            form.code.toUpperCase()
+        // RESET
+        setForm({
+          code: "",
+          type: "PERCENT",
+          value: 10,
+          minCartValue: 0,
+          expiryDate: "",
+          isActive: true,
+        });
+
+        alert(
+          "Coupon Created ✅"
         );
 
-      if (alreadyExists) {
+      } catch (err) {
 
-        alert("Coupon already exists");
+        console.error(err);
+
+        alert(
+          "Failed to create coupon"
+        );
+
+      } finally {
 
         setLoading(false);
-
-        return;
       }
-
-      // SAFE DATE
-      const expiry =
-        new Date(
-          form.expiryDate +
-            "T23:59:59"
-        );
-
-      await addDoc(
-        collection(db, "coupons"),
-        {
-          code:
-            form.code
-              .trim()
-              .toUpperCase(),
-
-          type: form.type,
-
-          value:
-            Number(form.value),
-
-          minCartValue:
-            Number(
-              form.minCartValue
-            ),
-
-          expiryDate: expiry,
-
-          isActive: true,
-
-          createdAt:
-            Date.now(),
-        }
-      );
-
-      // RESET FORM
-      setForm({
-        code: "",
-        type: "PERCENT",
-        value: 10,
-        minCartValue: 0,
-        expiryDate: "",
-        isActive: true,
-      });
-
-      alert("Coupon Created ✅");
-
-    } catch (err) {
-
-      console.error(err);
-
-      alert(
-        "Failed to create coupon"
-      );
-
-    } finally {
-
-      setLoading(false);
-    }
-  };
+    };
 
   // =========================
-  // TOGGLE STATUS
+  // TOGGLE ACTIVE
   // =========================
   const toggleActive =
-    async (id, current) => {
+    async (
+      id,
+      current
+    ) => {
 
       try {
 
         await updateDoc(
-          doc(db, "coupons", id),
+          doc(
+            db,
+            "coupons",
+            id
+          ),
           {
             isActive:
               !current,
@@ -205,7 +258,11 @@ export default function Coupons() {
       try {
 
         await deleteDoc(
-          doc(db, "coupons", id)
+          doc(
+            db,
+            "coupons",
+            id
+          )
         );
 
       } catch (err) {
@@ -218,6 +275,36 @@ export default function Coupons() {
       }
     };
 
+  // =========================
+  // FORMAT DATE
+  // =========================
+  const formatDate = (
+    expiry
+  ) => {
+
+    try {
+
+      if (expiry?.toDate) {
+
+        return expiry
+          .toDate()
+          .toLocaleDateString(
+            "en-IN"
+          );
+      }
+
+      return new Date(
+        expiry
+      ).toLocaleDateString(
+        "en-IN"
+      );
+
+    } catch {
+
+      return "Invalid Date";
+    }
+  };
+
   return (
 
     <div className="flex">
@@ -227,9 +314,25 @@ export default function Coupons() {
       <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
 
         {/* HEADER */}
-        <h1 className="text-4xl font-bold mb-6">
-          🎟️ Coupons Admin
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+
+          <h1 className="text-4xl font-bold">
+            🎟️ Coupons Admin
+          </h1>
+
+          <div className="bg-white px-5 py-3 rounded-2xl shadow">
+
+            <p className="text-sm text-gray-500">
+              Total Coupons
+            </p>
+
+            <h2 className="text-2xl font-bold">
+              {coupons.length}
+            </h2>
+
+          </div>
+
+        </div>
 
         {/* CREATE FORM */}
         <div className="bg-white p-6 rounded-2xl shadow mb-8">
@@ -265,6 +368,7 @@ export default function Coupons() {
                 })
               }
             >
+
               <option value="PERCENT">
                 PERCENT
               </option>
@@ -272,6 +376,7 @@ export default function Coupons() {
               <option value="FIXED">
                 FIXED
               </option>
+
             </select>
 
             <input
@@ -337,16 +442,31 @@ export default function Coupons() {
 
         </div>
 
-        {/* COUPON LIST */}
+        {/* LOADING */}
+        {fetching && (
+
+          <div className="bg-white p-6 rounded-2xl shadow">
+
+            Loading coupons...
+
+          </div>
+
+        )}
+
+        {/* EMPTY */}
+        {!fetching &&
+          coupons.length === 0 && (
+
+          <div className="bg-white p-6 rounded-2xl shadow">
+
+            No coupons found
+
+          </div>
+
+        )}
+
+        {/* COUPONS LIST */}
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-          {coupons.length === 0 && (
-
-            <div className="bg-white p-6 rounded-2xl shadow">
-              No coupons found
-            </div>
-
-          )}
 
           {coupons.map((c) => (
 
@@ -355,6 +475,7 @@ export default function Coupons() {
               className="bg-white p-5 rounded-2xl shadow"
             >
 
+              {/* TOP */}
               <div className="flex justify-between items-start">
 
                 <div>
@@ -376,19 +497,23 @@ export default function Coupons() {
                       : "bg-red-100 text-red-700"
                   }`}
                 >
+
                   {c.isActive
                     ? "ACTIVE"
                     : "INACTIVE"}
+
                 </span>
 
               </div>
 
+              {/* DETAILS */}
               <div className="mt-4 space-y-2 text-sm">
 
                 <p>
                   <strong>
                     Discount:
-                  </strong>{" "}
+                  </strong>
+                  {" "}
                   {c.type ===
                   "PERCENT"
                     ? `${c.value}%`
@@ -398,23 +523,25 @@ export default function Coupons() {
                 <p>
                   <strong>
                     Min Cart:
-                  </strong>{" "}
-                  ₹{c.minCartValue}
+                  </strong>
+                  {" "}
+                  ₹
+                  {c.minCartValue}
                 </p>
 
                 <p>
                   <strong>
                     Expiry:
-                  </strong>{" "}
-                  {c.expiryDate?.toDate
-                    ? c.expiryDate
-                        .toDate()
-                        .toLocaleDateString()
-                    : "No Date"}
+                  </strong>
+                  {" "}
+                  {formatDate(
+                    c.expiryDate
+                  )}
                 </p>
 
               </div>
 
+              {/* ACTIONS */}
               <div className="flex gap-3 mt-5">
 
                 <button
