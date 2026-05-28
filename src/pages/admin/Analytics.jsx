@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminSidebar from "../../components/AdminSidebar";
 
 import {
@@ -20,6 +20,8 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 
 export default function Analytics() {
@@ -30,8 +32,11 @@ export default function Analytics() {
 
   const [filter, setFilter] = useState("ALL");
 
+  const [dateFilter, setDateFilter] =
+    useState("ALL");
+
   // =========================
-  // LIVE ORDERS STREAM
+  // LIVE ORDERS
   // =========================
   useEffect(() => {
     const unsub = onSnapshot(
@@ -50,40 +55,95 @@ export default function Analytics() {
   }, []);
 
   // =========================
-  // FILTER LOGIC
+  // DATE FILTER
   // =========================
-  const filteredOrders = orders.filter((o) => {
-    if (filter === "PAID") return o.paymentStatus === "Paid";
-    if (filter === "COD") return o.paymentStatus === "COD";
+  const isWithinDateRange = (createdAt) => {
+    if (dateFilter === "ALL") return true;
+
+    const now = new Date();
+    const orderDate = new Date(createdAt);
+
+    const diffDays =
+      (now - orderDate) /
+      (1000 * 60 * 60 * 24);
+
+    if (dateFilter === "7D")
+      return diffDays <= 7;
+
+    if (dateFilter === "30D")
+      return diffDays <= 30;
+
     return true;
-  });
+  };
 
   // =========================
-  // REVENUE
+  // FILTERED ORDERS
   // =========================
-  const totalRevenue = filteredOrders.reduce(
-    (sum, o) => sum + (o.grandTotal || 0),
-    0
-  );
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const paymentMatch =
+        filter === "ALL"
+          ? true
+          : filter === "PAID"
+          ? o.paymentStatus === "Paid"
+          : o.paymentStatus === "COD";
 
-  const totalOrders = filteredOrders.length;
+      return (
+        paymentMatch &&
+        isWithinDateRange(o.createdAt)
+      );
+    });
+  }, [orders, filter, dateFilter]);
 
   // =========================
-  // DAILY REVENUE GRAPH
+  // STATS
+  // =========================
+  const totalRevenue =
+    filteredOrders.reduce(
+      (sum, o) =>
+        sum + (o.grandTotal || 0),
+      0
+    );
+
+  const totalOrders =
+    filteredOrders.length;
+
+  const averageOrderValue =
+    totalOrders > 0
+      ? totalRevenue / totalOrders
+      : 0;
+
+  const totalDiscount =
+    filteredOrders.reduce(
+      (sum, o) =>
+        sum +
+        (o.couponDiscount || 0),
+      0
+    );
+
+  // =========================
+  // DAILY REVENUE
   // =========================
   const revenueMap = {};
 
   filteredOrders.forEach((o) => {
-    const date = new Date(o.createdAt).toLocaleDateString();
+    const date = new Date(
+      o.createdAt
+    ).toLocaleDateString();
 
     revenueMap[date] =
-      (revenueMap[date] || 0) + (o.grandTotal || 0);
+      (revenueMap[date] || 0) +
+      (o.grandTotal || 0);
   });
 
-  const revenueData = Object.keys(revenueMap).map((date) => ({
-    date,
-    revenue: revenueMap[date],
-  }));
+  const revenueData =
+    Object.keys(revenueMap).map(
+      (date) => ({
+        date,
+        revenue:
+          revenueMap[date],
+      })
+    );
 
   // =========================
   // TOP PRODUCTS
@@ -93,14 +153,19 @@ export default function Analytics() {
   filteredOrders.forEach((o) => {
     o.products?.forEach((p) => {
       productMap[p.name] =
-        (productMap[p.name] || 0) + (p.qty || 0);
+        (productMap[p.name] || 0) +
+        (p.qty || 0);
     });
   });
 
-  const topProducts = Object.keys(productMap).map((name) => ({
-    name,
-    qty: productMap[name],
-  }));
+  const topProducts =
+    Object.keys(productMap)
+      .map((name) => ({
+        name,
+        qty: productMap[name],
+      }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 10);
 
   // =========================
   // COUPON USAGE
@@ -108,18 +173,70 @@ export default function Analytics() {
   const couponMap = {};
 
   filteredOrders.forEach((o) => {
-    const code = o.couponCode || "NO_COUPON";
+    const code =
+      o.couponCode ||
+      "NO_COUPON";
+
     couponMap[code] =
       (couponMap[code] || 0) + 1;
   });
 
-  const couponData = Object.keys(couponMap).map((c) => ({
-    name: c,
-    value: couponMap[c],
-  }));
+  const couponData =
+    Object.keys(couponMap).map(
+      (c) => ({
+        name: c,
+        value: couponMap[c],
+      })
+    );
 
-  const COLORS = ["#31572C", "#4CAF50", "#FF9800", "#F44336"];
+  // =========================
+  // ORDER STATUS
+  // =========================
+  const statusMap = {
+    pending: 0,
+    shipped: 0,
+    delivered: 0,
+  };
 
+  filteredOrders.forEach((o) => {
+    const status =
+      o.orderStatus || "pending";
+
+    statusMap[status] =
+      (statusMap[status] || 0) + 1;
+  });
+
+  const statusData = [
+    {
+      name: "Pending",
+      value: statusMap.pending,
+    },
+    {
+      name: "Shipped",
+      value: statusMap.shipped,
+    },
+    {
+      name: "Delivered",
+      value:
+        statusMap.delivered,
+    },
+  ];
+
+  // =========================
+  // COLORS
+  // =========================
+  const COLORS = [
+    "#31572C",
+    "#4CAF50",
+    "#FF9800",
+    "#F44336",
+    "#673AB7",
+    "#009688",
+  ];
+
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="flex">
       <AdminSidebar />
@@ -127,51 +244,113 @@ export default function Analytics() {
       <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
 
         {/* HEADER */}
-        <h1 className="text-4xl font-bold mb-6">
-          📊 Analytics Dashboard
-        </h1>
+        <div className="flex justify-between items-center mb-6">
 
-        {/* FILTERS */}
-        <div className="flex gap-3 mb-6">
-          {["ALL", "PAID", "COD"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-xl font-semibold ${
-                filter === f
-                  ? "bg-black text-white"
-                  : "bg-white"
-              }`}
+          <h1 className="text-4xl font-bold">
+            📊 Analytics Dashboard
+          </h1>
+
+          <div className="flex gap-3">
+
+            {/* PAYMENT FILTER */}
+            <select
+              value={filter}
+              onChange={(e) =>
+                setFilter(
+                  e.target.value
+                )
+              }
+              className="px-4 py-2 rounded-xl border"
             >
-              {f}
-            </button>
-          ))}
+              <option value="ALL">
+                All Payments
+              </option>
+
+              <option value="PAID">
+                Paid
+              </option>
+
+              <option value="COD">
+                COD
+              </option>
+            </select>
+
+            {/* DATE FILTER */}
+            <select
+              value={dateFilter}
+              onChange={(e) =>
+                setDateFilter(
+                  e.target.value
+                )
+              }
+              className="px-4 py-2 rounded-xl border"
+            >
+              <option value="ALL">
+                All Time
+              </option>
+
+              <option value="7D">
+                Last 7 Days
+              </option>
+
+              <option value="30D">
+                Last 30 Days
+              </option>
+            </select>
+
+          </div>
+
         </div>
 
-        {/* STATS CARDS */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
+        {/* STATS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
 
           <div className="bg-white p-6 rounded-2xl shadow">
-            <p>Total Revenue</p>
-            <h2 className="text-3xl font-bold">
-              ₹{totalRevenue.toFixed(2)}
+            <p className="text-gray-500">
+              Revenue
+            </p>
+
+            <h2 className="text-3xl font-bold mt-2">
+              ₹
+              {totalRevenue.toFixed(
+                2
+              )}
             </h2>
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow">
-            <p>Total Orders</p>
-            <h2 className="text-3xl font-bold">
+            <p className="text-gray-500">
+              Orders
+            </p>
+
+            <h2 className="text-3xl font-bold mt-2">
               {totalOrders}
             </h2>
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow">
-            <p>Avg Order Value</p>
-            <h2 className="text-3xl font-bold">
+            <p className="text-gray-500">
+              Avg Order
+            </p>
+
+            <h2 className="text-3xl font-bold mt-2">
               ₹
-              {totalOrders
-                ? (totalRevenue / totalOrders).toFixed(2)
-                : 0}
+              {averageOrderValue.toFixed(
+                2
+              )}
+            </h2>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow">
+            <p className="text-gray-500">
+              Discounts
+            </p>
+
+            <h2 className="text-3xl font-bold mt-2 text-red-500">
+              ₹
+              {totalDiscount.toFixed(
+                2
+              )}
             </h2>
           </div>
 
@@ -179,58 +358,165 @@ export default function Analytics() {
 
         {/* REVENUE CHART */}
         <div className="bg-white p-6 rounded-2xl shadow mb-8">
-          <h2 className="text-xl font-bold mb-4">
+
+          <h2 className="text-2xl font-bold mb-4">
             Revenue Trend
           </h2>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={revenueData}>
+          <ResponsiveContainer
+            width="100%"
+            height={350}
+          >
+            <LineChart
+              data={revenueData}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+
               <XAxis dataKey="date" />
+
               <YAxis />
+
               <Tooltip />
-              <Line type="monotone" dataKey="revenue" stroke="#31572C" />
+
+              <Legend />
+
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#31572C"
+                strokeWidth={3}
+              />
             </LineChart>
           </ResponsiveContainer>
+
         </div>
 
         {/* TOP PRODUCTS */}
         <div className="bg-white p-6 rounded-2xl shadow mb-8">
-          <h2 className="text-xl font-bold mb-4">
+
+          <h2 className="text-2xl font-bold mb-4">
             Top Products
           </h2>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topProducts}>
+          <ResponsiveContainer
+            width="100%"
+            height={350}
+          >
+            <BarChart
+              data={topProducts}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+
               <XAxis dataKey="name" />
+
               <YAxis />
+
               <Tooltip />
-              <Bar dataKey="qty" fill="#4CAF50" />
+
+              <Legend />
+
+              <Bar
+                dataKey="qty"
+                fill="#4CAF50"
+              />
             </BarChart>
           </ResponsiveContainer>
+
         </div>
 
-        {/* COUPON USAGE */}
-        <div className="bg-white p-6 rounded-2xl shadow">
-          <h2 className="text-xl font-bold mb-4">
-            Coupon Usage
-          </h2>
+        {/* PIE CHARTS */}
+        <div className="grid md:grid-cols-2 gap-8">
 
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={couponData}
-                dataKey="value"
-                nameKey="name"
-                outerRadius={120}
-                label
-              >
-                {couponData.map((entry, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          {/* COUPONS */}
+          <div className="bg-white p-6 rounded-2xl shadow">
+
+            <h2 className="text-2xl font-bold mb-4">
+              Coupon Usage
+            </h2>
+
+            <ResponsiveContainer
+              width="100%"
+              height={350}
+            >
+              <PieChart>
+                <Pie
+                  data={couponData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={120}
+                  label
+                >
+                  {couponData.map(
+                    (
+                      entry,
+                      index
+                    ) => (
+                      <Cell
+                        key={index}
+                        fill={
+                          COLORS[
+                            index %
+                              COLORS.length
+                          ]
+                        }
+                      />
+                    )
+                  )}
+                </Pie>
+
+                <Tooltip />
+
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+
+          </div>
+
+          {/* ORDER STATUS */}
+          <div className="bg-white p-6 rounded-2xl shadow">
+
+            <h2 className="text-2xl font-bold mb-4">
+              Order Status
+            </h2>
+
+            <ResponsiveContainer
+              width="100%"
+              height={350}
+            >
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={120}
+                  label
+                >
+                  {statusData.map(
+                    (
+                      entry,
+                      index
+                    ) => (
+                      <Cell
+                        key={index}
+                        fill={
+                          COLORS[
+                            index %
+                              COLORS.length
+                          ]
+                        }
+                      />
+                    )
+                  )}
+                </Pie>
+
+                <Tooltip />
+
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+
+          </div>
+
         </div>
 
       </div>
