@@ -4,14 +4,21 @@ import {
   useState,
   lazy,
   Suspense,
+  useEffect,
 } from "react";
 
 import {
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 
-import { products } from "./data/products";
+import {
+  collection,
+  getDocs,
+} from "firebase/firestore";
+
+import { db } from "./firebase";
 
 // =========================
 // NORMAL COMPONENTS
@@ -26,9 +33,14 @@ import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 
 // =========================
-// ADMIN COMPONENTS
+// ADMIN PAGES
 // =========================
-import AdminDashboard from "./components/AdminDashboard";
+import Dashboard from "./pages/admin/Dashboard";
+import Products from "./pages/admin/Products";
+import Orders from "./pages/admin/Orders";
+import Analytics from "./pages/admin/Analytics";
+import Coupons from "./pages/admin/Coupons";
+import Settings from "./pages/admin/Settings";
 
 // =========================
 // LAZY COMPONENTS
@@ -42,7 +54,7 @@ const Testimonials = lazy(() =>
 );
 
 const AdminLogin = lazy(() =>
-  import("./components/AdminLogin")
+  import("./pages/admin/AdminLogin")
 );
 
 // =========================
@@ -51,6 +63,23 @@ const AdminLogin = lazy(() =>
 import MurungabannerImage from "./assets/Murunga-banner.webp";
 
 import BananabannerImage from "./assets/Bloom-banner.webp";
+
+// =========================
+// PROTECTED ADMIN ROUTE
+// =========================
+function ProtectedRoute({
+  children,
+}) {
+
+  const isAdmin =
+    localStorage.getItem(
+      "admin"
+    ) === "true";
+
+  return isAdmin
+    ? children
+    : <Navigate to="/admin" />;
+}
 
 // =========================
 // HOME PAGE
@@ -65,6 +94,47 @@ function HomePage() {
 
   const [cart, setCart] =
     useState([]);
+
+  const [products, setProducts] =
+    useState([]);
+
+  // =========================
+  // FETCH PRODUCTS
+  // =========================
+  useEffect(() => {
+
+    const fetchProducts =
+      async () => {
+
+        try {
+
+          const snapshot =
+            await getDocs(
+              collection(
+                db,
+                "products"
+              )
+            );
+
+          const data =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
+
+          setProducts(data);
+
+        } catch (err) {
+
+          console.error(err);
+        }
+      };
+
+    fetchProducts();
+
+  }, []);
 
   // =========================
   // OFFER CONFIG
@@ -84,17 +154,17 @@ function HomePage() {
   // OFFER PRICE
   // =========================
   const getOfferPrice = (
-    mrp
+    price
   ) => {
 
-    const price =
-      Number(mrp) || 0;
+    const safePrice =
+      Number(price) || 0;
 
     if (
       !OFFER_CONFIG.isActive
     ) {
 
-      return price;
+      return safePrice;
     }
 
     if (
@@ -103,9 +173,9 @@ function HomePage() {
     ) {
 
       return (
-        price -
+        safePrice -
         (
-          price *
+          safePrice *
           OFFER_CONFIG.value
         ) / 100
       );
@@ -117,12 +187,12 @@ function HomePage() {
     ) {
 
       return (
-        price -
+        safePrice -
         OFFER_CONFIG.value
       );
     }
 
-    return price;
+    return safePrice;
   };
 
   // =========================
@@ -139,9 +209,9 @@ function HomePage() {
         variant?.weight ||
         "100g",
 
-      mrp:
+      price:
         Number(
-          variant?.mrp
+          variant?.price
         ) || 0,
     };
 
@@ -156,7 +226,7 @@ function HomePage() {
             safeVariant.weight
       );
 
-    // EXISTING PRODUCT
+    // EXISTING
     if (
       existingIndex !== -1
     ) {
@@ -173,7 +243,7 @@ function HomePage() {
       return;
     }
 
-    // NEW PRODUCT
+    // NEW
     setCart((prev) => [
 
       ...prev,
@@ -181,9 +251,15 @@ function HomePage() {
       {
         id: product.id,
         name: product.name,
-        image: product.image,
-        weight: safeVariant.weight,
-        mrp: safeVariant.mrp,
+        image:
+          product.imageUrl,
+
+        weight:
+          safeVariant.weight,
+
+        mrp:
+          safeVariant.price,
+
         qty: 1,
       },
 
@@ -331,9 +407,7 @@ function HomePage() {
 
       {/* ABOUT */}
       <section id="about">
-
         <About />
-
       </section>
 
       {/* FAQ */}
@@ -354,9 +428,7 @@ function HomePage() {
 
       {/* CONTACT */}
       <section id="contact">
-
         <Contact />
-
       </section>
 
       {/* FOOTER */}
@@ -371,24 +443,15 @@ function HomePage() {
 // =========================
 export default function App() {
 
-  const [isAdmin, setIsAdmin] =
-    useState(
-      localStorage.getItem(
-        "isAdmin"
-      ) === "true"
-    );
-
   return (
 
     <Routes>
 
-      {/* HOME */}
       <Route
         path="/"
         element={<HomePage />}
       />
 
-      {/* ADMIN */}
       <Route
         path="/admin"
         element={
@@ -401,23 +464,66 @@ export default function App() {
             }
           >
 
-            {isAdmin ? (
-
-              <AdminDashboard />
-
-            ) : (
-
-              <AdminLogin
-                setIsAdmin={
-                  setIsAdmin
-                }
-              />
-
-            )}
+            <AdminLogin />
 
           </Suspense>
         }
       />
+
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/products"
+        element={
+          <ProtectedRoute>
+            <Products />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/orders"
+        element={
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/coupons"
+        element={
+          <ProtectedRoute>
+            <Coupons />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+
     </Routes>
   );
 }

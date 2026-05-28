@@ -49,7 +49,7 @@ export default function Navbar({
 
                 <span>🌾 Millet Based</span>
 
-               <span>•</span>
+               <span className="text-[#C2A878]">•</span>
 
               <span>💚 No Preservatives</span>
 

@@ -2,118 +2,95 @@ import { useState } from "react";
 
 export default function ProductCard({
   product,
-  addToCart
+  addToCart,
 }) {
 
-  // ✅ DEFAULT VARIANT
-  const defaultVariant =
-    product?.variants?.[0] || {
-      weight: "100g",
-      mrp: 0
-    };
-
-  const [selectedVariant, setSelectedVariant] =
-    useState(defaultVariant);
-
   // =========================
-  // 🎉 OFFER CONFIG
+  // DEFAULT VARIANT
   // =========================
-  const OFFER_CONFIG = {
-    name: "Launching Offer",
-    type: "PERCENT",
-    value: 10,
-    isActive: true
-  };
-
-  // =========================
-  // 💰 OFFER PRICE FUNCTION
-  // =========================
-  const getOfferPrice = (mrp) => {
-
-    const price =
-      Number(mrp) || 0;
-
-    if (!OFFER_CONFIG.isActive) {
-      return price;
-    }
-
-    if (OFFER_CONFIG.type === "PERCENT") {
-
-      return (
-        price -
-        (price * OFFER_CONFIG.value) / 100
-      );
-    }
-
-    if (OFFER_CONFIG.type === "FIXED") {
-
-      return (
-        price -
-        OFFER_CONFIG.value
-      );
-    }
-
-    return price;
-  };
-
-  // =========================
-  // 💰 PRICE VALUES
-  // =========================
-  const mrp =
-    Number(selectedVariant?.mrp) || 0;
-
-  const offerPrice =
-    Number(getOfferPrice(mrp)) || 0;
-
-  const discountAmount =
-    mrp - offerPrice;
-
-  // =========================
-  // 🛒 HANDLE ADD TO CART
-  // =========================
-  const handleAddToCart = () => {
-
-    const safeVariant = {
-
-      weight:
-        selectedVariant?.weight || "100g",
-
-      mrp:
-        Number(selectedVariant?.mrp) || 0
-    };
-
-    console.log(
-      "ADDING TO CART:",
-      safeVariant
+  const [selectedVariant,
+    setSelectedVariant] =
+    useState(
+      product.variants?.[0]
     );
 
-    addToCart(
-      product,
-      safeVariant
+  // =========================
+  // DEFAULT IMAGE
+  // =========================
+  const [selectedImage,
+    setSelectedImage] =
+    useState(
+      product.images?.[0]
     );
-  };
 
   return (
 
-    <div className="bg-white rounded-[32px] overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-2 transition duration-300">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
 
-      {/* IMAGE */}
-      <div className="overflow-hidden">
+      {/* MAIN IMAGE */}
 
-        <img
-          src={product.image}
-          alt={product.name}
-          className="h-72 md:h-80 w-full object-cover hover:scale-105 transition duration-500"
-        />
+      <img
+        src={
+          selectedImage ||
+          "https://via.placeholder.com/500"
+        }
+        alt={product.name}
+        className="w-full h-64 object-cover"
+      />
 
-      </div>
+      {/* IMAGE GALLERY */}
+
+      {product.images?.length > 0 && (
+
+        <div className="flex gap-2 p-3 overflow-x-auto">
+
+          {product.images.map(
+            (image, index) => (
+
+              <img
+                key={index}
+                src={image}
+                alt={`product-${index}`}
+                onClick={() =>
+                  setSelectedImage(image)
+                }
+                className={`w-16 h-16 object-cover rounded-lg border cursor-pointer transition
+
+                ${
+                  selectedImage === image
+                    ? "border-black"
+                    : "border-gray-300"
+                }`}
+              />
+            )
+          )}
+
+        </div>
+      )}
 
       {/* CONTENT */}
-      <div className="p-8">
+
+      <div className="p-5">
+
+        {/* PRODUCT NAME */}
+
+        <h2 className="text-2xl font-bold mb-2">
+          {product.name}
+        </h2>
+
+        {/* DESCRIPTION */}
+
+        <p className="text-gray-600 text-sm mb-4">
+          {product.description}
+        </p>
 
         {/* VARIANT SELECT */}
+
         <select
-          value={selectedVariant.weight}
+          className="border p-3 rounded w-full mb-4"
+          value={
+            selectedVariant?.weight
+          }
           onChange={(e) => {
 
             const variant =
@@ -124,108 +101,70 @@ export default function ProductCard({
               );
 
             setSelectedVariant(
-              variant || defaultVariant
+              variant
             );
           }}
-          className="w-full border p-3 rounded-2xl mb-6"
         >
 
-          {product?.variants?.map(
+          {product.variants?.map(
             (variant, index) => (
 
               <option
                 key={index}
-                value={variant.weight}
+                value={
+                  variant.weight
+                }
               >
                 {variant.weight}
               </option>
-
             )
           )}
 
         </select>
 
-        {/* PRICE SECTION */}
+        {/* PRICE & STOCK */}
+
         <div className="flex items-center justify-between mb-4">
 
-          {/* WEIGHT */}
-          <p className="text-sm font-medium bg-[#eef4e7] text-[#31572C] px-4 py-2 rounded-full">
-
-            {selectedVariant.weight}
-
+          <p className="text-2xl font-bold text-green-700">
+            ₹
+            {selectedVariant?.price}
           </p>
 
-          {/* PRICE */}
-          <div className="text-right">
-
-            {/* MRP */}
-            <p className="text-gray-400 line-through text-sm">
-
-              ₹{mrp}
-
-            </p>
-
-            {/* OFFER PRICE */}
-            <p className="text-3xl font-bold text-[#4F772D]">
-
-              ₹{offerPrice.toFixed(0)}
-
-            </p>
-
-            {/* DISCOUNT */}
-            <p className="text-green-600 text-sm font-medium">
-
-              Save ₹
-              {discountAmount.toFixed(0)}
-              {" "}
-              ({OFFER_CONFIG.value}% OFF)
-
-            </p>
-
-          </div>
+          <p className="text-sm text-gray-500">
+            Stock:
+            {" "}
+            {selectedVariant?.stock}
+          </p>
 
         </div>
 
-        {/* NAME */}
-        <h3 className="text-2xl font-bold text-[#31572C] mb-4">
+        {/* ADD TO CART */}
 
-          {product.name}
+        <button
+          onClick={() =>
+            addToCart(
+              product,
+              selectedVariant
+            )
+          }
+          disabled={
+            selectedVariant?.stock <= 0
+          }
+          className={`w-full py-3 rounded-xl transition text-white
 
-        </h3>
-
-        {/* DESCRIPTION */}
-        <p className="text-gray-600 leading-relaxed mb-8">
-
-          {product.description}
-
-        </p>
-
-        {/* BUTTONS */}
-        <div className="flex gap-4">
-
-          {/* ADD TO CART */}
-          <button
-            onClick={handleAddToCart}
-            className="flex-1 bg-[#4F772D] hover:bg-[#31572C] text-white py-3 rounded-2xl font-semibold transition"
-          >
-
-            Add To Cart
-
-          </button>
-
-          {/* WHATSAPP */}
-          <a
-            href={`https://wa.me/917411498799?text=I want to order ${product.name} (${selectedVariant.weight})`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-2xl font-semibold transition text-center"
-          >
-
-            WhatsApp
-
-          </a>
-
-        </div>
+          ${
+            selectedVariant?.stock <= 0
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-black hover:bg-gray-800"
+          }`}
+        >
+          {
+            selectedVariant?.stock <= 0
+              ? "Out Of Stock"
+              : "Add To Cart"
+          }
+        </button>
 
       </div>
 
