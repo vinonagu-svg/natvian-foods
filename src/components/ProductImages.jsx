@@ -4,11 +4,69 @@ export default function ProductImages({
   images
 }) {
 
-  const [selectedImage, setSelectedImage] =
+  // =========================
+  // DEFAULT IMAGE
+  // =========================
+  const [selectedImage,
+    setSelectedImage] =
     useState(images?.[0]);
 
-  const [showGallery, setShowGallery] =
+  // =========================
+  // FULLSCREEN GALLERY
+  // =========================
+  const [showGallery,
+    setShowGallery] =
     useState(false);
+
+  // =========================
+  // ZOOM STATE
+  // =========================
+  const [zoom,
+    setZoom] =
+    useState(1);
+
+  // =========================
+  // NEXT IMAGE
+  // =========================
+  const nextImage = () => {
+
+    const currentIndex =
+      images.indexOf(
+        selectedImage
+      );
+
+    const nextIndex =
+      (currentIndex + 1) %
+      images.length;
+
+    setSelectedImage(
+      images[nextIndex]
+    );
+
+    setZoom(1);
+  };
+
+  // =========================
+  // PREVIOUS IMAGE
+  // =========================
+  const prevImage = () => {
+
+    const currentIndex =
+      images.indexOf(
+        selectedImage
+      );
+
+    const prevIndex =
+      (currentIndex - 1 +
+        images.length) %
+      images.length;
+
+    setSelectedImage(
+      images[prevIndex]
+    );
+
+    setZoom(1);
+  };
 
   return (
 
@@ -19,11 +77,17 @@ export default function ProductImages({
       <div className="overflow-hidden rounded-lg border">
 
         <img
-          src={selectedImage}
-          alt="Product"
-          onClick={() =>
-            setShowGallery(true)
+          src={
+            selectedImage ||
+            "https://via.placeholder.com/500"
           }
+          alt="Product"
+          onClick={() => {
+
+            setShowGallery(true);
+
+            setZoom(1);
+          }}
           className="
             w-full
             cursor-pointer
@@ -78,12 +142,12 @@ export default function ProductImages({
           className="
             fixed
             inset-0
-            bg-black/90
+            bg-black/95
             z-50
             flex
             items-center
             justify-center
-            p-4
+            overflow-hidden
           "
         >
 
@@ -98,24 +162,155 @@ export default function ProductImages({
               top-5
               right-5
               text-white
-              text-4xl
+              text-5xl
               font-bold
+              z-50
             "
           >
             ×
           </button>
 
-          {/* LARGE IMAGE */}
+          {/* LEFT BUTTON */}
 
-          <img
-            src={selectedImage}
-            alt="Fullscreen"
+          {images?.length > 1 && (
+
+            <button
+              onClick={prevImage}
+              className="
+                absolute
+                left-5
+                top-1/2
+                -translate-y-1/2
+                bg-white/20
+                text-white
+                text-4xl
+                px-4
+                py-2
+                rounded-full
+                z-50
+              "
+            >
+              ‹
+            </button>
+          )}
+
+          {/* RIGHT BUTTON */}
+
+          {images?.length > 1 && (
+
+            <button
+              onClick={nextImage}
+              className="
+                absolute
+                right-5
+                top-1/2
+                -translate-y-1/2
+                bg-white/20
+                text-white
+                text-4xl
+                px-4
+                py-2
+                rounded-full
+                z-50
+              "
+            >
+              ›
+            </button>
+          )}
+
+          {/* ZOOM CONTROLS */}
+
+          <div
             className="
-              max-w-full
-              max-h-[85vh]
-              rounded-lg
+              absolute
+              top-5
+              left-5
+              flex
+              gap-3
+              z-50
             "
-          />
+          >
+
+            {/* ZOOM IN */}
+
+            <button
+              onClick={() =>
+                setZoom(
+                  (prev) =>
+                    prev + 0.2
+                )
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-2
+                rounded-lg
+                text-2xl
+                font-bold
+              "
+            >
+              +
+            </button>
+
+            {/* ZOOM OUT */}
+
+            <button
+              onClick={() =>
+                setZoom(
+                  (prev) =>
+                    Math.max(
+                      1,
+                      prev - 0.2
+                    )
+                )
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-2
+                rounded-lg
+                text-2xl
+                font-bold
+              "
+            >
+              -
+            </button>
+
+          </div>
+
+          {/* IMAGE CONTAINER */}
+
+          <div
+            className="
+              overflow-auto
+              w-full
+              h-full
+              flex
+              items-center
+              justify-center
+              p-10
+            "
+          >
+
+            <img
+              src={selectedImage}
+              alt="Fullscreen"
+              style={{
+                transform: `scale(${zoom})`,
+              }}
+              className="
+                max-w-full
+                max-h-[85vh]
+                object-contain
+                transition-transform
+                duration-200
+                cursor-grab
+              "
+            />
+
+          </div>
 
           {/* BOTTOM THUMBNAILS */}
 
@@ -123,7 +318,10 @@ export default function ProductImages({
             className="
               absolute
               bottom-5
+              left-0
+              right-0
               flex
+              justify-center
               gap-3
               overflow-x-auto
               px-4
@@ -136,9 +334,12 @@ export default function ProductImages({
                 key={index}
                 src={img}
                 alt="gallery-thumb"
-                onClick={() =>
-                  setSelectedImage(img)
-                }
+                onClick={() => {
+
+                  setSelectedImage(img);
+
+                  setZoom(1);
+                }}
                 className={`
                   w-20
                   h-20

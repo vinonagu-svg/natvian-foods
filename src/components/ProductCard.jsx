@@ -37,6 +37,49 @@ export default function ProductCard({
     setZoom] =
     useState(1);
 
+  // =========================
+  // NEXT IMAGE
+  // =========================
+  const nextImage = () => {
+
+    const currentIndex =
+      product.images.indexOf(
+        selectedImage
+      );
+
+    const nextIndex =
+      (currentIndex + 1) %
+      product.images.length;
+
+    setSelectedImage(
+      product.images[nextIndex]
+    );
+
+    setZoom(1);
+  };
+
+  // =========================
+  // PREVIOUS IMAGE
+  // =========================
+  const prevImage = () => {
+
+    const currentIndex =
+      product.images.indexOf(
+        selectedImage
+      );
+
+    const prevIndex =
+      (currentIndex - 1 +
+        product.images.length) %
+      product.images.length;
+
+    setSelectedImage(
+      product.images[prevIndex]
+    );
+
+    setZoom(1);
+  };
+
   return (
 
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -244,6 +287,54 @@ export default function ProductCard({
           >
             ×
           </button>
+
+          {/* LEFT BUTTON */}
+
+          {product.images?.length > 1 && (
+
+            <button
+              onClick={prevImage}
+              className="
+                absolute
+                left-5
+                top-1/2
+                -translate-y-1/2
+                bg-white/20
+                text-white
+                text-4xl
+                px-4
+                py-2
+                rounded-full
+                z-50
+              "
+            >
+              ‹
+            </button>
+          )}
+
+          {/* RIGHT BUTTON */}
+
+          {product.images?.length > 1 && (
+
+            <button
+              onClick={nextImage}
+              className="
+                absolute
+                right-5
+                top-1/2
+                -translate-y-1/2
+                bg-white/20
+                text-white
+                text-4xl
+                px-4
+                py-2
+                rounded-full
+                z-50
+              "
+            >
+              ›
+            </button>
+          )}
 
           {/* ZOOM CONTROLS */}
 

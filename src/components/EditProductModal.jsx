@@ -37,6 +37,12 @@ export default function EditProductModal({
     useState(false);
 
   // =========================
+  // ZOOM STATE
+  // =========================
+  const [zoom, setZoom] =
+    useState(1);
+
+  // =========================
   // HANDLE BASIC FIELDS
   // =========================
   const handleChange = (e) => {
@@ -303,9 +309,12 @@ export default function EditProductModal({
             <img
               src={selectedImage}
               alt="Preview"
-              onClick={() =>
-                setShowGallery(true)
-              }
+              onClick={() => {
+
+                setShowGallery(true);
+
+                setZoom(1);
+              }}
               className="
                 w-full
                 max-h-[400px]
@@ -586,12 +595,12 @@ export default function EditProductModal({
           className="
             fixed
             inset-0
-            bg-black/90
+            bg-black/95
             z-[100]
             flex
             items-center
             justify-center
-            p-4
+            overflow-hidden
           "
         >
 
@@ -608,22 +617,104 @@ export default function EditProductModal({
               text-white
               text-5xl
               font-bold
+              z-50
             "
           >
             ×
           </button>
 
-          {/* LARGE IMAGE */}
+          {/* ZOOM CONTROLS */}
 
-          <img
-            src={selectedImage}
-            alt="Fullscreen"
+          <div
             className="
-              max-w-full
-              max-h-[85vh]
-              rounded-lg
+              absolute
+              top-5
+              left-5
+              flex
+              gap-3
+              z-50
             "
-          />
+          >
+
+            {/* ZOOM IN */}
+
+            <button
+              onClick={() =>
+                setZoom(
+                  (prev) =>
+                    prev + 0.2
+                )
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-2
+                rounded-lg
+                text-2xl
+                font-bold
+              "
+            >
+              +
+            </button>
+
+            {/* ZOOM OUT */}
+
+            <button
+              onClick={() =>
+                setZoom(
+                  (prev) =>
+                    Math.max(
+                      1,
+                      prev - 0.2
+                    )
+                )
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-2
+                rounded-lg
+                text-2xl
+                font-bold
+              "
+            >
+              -
+            </button>
+
+          </div>
+
+          {/* IMAGE CONTAINER */}
+
+          <div
+            className="
+              overflow-auto
+              w-full
+              h-full
+              flex
+              items-center
+              justify-center
+              p-10
+            "
+          >
+
+            <img
+              src={selectedImage}
+              alt="Fullscreen"
+              style={{
+                transform: `scale(${zoom})`,
+              }}
+              className="
+                max-w-full
+                max-h-[85vh]
+                object-contain
+                transition-transform
+                duration-200
+              "
+            />
+
+          </div>
 
           {/* THUMBNAILS */}
 
@@ -631,7 +722,10 @@ export default function EditProductModal({
             className="
               absolute
               bottom-5
+              left-0
+              right-0
               flex
+              justify-center
               gap-3
               overflow-x-auto
               px-4
@@ -650,11 +744,14 @@ export default function EditProductModal({
                     key={index}
                     src={image}
                     alt="thumb"
-                    onClick={() =>
+                    onClick={() => {
+
                       setSelectedImage(
                         image
-                      )
-                    }
+                      );
+
+                      setZoom(1);
+                    }}
                     className={`
                       w-20
                       h-20
