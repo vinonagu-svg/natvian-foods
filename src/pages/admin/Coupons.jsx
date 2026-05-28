@@ -1,80 +1,40 @@
 import { useEffect, useState } from "react";
 import AdminSidebar from "../../components/AdminSidebar";
+import { db } from "../../firebase";
 
 import {
   collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
+  onSnapshot,
+  updateDoc,
   doc,
-  Timestamp,
 } from "firebase/firestore";
-
-import { db } from "../../firebase";
 
 export default function Coupons() {
   const [coupons, setCoupons] = useState([]);
 
-  const [form, setForm] = useState({
-    code: "",
-    type: "PERCENT",
-    value: 0,
-    minCartValue: 0,
-    isActive: true,
-    expiryDate: "",
-  });
-
-  // =========================
-  // FETCH COUPONS
-  // =========================
-  const fetchCoupons = async () => {
-    const snap = await getDocs(collection(db, "coupons"));
-    setCoupons(
-      snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }))
-    );
-  };
-
   useEffect(() => {
-    fetchCoupons();
+    const unsub = onSnapshot(collection(db, "coupons"), (snap) => {
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setCoupons(data);
+    });
+
+    return () => unsub();
   }, []);
 
-  // =========================
-  // ADD COUPON
-  // =========================
-  const addCoupon = async () => {
-    if (!form.code) return alert("Enter coupon code");
-
-    await addDoc(collection(db, "coupons"), {
-      code: form.code.toUpperCase(),
-      type: form.type,
-      value: Number(form.value),
-      minCartValue: Number(form.minCartValue),
-      isActive: form.isActive,
-      expiryDate: Timestamp.fromDate(new Date(form.expiryDate)),
+  const toggleActive = async (id, current) => {
+    await updateDoc(doc(db, "coupons", id), {
+      isActive: !current,
     });
-
-    alert("Coupon Added");
-    setForm({
-      code: "",
-      type: "PERCENT",
-      value: 0,
-      minCartValue: 0,
-      isActive: true,
-      expiryDate: "",
-    });
-
-    fetchCoupons();
   };
 
-  // =========================
-  // DELETE
-  // =========================
-  const deleteCoupon = async (id) => {
-    await deleteDoc(doc(db, "coupons", id));
-    fetchCoupons();
+  const formatDate = (date) => {
+    if (!date) return "-";
+    if (date?.toDate) return date.toDate().toLocaleDateString();
+    return new Date(date).toLocaleDateString();
   };
 
   return (
@@ -82,94 +42,46 @@ export default function Coupons() {
       <AdminSidebar />
 
       <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
-        <h1 className="text-4xl font-bold mb-6">Coupons</h1>
+        <h1 className="text-3xl font-bold mb-6">
+          🎟️ Coupons
+        </h1>
 
-        {/* CREATE COUPON */}
-        <div className="bg-white p-6 rounded shadow mb-6 space-y-3">
-          <input
-            placeholder="Coupon Code"
-            className="border p-2 w-full"
-            value={form.code}
-            onChange={(e) =>
-              setForm({ ...form, code: e.target.value })
-            }
-          />
+        {coupons.length === 0 ? (
+          <p>No coupons found</p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {coupons.map((c) => (
+              <div key={c.id} className="bg-white p-5 rounded-xl shadow">
+                <h2 className="text-xl font-bold">{c.code}</h2>
 
-          <select
-            className="border p-2 w-full"
-            value={form.type}
-            onChange={(e) =>
-              setForm({ ...form, type: e.target.value })
-            }
-          >
-            <option value="PERCENT">PERCENT</option>
-            <option value="FIXED">FIXED</option>
-          </select>
+                <p>Type: {c.type}</p>
+                <p>Value: {c.value}</p>
+                <p>Min Cart: ₹{c.minCartValue}</p>
 
-          <input
-            type="number"
-            placeholder="Value"
-            className="border p-2 w-full"
-            value={form.value}
-            onChange={(e) =>
-              setForm({ ...form, value: e.target.value })
-            }
-          />
+                <p>Expiry: {formatDate(c.expiryDate)}</p>
 
-          <input
-            type="number"
-            placeholder="Min Cart Value"
-            className="border p-2 w-full"
-            value={form.minCartValue}
-            onChange={(e) =>
-              setForm({ ...form, minCartValue: e.target.value })
-            }
-          />
+                <div
+                  className={`mt-2 inline-block px-3 py-1 rounded-full text-sm ${
+                    c.isActive
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {c.isActive ? "ACTIVE" : "INACTIVE"}
+                </div>
 
-          <input
-            type="date"
-            className="border p-2 w-full"
-            value={form.expiryDate}
-            onChange={(e) =>
-              setForm({ ...form, expiryDate: e.target.value })
-            }
-          />
-
-          <button
-            onClick={addCoupon}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            Add Coupon
-          </button>
-        </div>
-
-        {/* LIST COUPONS */}
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-bold mb-4">
-            Active Coupons
-          </h2>
-
-          {coupons.map((c) => (
-            <div
-              key={c.id}
-              className="flex justify-between border-b py-3"
-            >
-              <div>
-                <p className="font-bold">{c.code}</p>
-                <p className="text-sm text-gray-500">
-                  {c.type} | {c.value} | Min ₹{c.minCartValue}
-                </p>
+                <div className="mt-4">
+                  <button
+                    onClick={() => toggleActive(c.id, c.isActive)}
+                    className="bg-black text-white px-4 py-2 rounded-xl"
+                  >
+                    Toggle Status
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={() => deleteCoupon(c.id)}
-                className="text-red-500"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
