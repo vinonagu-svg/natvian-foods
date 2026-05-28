@@ -1,26 +1,28 @@
 import { useState } from "react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 
 export default function ProductImages({
   images
 }) {
 
   // =========================
-  // DEFAULT IMAGE
+  // STATES
   // =========================
+
   const [selectedImage,
     setSelectedImage] =
     useState(images?.[0]);
 
-  // =========================
-  // FULLSCREEN GALLERY
-  // =========================
   const [showGallery,
     setShowGallery] =
     useState(false);
 
-  // =========================
-  // ZOOM STATE
-  // =========================
   const [zoom,
     setZoom] =
     useState(1);
@@ -28,6 +30,7 @@ export default function ProductImages({
   // =========================
   // NEXT IMAGE
   // =========================
+
   const nextImage = () => {
 
     const currentIndex =
@@ -49,6 +52,7 @@ export default function ProductImages({
   // =========================
   // PREVIOUS IMAGE
   // =========================
+
   const prevImage = () => {
 
     const currentIndex =
@@ -70,16 +74,25 @@ export default function ProductImages({
 
   return (
 
-    <div>
+    <div className="w-full">
 
       {/* MAIN IMAGE */}
 
-      <div className="overflow-hidden rounded-lg border">
+      <div
+        className="
+          relative
+          overflow-hidden
+          rounded-3xl
+          bg-gray-100
+          group
+          shadow-lg
+        "
+      >
 
         <img
           src={
             selectedImage ||
-            "https://via.placeholder.com/500"
+            "https://via.placeholder.com/600"
           }
           alt="Product"
           onClick={() => {
@@ -90,45 +103,93 @@ export default function ProductImages({
           }}
           className="
             w-full
+            h-[450px]
+            object-cover
             cursor-pointer
             transition-transform
-            duration-300
-            hover:scale-110
+            duration-500
+            group-hover:scale-105
           "
         />
+
+        {/* VIEW BUTTON */}
+
+        <button
+          onClick={() => {
+
+            setShowGallery(true);
+
+            setZoom(1);
+          }}
+          className="
+            absolute
+            bottom-4
+            right-4
+            bg-black/70
+            backdrop-blur-md
+            text-white
+            px-5
+            py-2
+            rounded-full
+            opacity-0
+            group-hover:opacity-100
+            transition
+          "
+        >
+          View Gallery
+        </button>
 
       </div>
 
       {/* THUMBNAILS */}
 
-      <div className="flex gap-3 mt-4 flex-wrap">
+      <div
+        className="
+          flex
+          gap-4
+          mt-5
+          overflow-x-auto
+          pb-2
+        "
+      >
 
         {images?.map((img, index) => (
 
-          <img
+          <div
             key={index}
-            src={img}
-            alt="thumb"
             onClick={() =>
               setSelectedImage(img)
             }
             className={`
-              w-20
-              h-20
-              object-cover
-              border
-              rounded
+              relative
+              min-w-[90px]
+              h-[90px]
+              rounded-2xl
+              overflow-hidden
               cursor-pointer
-              p-1
-              transition
+              transition-all
+              duration-300
+              border-2
 
               ${
                 selectedImage === img
-                  ? "border-black"
-                  : "border-gray-300"
+                  ? "border-black scale-105 shadow-lg"
+                  : "border-transparent opacity-70 hover:opacity-100"
               }
             `}
-          />
+          >
+
+            <img
+              src={img}
+              alt="thumb"
+              className="
+                w-full
+                h-full
+                object-cover
+              "
+            />
+
+          </div>
 
         ))}
 
@@ -143,15 +204,15 @@ export default function ProductImages({
             fixed
             inset-0
             bg-black/95
+            backdrop-blur-lg
             z-50
             flex
             items-center
             justify-center
-            overflow-hidden
           "
         >
 
-          {/* CLOSE BUTTON */}
+          {/* CLOSE */}
 
           <button
             onClick={() =>
@@ -161,16 +222,20 @@ export default function ProductImages({
               absolute
               top-5
               right-5
+              bg-white/10
+              hover:bg-white/20
+              backdrop-blur-md
+              p-3
+              rounded-full
               text-white
-              text-5xl
-              font-bold
               z-50
+              transition
             "
           >
-            ×
+            <X size={28} />
           </button>
 
-          {/* LEFT BUTTON */}
+          {/* LEFT */}
 
           {images?.length > 1 && (
 
@@ -181,20 +246,21 @@ export default function ProductImages({
                 left-5
                 top-1/2
                 -translate-y-1/2
-                bg-white/20
-                text-white
-                text-4xl
-                px-4
-                py-2
+                bg-white/10
+                hover:bg-white/20
+                backdrop-blur-md
+                p-4
                 rounded-full
+                text-white
                 z-50
+                transition
               "
             >
-              ‹
+              <ChevronLeft size={35} />
             </button>
           )}
 
-          {/* RIGHT BUTTON */}
+          {/* RIGHT */}
 
           {images?.length > 1 && (
 
@@ -205,16 +271,17 @@ export default function ProductImages({
                 right-5
                 top-1/2
                 -translate-y-1/2
-                bg-white/20
-                text-white
-                text-4xl
-                px-4
-                py-2
+                bg-white/10
+                hover:bg-white/20
+                backdrop-blur-md
+                p-4
                 rounded-full
+                text-white
                 z-50
+                transition
               "
             >
-              ›
+              <ChevronRight size={35} />
             </button>
           )}
 
@@ -231,8 +298,6 @@ export default function ProductImages({
             "
           >
 
-            {/* ZOOM IN */}
-
             <button
               onClick={() =>
                 setZoom(
@@ -241,19 +306,17 @@ export default function ProductImages({
                 )
               }
               className="
-                bg-white
-                text-black
-                px-4
-                py-2
-                rounded-lg
-                text-2xl
-                font-bold
+                bg-white/10
+                hover:bg-white/20
+                backdrop-blur-md
+                p-3
+                rounded-full
+                text-white
+                transition
               "
             >
-              +
+              <ZoomIn size={24} />
             </button>
-
-            {/* ZOOM OUT */}
 
             <button
               onClick={() =>
@@ -266,27 +329,27 @@ export default function ProductImages({
                 )
               }
               className="
-                bg-white
-                text-black
-                px-4
-                py-2
-                rounded-lg
-                text-2xl
-                font-bold
+                bg-white/10
+                hover:bg-white/20
+                backdrop-blur-md
+                p-3
+                rounded-full
+                text-white
+                transition
               "
             >
-              -
+              <ZoomOut size={24} />
             </button>
 
           </div>
 
-          {/* IMAGE CONTAINER */}
+          {/* IMAGE */}
 
           <div
             className="
-              overflow-auto
               w-full
               h-full
+              overflow-auto
               flex
               items-center
               justify-center
@@ -305,8 +368,9 @@ export default function ProductImages({
                 max-h-[85vh]
                 object-contain
                 transition-transform
-                duration-200
-                cursor-grab
+                duration-300
+                rounded-2xl
+                shadow-2xl
               "
             />
 
@@ -318,22 +382,24 @@ export default function ProductImages({
             className="
               absolute
               bottom-5
-              left-0
-              right-0
+              left-1/2
+              -translate-x-1/2
               flex
-              justify-center
-              gap-3
+              gap-4
+              bg-white/10
+              backdrop-blur-md
+              px-5
+              py-3
+              rounded-2xl
               overflow-x-auto
-              px-4
+              max-w-[90%]
             "
           >
 
             {images?.map((img, index) => (
 
-              <img
+              <div
                 key={index}
-                src={img}
-                alt="gallery-thumb"
                 onClick={() => {
 
                   setSelectedImage(img);
@@ -341,20 +407,33 @@ export default function ProductImages({
                   setZoom(1);
                 }}
                 className={`
-                  w-20
-                  h-20
-                  object-cover
-                  rounded
+                  min-w-[75px]
+                  h-[75px]
+                  rounded-xl
+                  overflow-hidden
                   cursor-pointer
                   border-2
+                  transition-all
 
                   ${
                     selectedImage === img
-                      ? "border-white"
-                      : "border-gray-500"
+                      ? "border-white scale-105"
+                      : "border-transparent opacity-70 hover:opacity-100"
                   }
                 `}
-              />
+              >
+
+                <img
+                  src={img}
+                  alt="gallery-thumb"
+                  className="
+                    w-full
+                    h-full
+                    object-cover
+                  "
+                />
+
+              </div>
 
             ))}
 

@@ -1,38 +1,40 @@
 import { useState } from "react";
 
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  ShoppingBag,
+  Eye,
+} from "lucide-react";
+
 export default function ProductCard({
   product,
   addToCart,
 }) {
 
   // =========================
-  // DEFAULT VARIANT
+  // STATES
   // =========================
+
   const [selectedVariant,
     setSelectedVariant] =
     useState(
-      product.variants?.[0]
+      product?.variants?.[0]
     );
 
-  // =========================
-  // DEFAULT IMAGE
-  // =========================
   const [selectedImage,
     setSelectedImage] =
     useState(
-      product.images?.[0]
+      product?.images?.[0]
     );
 
-  // =========================
-  // FULLSCREEN GALLERY
-  // =========================
   const [showGallery,
     setShowGallery] =
     useState(false);
 
-  // =========================
-  // ZOOM STATE
-  // =========================
   const [zoom,
     setZoom] =
     useState(1);
@@ -40,7 +42,11 @@ export default function ProductCard({
   // =========================
   // NEXT IMAGE
   // =========================
+
   const nextImage = () => {
+
+    if (!product?.images?.length)
+      return;
 
     const currentIndex =
       product.images.indexOf(
@@ -61,7 +67,11 @@ export default function ProductCard({
   // =========================
   // PREVIOUS IMAGE
   // =========================
+
   const prevImage = () => {
+
+    if (!product?.images?.length)
+      return;
 
     const currentIndex =
       product.images.indexOf(
@@ -69,8 +79,11 @@ export default function ProductCard({
       );
 
     const prevIndex =
-      (currentIndex - 1 +
-        product.images.length) %
+      (
+        currentIndex -
+        1 +
+        product.images.length
+      ) %
       product.images.length;
 
     setSelectedImage(
@@ -82,18 +95,64 @@ export default function ProductCard({
 
   return (
 
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div
+      className="
+        group
+        relative
+        bg-white/90
+        backdrop-blur-xl
+        rounded-[32px]
+        overflow-hidden
+        border
+        border-gray-100
+        shadow-lg
+        hover:shadow-2xl
+        hover:-translate-y-2
+        transition-all
+        duration-500
+      "
+    >
 
-      {/* MAIN IMAGE */}
+      {/* TOP BADGE */}
 
-      <div className="overflow-hidden">
+      <div
+        className="
+          absolute
+          top-4
+          left-4
+          z-20
+          bg-white/80
+          backdrop-blur-md
+          px-4
+          py-1.5
+          rounded-full
+          shadow-md
+          text-xs
+          font-semibold
+          text-gray-700
+        "
+      >
+        Premium
+      </div>
+
+      {/* IMAGE SECTION */}
+
+      <div
+        className="
+          relative
+          overflow-hidden
+          bg-gradient-to-br
+          from-gray-100
+          to-gray-200
+        "
+      >
 
         <img
           src={
             selectedImage ||
             "https://via.placeholder.com/500"
           }
-          alt={product.name}
+          alt={product?.name}
           onClick={() => {
 
             setShowGallery(true);
@@ -102,50 +161,137 @@ export default function ProductCard({
           }}
           className="
             w-full
-            h-64
+            h-[320px]
             object-cover
             cursor-pointer
-            transition-transform
-            duration-300
-            hover:scale-110
+            transition-all
+            duration-700
+            group-hover:scale-110
           "
         />
 
+        {/* OVERLAY */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-t
+            from-black/30
+            via-transparent
+            to-transparent
+            opacity-0
+            group-hover:opacity-100
+            transition
+            duration-500
+          "
+        />
+
+        {/* VIEW BUTTON */}
+
+        <button
+          onClick={() => {
+
+            setShowGallery(true);
+
+            setZoom(1);
+          }}
+          className="
+            absolute
+            bottom-5
+            right-5
+            flex
+            items-center
+            gap-2
+            bg-white/20
+            backdrop-blur-md
+            border
+            border-white/30
+            text-white
+            px-5
+            py-2.5
+            rounded-full
+            opacity-0
+            translate-y-5
+            group-hover:opacity-100
+            group-hover:translate-y-0
+            transition-all
+            duration-500
+          "
+        >
+          <Eye size={18} />
+
+          View
+        </button>
+
       </div>
 
-      {/* IMAGE GALLERY */}
+      {/* THUMBNAILS */}
 
-      {product.images?.length > 0 && (
+      {product?.images?.length > 0 && (
 
-        <div className="flex gap-2 p-3 overflow-x-auto">
+        <div
+          className="
+            flex
+            gap-3
+            px-5
+            pt-5
+            overflow-x-auto
+            scrollbar-hide
+          "
+        >
 
           {product.images.map(
-            (image, index) => (
+            (
+              image,
+              index
+            ) => (
 
-              <img
+              <div
                 key={index}
-                src={image}
-                alt={`product-${index}`}
                 onClick={() =>
-                  setSelectedImage(image)
+                  setSelectedImage(
+                    image
+                  )
                 }
                 className={`
-                  w-16
-                  h-16
-                  object-cover
-                  rounded-lg
-                  border
+                  relative
+                  min-w-[78px]
+                  h-[78px]
+                  rounded-2xl
+                  overflow-hidden
                   cursor-pointer
-                  transition
-                  p-1
+                  border-2
+                  transition-all
+                  duration-300
 
                   ${
                     selectedImage === image
-                      ? "border-black"
-                      : "border-gray-300"
+                      ? `
+                        border-black
+                        scale-105
+                        shadow-xl
+                      `
+                      : `
+                        border-transparent
+                        opacity-70
+                        hover:opacity-100
+                      `
                   }
                 `}
-              />
+              >
+
+                <img
+                  src={image}
+                  alt={`thumb-${index}`}
+                  className="
+                    w-full
+                    h-full
+                    object-cover
+                  "
+                />
+
+              </div>
             )
           )}
 
@@ -154,31 +300,61 @@ export default function ProductCard({
 
       {/* CONTENT */}
 
-      <div className="p-5">
+      <div className="p-6">
+
+        {/* CATEGORY */}
+
+        <p
+          className="
+            text-xs
+            uppercase
+            tracking-widest
+            text-gray-400
+            font-semibold
+            mb-2
+          "
+        >
+          {product?.category}
+        </p>
 
         {/* PRODUCT NAME */}
 
-        <h2 className="text-2xl font-bold mb-2">
-          {product.name}
+        <h2
+          className="
+            text-2xl
+            font-bold
+            text-gray-900
+            mb-3
+            line-clamp-1
+          "
+        >
+          {product?.name}
         </h2>
 
         {/* DESCRIPTION */}
 
-        <p className="text-gray-600 text-sm mb-4">
-          {product.description}
+        <p
+          className="
+            text-gray-500
+            text-sm
+            leading-relaxed
+            mb-6
+            line-clamp-2
+          "
+        >
+          {product?.description}
         </p>
 
         {/* VARIANT SELECT */}
 
         <select
-          className="border p-3 rounded w-full mb-4"
           value={
             selectedVariant?.weight
           }
           onChange={(e) => {
 
             const variant =
-              product.variants.find(
+              product?.variants?.find(
                 (v) =>
                   v.weight ===
                   e.target.value
@@ -188,10 +364,27 @@ export default function ProductCard({
               variant
             );
           }}
+          className="
+            w-full
+            border
+            border-gray-200
+            bg-gray-50
+            rounded-2xl
+            px-4
+            py-3.5
+            mb-6
+            outline-none
+            focus:ring-2
+            focus:ring-black
+            transition
+          "
         >
 
-          {product.variants?.map(
-            (variant, index) => (
+          {product?.variants?.map(
+            (
+              variant,
+              index
+            ) => (
 
               <option
                 key={index}
@@ -206,24 +399,80 @@ export default function ProductCard({
 
         </select>
 
-        {/* PRICE & STOCK */}
+        {/* PRICE SECTION */}
 
-        <div className="flex items-center justify-between mb-4">
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            mb-6
+          "
+        >
 
-          <p className="text-2xl font-bold text-green-700">
-            ₹
-            {selectedVariant?.price}
-          </p>
+          <div>
 
-          <p className="text-sm text-gray-500">
-            Stock:
-            {" "}
-            {selectedVariant?.stock}
-          </p>
+            <p
+              className="
+                text-xs
+                text-gray-400
+                mb-1
+              "
+            >
+              Price
+            </p>
+
+            <h3
+              className="
+                text-3xl
+                font-black
+                text-gray-900
+              "
+            >
+              ₹
+              {
+                selectedVariant?.price
+              }
+            </h3>
+
+          </div>
+
+          <div
+            className="
+              bg-gray-100
+              px-4
+              py-2
+              rounded-2xl
+              text-center
+            "
+          >
+
+            <p
+              className="
+                text-xs
+                text-gray-400
+              "
+            >
+              Stock
+            </p>
+
+            <p
+              className="
+                text-sm
+                font-bold
+                text-gray-700
+              "
+            >
+              {
+                selectedVariant?.stock
+              }
+            </p>
+
+          </div>
 
         </div>
 
-        {/* ADD TO CART */}
+        {/* BUTTON */}
 
         <button
           onClick={() =>
@@ -235,19 +484,43 @@ export default function ProductCard({
           disabled={
             selectedVariant?.stock <= 0
           }
-          className={`w-full py-3 rounded-xl transition text-white
+          className={`
+            w-full
+            flex
+            items-center
+            justify-center
+            gap-2
+            py-4
+            rounded-2xl
+            text-white
+            font-semibold
+            transition-all
+            duration-300
 
-          ${
-            selectedVariant?.stock <= 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-black hover:bg-gray-800"
-          }`}
+            ${
+              selectedVariant?.stock <= 0
+                ? `
+                  bg-gray-400
+                  cursor-not-allowed
+                `
+                : `
+                  bg-black
+                  hover:bg-gray-900
+                  hover:scale-[1.02]
+                  active:scale-100
+                `
+            }
+          `}
         >
+
+          <ShoppingBag size={20} />
+
           {
             selectedVariant?.stock <= 0
               ? "Out Of Stock"
               : "Add To Cart"
           }
+
         </button>
 
       </div>
@@ -260,16 +533,16 @@ export default function ProductCard({
           className="
             fixed
             inset-0
-            bg-black/95
             z-50
+            bg-black/95
+            backdrop-blur-lg
             flex
             items-center
             justify-center
-            overflow-hidden
           "
         >
 
-          {/* CLOSE BUTTON */}
+          {/* CLOSE */}
 
           <button
             onClick={() =>
@@ -279,18 +552,22 @@ export default function ProductCard({
               absolute
               top-5
               right-5
-              text-white
-              text-5xl
-              font-bold
               z-50
+              bg-white/10
+              hover:bg-white/20
+              p-3
+              rounded-full
+              text-white
+              transition
             "
           >
-            ×
+            <X size={28} />
           </button>
 
-          {/* LEFT BUTTON */}
+          {/* LEFT */}
 
-          {product.images?.length > 1 && (
+          {product?.images?.length >
+            1 && (
 
             <button
               onClick={prevImage}
@@ -299,22 +576,23 @@ export default function ProductCard({
                 left-5
                 top-1/2
                 -translate-y-1/2
-                bg-white/20
-                text-white
-                text-4xl
-                px-4
-                py-2
-                rounded-full
                 z-50
+                bg-white/10
+                hover:bg-white/20
+                p-4
+                rounded-full
+                text-white
+                transition
               "
             >
-              ‹
+              <ChevronLeft size={34} />
             </button>
           )}
 
-          {/* RIGHT BUTTON */}
+          {/* RIGHT */}
 
-          {product.images?.length > 1 && (
+          {product?.images?.length >
+            1 && (
 
             <button
               onClick={nextImage}
@@ -323,16 +601,16 @@ export default function ProductCard({
                 right-5
                 top-1/2
                 -translate-y-1/2
-                bg-white/20
-                text-white
-                text-4xl
-                px-4
-                py-2
-                rounded-full
                 z-50
+                bg-white/10
+                hover:bg-white/20
+                p-4
+                rounded-full
+                text-white
+                transition
               "
             >
-              ›
+              <ChevronRight size={34} />
             </button>
           )}
 
@@ -349,8 +627,6 @@ export default function ProductCard({
             "
           >
 
-            {/* ZOOM IN */}
-
             <button
               onClick={() =>
                 setZoom(
@@ -359,19 +635,16 @@ export default function ProductCard({
                 )
               }
               className="
-                bg-white
-                text-black
-                px-4
-                py-2
-                rounded-lg
-                text-2xl
-                font-bold
+                bg-white/10
+                hover:bg-white/20
+                p-3
+                rounded-full
+                text-white
+                transition
               "
             >
-              +
+              <ZoomIn size={24} />
             </button>
-
-            {/* ZOOM OUT */}
 
             <button
               onClick={() =>
@@ -384,27 +657,26 @@ export default function ProductCard({
                 )
               }
               className="
-                bg-white
-                text-black
-                px-4
-                py-2
-                rounded-lg
-                text-2xl
-                font-bold
+                bg-white/10
+                hover:bg-white/20
+                p-3
+                rounded-full
+                text-white
+                transition
               "
             >
-              -
+              <ZoomOut size={24} />
             </button>
 
           </div>
 
-          {/* IMAGE CONTAINER */}
+          {/* MAIN IMAGE */}
 
           <div
             className="
-              overflow-auto
               w-full
               h-full
+              overflow-auto
               flex
               items-center
               justify-center
@@ -414,7 +686,7 @@ export default function ProductCard({
 
             <img
               src={selectedImage}
-              alt="Fullscreen"
+              alt="fullscreen"
               style={{
                 transform: `scale(${zoom})`,
               }}
@@ -422,40 +694,45 @@ export default function ProductCard({
                 max-w-full
                 max-h-[85vh]
                 object-contain
+                rounded-3xl
+                shadow-2xl
                 transition-transform
-                duration-200
-                cursor-grab
+                duration-300
               "
             />
 
           </div>
 
-          {/* THUMBNAILS */}
+          {/* BOTTOM THUMBNAILS */}
 
           <div
             className="
               absolute
               bottom-5
-              left-0
-              right-0
+              left-1/2
+              -translate-x-1/2
               flex
-              justify-center
-              gap-3
+              gap-4
+              bg-white/10
+              backdrop-blur-xl
+              border
+              border-white/10
+              px-5
+              py-3
+              rounded-3xl
               overflow-x-auto
-              px-4
+              max-w-[92%]
             "
           >
 
-            {product.images?.map(
+            {product?.images?.map(
               (
                 image,
                 index
               ) => (
 
-                <img
+                <div
                   key={index}
-                  src={image}
-                  alt={`thumb-${index}`}
                   onClick={() => {
 
                     setSelectedImage(
@@ -465,20 +742,40 @@ export default function ProductCard({
                     setZoom(1);
                   }}
                   className={`
-                    w-20
-                    h-20
-                    object-cover
-                    rounded-lg
+                    min-w-[80px]
+                    h-[80px]
+                    rounded-2xl
+                    overflow-hidden
                     border-2
                     cursor-pointer
+                    transition-all
 
                     ${
                       selectedImage === image
-                        ? "border-white"
-                        : "border-gray-500"
+                        ? `
+                          border-white
+                          scale-105
+                        `
+                        : `
+                          border-transparent
+                          opacity-70
+                          hover:opacity-100
+                        `
                     }
                   `}
-                />
+                >
+
+                  <img
+                    src={image}
+                    alt={`gallery-${index}`}
+                    className="
+                      w-full
+                      h-full
+                      object-cover
+                    "
+                  />
+
+                </div>
               )
             )}
 
