@@ -23,20 +23,42 @@ export default function ProductCard({
       product.images?.[0]
     );
 
+  // =========================
+  // FULLSCREEN GALLERY
+  // =========================
+  const [showGallery,
+    setShowGallery] =
+    useState(false);
+
   return (
 
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
 
       {/* MAIN IMAGE */}
 
-      <img
-        src={
-          selectedImage ||
-          "https://via.placeholder.com/500"
-        }
-        alt={product.name}
-        className="w-full h-64 object-cover"
-      />
+      <div className="overflow-hidden">
+
+        <img
+          src={
+            selectedImage ||
+            "https://via.placeholder.com/500"
+          }
+          alt={product.name}
+          onClick={() =>
+            setShowGallery(true)
+          }
+          className="
+            w-full
+            h-64
+            object-cover
+            cursor-pointer
+            transition-transform
+            duration-300
+            hover:scale-110
+          "
+        />
+
+      </div>
 
       {/* IMAGE GALLERY */}
 
@@ -54,13 +76,22 @@ export default function ProductCard({
                 onClick={() =>
                   setSelectedImage(image)
                 }
-                className={`w-16 h-16 object-cover rounded-lg border cursor-pointer transition
+                className={`
+                  w-16
+                  h-16
+                  object-cover
+                  rounded-lg
+                  border
+                  cursor-pointer
+                  transition
+                  p-1
 
-                ${
-                  selectedImage === image
-                    ? "border-black"
-                    : "border-gray-300"
-                }`}
+                  ${
+                    selectedImage === image
+                      ? "border-black"
+                      : "border-gray-300"
+                  }
+                `}
               />
             )
           )}
@@ -167,6 +198,109 @@ export default function ProductCard({
         </button>
 
       </div>
+
+      {/* FULLSCREEN GALLERY */}
+
+      {showGallery && (
+
+        <div
+          className="
+            fixed
+            inset-0
+            bg-black/90
+            z-50
+            flex
+            items-center
+            justify-center
+            p-4
+          "
+        >
+
+          {/* CLOSE BUTTON */}
+
+          <button
+            onClick={() =>
+              setShowGallery(false)
+            }
+            className="
+              absolute
+              top-5
+              right-5
+              text-white
+              text-5xl
+              font-bold
+              z-50
+            "
+          >
+            ×
+          </button>
+
+          {/* LARGE IMAGE */}
+
+          <img
+            src={selectedImage}
+            alt="Fullscreen"
+            className="
+              max-w-full
+              max-h-[80vh]
+              rounded-xl
+              object-contain
+            "
+          />
+
+          {/* THUMBNAILS */}
+
+          <div
+            className="
+              absolute
+              bottom-5
+              left-0
+              right-0
+              flex
+              justify-center
+              gap-3
+              overflow-x-auto
+              px-4
+            "
+          >
+
+            {product.images?.map(
+              (
+                image,
+                index
+              ) => (
+
+                <img
+                  key={index}
+                  src={image}
+                  alt={`thumb-${index}`}
+                  onClick={() =>
+                    setSelectedImage(
+                      image
+                    )
+                  }
+                  className={`
+                    w-20
+                    h-20
+                    object-cover
+                    rounded-lg
+                    border-2
+                    cursor-pointer
+
+                    ${
+                      selectedImage === image
+                        ? "border-white"
+                        : "border-gray-500"
+                    }
+                  `}
+                />
+              )
+            )}
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );

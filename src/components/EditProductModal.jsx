@@ -26,6 +26,17 @@ export default function EditProductModal({
     });
 
   // =========================
+  // IMAGE GALLERY STATE
+  // =========================
+  const [selectedImage, setSelectedImage] =
+    useState(
+      product.images?.[0] || ""
+    );
+
+  const [showGallery, setShowGallery] =
+    useState(false);
+
+  // =========================
   // HANDLE BASIC FIELDS
   // =========================
   const handleChange = (e) => {
@@ -60,6 +71,17 @@ export default function EditProductModal({
       images:
         updatedImages,
     });
+
+    // UPDATE SELECTED IMAGE
+    if (
+      selectedImage ===
+      form.images[index]
+    ) {
+
+      setSelectedImage(
+        value
+      );
+    }
   };
 
   // =========================
@@ -99,6 +121,17 @@ export default function EditProductModal({
       images:
         updatedImages,
     });
+
+    // RESET SELECTED IMAGE
+    if (
+      selectedImage ===
+      form.images[index]
+    ) {
+
+      setSelectedImage(
+        updatedImages[0] || ""
+      );
+    }
   };
 
   // =========================
@@ -178,6 +211,7 @@ export default function EditProductModal({
 
       try {
 
+        // CLEAN VARIANTS
         const cleanVariants =
           form.variants.map(
             (variant) => ({
@@ -195,6 +229,13 @@ export default function EditProductModal({
                   variant.stock
                 ),
             })
+          );
+
+        // REMOVE EMPTY IMAGES
+        const cleanImages =
+          form.images.filter(
+            (img) =>
+              img.trim() !== ""
           );
 
         const productRef =
@@ -218,7 +259,7 @@ export default function EditProductModal({
               form.description,
 
             images:
-              form.images || [],
+              cleanImages,
 
             variants:
               cleanVariants,
@@ -245,13 +286,89 @@ export default function EditProductModal({
 
   return (
 
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4">
 
-      <div className="bg-white p-6 rounded w-[700px] max-h-[90vh] overflow-y-auto">
+      <div className="bg-white p-6 rounded w-full max-w-4xl max-h-[95vh] overflow-y-auto">
 
         <h2 className="text-3xl font-bold mb-6">
           Edit Product
         </h2>
+
+        {/* IMAGE PREVIEW */}
+
+        {selectedImage && (
+
+          <div className="mb-6">
+
+            <img
+              src={selectedImage}
+              alt="Preview"
+              onClick={() =>
+                setShowGallery(true)
+              }
+              className="
+                w-full
+                max-h-[400px]
+                object-contain
+                rounded-lg
+                border
+                cursor-pointer
+                transition
+                duration-300
+                hover:scale-105
+              "
+            />
+
+            <p className="text-sm text-gray-500 mt-2">
+              Click image to open fullscreen
+            </p>
+
+          </div>
+        )}
+
+        {/* THUMBNAILS */}
+
+        <div className="flex gap-3 mb-8 flex-wrap">
+
+          {form.images?.map(
+            (
+              image,
+              index
+            ) => (
+
+              image && (
+
+                <img
+                  key={index}
+                  src={image}
+                  alt="thumb"
+                  onClick={() =>
+                    setSelectedImage(
+                      image
+                    )
+                  }
+                  className={`
+                    w-24
+                    h-24
+                    object-cover
+                    rounded
+                    border-2
+                    cursor-pointer
+                    p-1
+
+                    ${
+                      selectedImage === image
+                        ? "border-black"
+                        : "border-gray-300"
+                    }
+                  `}
+                />
+
+              )
+            )
+          )}
+
+        </div>
 
         {/* BASIC INFO */}
 
@@ -319,6 +436,7 @@ export default function EditProductModal({
                 />
 
                 <button
+                  type="button"
                   onClick={() =>
                     removeImage(
                       index
@@ -334,6 +452,7 @@ export default function EditProductModal({
           )}
 
           <button
+            type="button"
             onClick={addImageField}
             className="bg-gray-200 px-5 py-3 rounded"
           >
@@ -410,6 +529,7 @@ export default function EditProductModal({
                 />
 
                 <button
+                  type="button"
                   onClick={() =>
                     removeVariant(
                       index
@@ -429,6 +549,7 @@ export default function EditProductModal({
         {/* ADD VARIANT */}
 
         <button
+          type="button"
           onClick={addVariant}
           className="bg-gray-200 px-5 py-3 rounded mt-4"
         >
@@ -456,6 +577,108 @@ export default function EditProductModal({
         </div>
 
       </div>
+
+      {/* FULLSCREEN GALLERY */}
+
+      {showGallery && (
+
+        <div
+          className="
+            fixed
+            inset-0
+            bg-black/90
+            z-[100]
+            flex
+            items-center
+            justify-center
+            p-4
+          "
+        >
+
+          {/* CLOSE BUTTON */}
+
+          <button
+            onClick={() =>
+              setShowGallery(false)
+            }
+            className="
+              absolute
+              top-5
+              right-5
+              text-white
+              text-5xl
+              font-bold
+            "
+          >
+            ×
+          </button>
+
+          {/* LARGE IMAGE */}
+
+          <img
+            src={selectedImage}
+            alt="Fullscreen"
+            className="
+              max-w-full
+              max-h-[85vh]
+              rounded-lg
+            "
+          />
+
+          {/* THUMBNAILS */}
+
+          <div
+            className="
+              absolute
+              bottom-5
+              flex
+              gap-3
+              overflow-x-auto
+              px-4
+            "
+          >
+
+            {form.images?.map(
+              (
+                image,
+                index
+              ) => (
+
+                image && (
+
+                  <img
+                    key={index}
+                    src={image}
+                    alt="thumb"
+                    onClick={() =>
+                      setSelectedImage(
+                        image
+                      )
+                    }
+                    className={`
+                      w-20
+                      h-20
+                      object-cover
+                      rounded
+                      cursor-pointer
+                      border-2
+
+                      ${
+                        selectedImage === image
+                          ? "border-white"
+                          : "border-gray-500"
+                      }
+                    `}
+                  />
+
+                )
+              )
+            )}
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );
