@@ -1,14 +1,16 @@
+import { useState } from "react";
+
 export default function Navbar({
   darkMode,
   setDarkMode,
   language,
   setLanguage,
   cartCount,
-}) {
+}) { const [menuOpen, setMenuOpen] = useState(false);
 
   return (
 
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+    <nav className="sticky top-0 z-50 relative bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
 
       <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
 
@@ -58,88 +60,120 @@ export default function Navbar({
           </div>
 
         </div>
+        <button
+          className="lg:hidden text-3xl text-[#31572C]"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+         ☰
+        </button>
+        {/* DESKTOP NAVIGATION */}
+<div className="hidden lg:flex items-center gap-6 ml-16">
 
-        {/* =========================
-            NAVIGATION
-        ========================= */}
-        <div className="hidden lg:flex items-center gap-6 ml-16">
+  <a href="#home" className="text-gray-700 hover:text-[#4F772D]">
+    Home
+  </a>
 
-          {/* HOME */}
-          <a
-            href="#home"
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
-            Home
-          </a>
+  <a href="#products" className="text-gray-700 hover:text-[#4F772D]">
+    Products
+  </a>
 
-          {/* PRODUCTS */}
-          <a
-            href="#products"
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
-            Products
-          </a>
+  <a href="#about" className="text-gray-700 hover:text-[#4F772D]">
+    About
+  </a>
 
-          {/* ABOUT */}
-          <a
-            href="#about"
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
-            About
-          </a>
+  <a href="#contact" className="text-gray-700 hover:text-[#4F772D]">
+    Contact
+  </a>
 
-          {/* CONTACT */}
-          <a
-            href="#contact"
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
-            Contact
-          </a>
+  <a href="#cart" className="text-gray-700 hover:text-[#4F772D]">
+    🛒 Cart ({cartCount})
+  </a>
 
-          {/* CART */}
-          <a
-            href="#cart"
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
-            🛒 Cart ({cartCount})
-          </a>
+  <button
+    onClick={() => setDarkMode(!darkMode)}
+    className="text-gray-700 hover:text-[#4F772D]"
+  >
+    {darkMode ? "☀ Light" : "🌙 Dark"}
+  </button>
 
-          {/* DARK MODE */}
-          <button
-            onClick={() =>
-              setDarkMode(!darkMode)
-            }
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
+  <button
+    onClick={() =>
+      setLanguage(language === "en" ? "ta" : "en")
+    }
+    className="text-gray-700 hover:text-[#4F772D]"
+  >
+    {language === "en" ? "தமிழ்" : "English"}
+  </button>
 
-            {darkMode
-              ? "☀ Light"
-              : "🌙 Dark"}
+</div>
 
-          </button>
+</div> {/* closes max-w-7xl container */}
 
-          {/* LANGUAGE */}
-          <button
-            onClick={() =>
-              setLanguage(
-                language === "en"
-                  ? "ta"
-                  : "en"
-              )
-            }
-            className="relative text-gray-700 hover:text-[#4F772D] font-medium tracking-wide text-[15px] transition duration-300 after:content-[''] after:absolute after:w-0 after:h-[2px] after:bg-[#4F772D] after:left-0 after:-bottom-1 hover:after:w-full after:transition-all after:duration-300"
-          >
+{/* MOBILE MENU */}
+{menuOpen && (
+  <div className="lg:hidden absolute top-full left-0 w-full bg-white shadow-lg border-t z-50">
 
-            {language === "en"
-              ? "தமிழ்"
-              : "English"}
+    <a
+      href="#home"
+      className="block px-6 py-4 border-b"
+      onClick={() => setMenuOpen(false)}
+    >
+      Home
+    </a>
 
-          </button>
+    <a
+      href="#products"
+      className="block px-6 py-4 border-b"
+      onClick={() => setMenuOpen(false)}
+    >
+      Products
+    </a>
 
-        </div>
+    <a
+      href="#about"
+      className="block px-6 py-4 border-b"
+      onClick={() => setMenuOpen(false)}
+    >
+      About
+    </a>
 
-      </div>
+    <a
+      href="#contact"
+      className="block px-6 py-4 border-b"
+      onClick={() => setMenuOpen(false)}
+    >
+      Contact
+    </a>
 
+    <a
+      href="#cart"
+      className="block px-6 py-4 border-b"
+      onClick={() => setMenuOpen(false)}
+    >
+      🛒 Cart ({cartCount})
+    </a>
+
+    <button
+      onClick={() => {
+        setDarkMode(!darkMode);
+        setMenuOpen(false);
+      }}
+      className="block w-full text-left px-6 py-4 border-b"
+    >
+      {darkMode ? "☀ Light" : "🌙 Dark"}
+    </button>
+
+    <button
+      onClick={() => {
+        setLanguage(language === "en" ? "ta" : "en");
+        setMenuOpen(false);
+      }}
+      className="block w-full text-left px-6 py-4"
+    >
+      {language === "en" ? "தமிழ்" : "English"}
+    </button>
+  </div>
+)}
     </nav>
   );
 }

@@ -4,6 +4,8 @@ import { db } from "../firebase";
 import {
   collection,
   getDocs,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 export default function Cart({
@@ -307,7 +309,175 @@ export default function Cart({
 
       setCart(updated);
     };
+// =========================
+// RAZORPAY PAYMENT
+// =========================
+const handlePayment = async () => {
 
+  try {
+
+    if (!customer.name) {
+      alert("Please enter your name");
+      return;
+    }
+
+    if (!customer.phone) {
+      alert("Please enter your phone number");
+      return;
+    }
+
+    if (!customer.address) {
+      alert("Please enter your address");
+      return;
+    }
+
+    if (!window.Razorpay) {
+      alert("Razorpay SDK not loaded");
+      return;
+    }
+
+    const options = {
+
+      key:
+        import.meta.env
+          .VITE_RAZORPAY_KEY_ID,
+
+        amount: Math.round(grandTotal * 100),
+
+      currency: "INR",
+
+      name: "Natvian Foods",
+
+      description:
+        "Online Order",
+
+      prefill: {
+
+        name:
+          customer.name,
+
+        contact:
+          customer.phone,
+      },
+
+      notes: {
+
+        address:
+          customer.address,
+      },
+
+      theme: {
+        color: "#31572C",
+      },
+
+      handler:
+        async function (
+          response
+        ) {
+
+          try {
+
+            const orderNumber =
+              "NF-" +
+              Date.now();
+
+              console.log("Customer", customer);
+              console.log("Cart", cart);
+              console.log("Applied Coupon", appliedCoupon);
+              console.log("Payment Response", response);
+
+            await addDoc(collection(db, "orders"), {
+             orderNumber: orderNumber || "",
+
+             customer: {
+             name: customer.name || "",
+             phone: customer.phone || "",
+             address: customer.address || "",
+             city: customer.city || "",
+             pincode: customer.pincode || "",
+            },
+
+             items: cart.map((item) => ({
+             id: item.id || "",
+             name: item.name || "",
+             weight: item.weight || "",
+             mrp: item.mrp || 0,
+             qty: item.qty || 1,
+            })),
+
+             subtotal: Number(mrpTotal) || 0,
+             couponDiscount: Number(couponDiscount) || 0,
+             shipping: Number(shipping) || 0,
+              cgst: Number(cgst) || 0,
+              sgst: Number(sgst) || 0,
+              grandTotal: Number(grandTotal) || 0,
+
+              coupon: appliedCoupon || "",
+
+              paymentId: response?.razorpay_payment_id || "",
+
+              paymentStatus: "PAID",
+              orderStatus: "pending",
+
+             createdAt: serverTimestamp(),
+          });
+
+            alert(
+              "Payment Successful ✅"
+            );
+
+            setCart([]);
+
+          } catch (error) {
+            console.error("FULL ERROR:", error);
+            console.error("ERROR CODE:", error.code);
+            console.error("ERROR MESSAGE:", error.message);
+
+           alert(
+            `Order save failed:
+            ${error.code}
+            ${error.message}`
+            );
+          }
+        },
+    };
+
+    const razorpay =
+      new window.Razorpay(
+        options
+      );
+
+    razorpay.on(
+      "payment.failed",
+      function (
+        response
+      ) {
+
+        console.error(
+          response
+        );
+
+        alert(
+          response.error
+            ?.description ||
+            "Payment Failed"
+        );
+      }
+    );
+
+    razorpay.open();
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+    alert(
+      "Unable to start payment"
+    );
+  }
+};
   // =========================
   // EMPTY CART
   // =========================
@@ -637,12 +807,12 @@ export default function Cart({
 
         {/* PAYMENT BUTTON */}
         <button
-          className="w-full mt-6 bg-[#31572C] hover:bg-[#264653] text-white py-4 rounded-2xl text-lg font-bold"
+        onClick={handlePayment}
+        className="w-full mt-6 bg-[#31572C] hover:bg-[#264653] text-white py-4 rounded-2xl text-lg font-bold"
         >
-          Proceed to Pay
-        </button>
-
-      </div>
+  Proceed to Pay
+</button>
+    </div>
 
     </section>
   );

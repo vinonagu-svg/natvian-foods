@@ -23,8 +23,12 @@ export default function Orders() {
         ...doc.data(),
       }));
 
-      data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      data.sort((a, b) => {
+       const aTime = a.createdAt?.seconds || 0;
+        const bTime = b.createdAt?.seconds || 0;
 
+       return bTime - aTime;
+      });
       setOrders(data);
     });
 
@@ -51,13 +55,12 @@ export default function Orders() {
     const printWindow = window.open("", "_blank");
 
     const items =
-      order.products
-        ?.map(
-          (p) =>
-            `${p.name} (${p.weight}) x ${p.qty}`
-        )
-        .join("<br/>") || "";
-
+    order.items
+    ?.map(
+      (p) =>
+        `${p.name} (${p.weight}) x ${p.qty}`
+    )
+    .join("<br/>") || "";
     printWindow.document.write(`
       <html>
         <head>
@@ -86,11 +89,11 @@ export default function Orders() {
 
           <div class="line"></div>
 
-          <p><b>Order ID:</b> ${order.orderId || ""}</p>
-          <p><b>Name:</b> ${order.customerName || ""}</p>
-          <p><b>Phone:</b> ${order.phoneNumber || ""}</p>
-          <p><b>City:</b> ${order.city || ""}</p>
-          <p><b>Address:</b> ${order.address || ""}</p>
+          <p><b>Order ID:</b> ${order.orderNumber || order.id}</p>
+          <p><b>Name:</b> ${order.customer?.name || ""}</p>
+          <p><b>Phone:</b> ${order.customer?.phone || ""}</p>
+          <p><b>City:</b> ${order.customer?.city || ""}</p>
+          <p><b>Address:</b> ${order.customer?.address || ""}</p>
 
           <div class="line"></div>
 
@@ -148,23 +151,34 @@ export default function Orders() {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="font-bold text-lg">
-                    {order.customerName}
+                  {order.customer?.name || "Customer"}
                   </h2>
 
                   <p className="text-sm text-gray-500">
-                    {order.phoneNumber} | {order.city}
+                  {order.customer?.phone || ""}
+                  {" | "}
+                  {order.customer?.city || ""}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                  {order.customer?.address || ""}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                  PIN: {order.customer?.pincode || ""}
                   </p>
 
                   <p className="text-xs text-gray-400">
-                    Order ID: {order.orderId}
-                  </p>
+                  Order ID: {order.orderNumber || order.id}
+                </p>
                 </div>
 
                 <div className="text-right">
                   <p className="text-2xl font-bold">
                     ₹{order.grandTotal}
                   </p>
-
+                  <p className="text-xs text-green-600">
+                  Payment ID: {order.paymentId || "N/A"}
+                  </p>
                   <span
                     className={`px-3 py-1 rounded-full text-sm ${getStatusStyle(
                       order.orderStatus
@@ -177,10 +191,10 @@ export default function Orders() {
 
               {/* PRODUCTS */}
               <div className="mt-3 text-sm text-gray-600">
-                {order.products?.map((p, i) => (
-                  <p key={i}>
-                    {p.name} ({p.weight}) × {p.qty}
-                  </p>
+                {order.items?.map((p, i) => (
+                <p key={i}>
+                {p.name} ({p.weight}) × {p.qty}
+                </p>
                 ))}
               </div>
 

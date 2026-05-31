@@ -171,7 +171,10 @@ function HomePage() {
       {
         id: product.id,
         name: product.name,
-        image: product.imageUrl,
+        image:
+          product.imageUrl ||
+          product.images?.[0] ||
+        "",
         weight: safeVariant.weight,
         mrp: safeVariant.price,
         qty: 1,
@@ -261,21 +264,32 @@ function HomePage() {
         cartCount={cart.length}
       />
 
-      <Hero
-        language={language}
-        MurungabannerImage={MurungabannerImage}
-        BananabannerImage={BananabannerImage}
-      />
+      <section id="home">
+  <Hero
+    language={language}
+    MurungabannerImage={MurungabannerImage}
+    BananabannerImage={BananabannerImage}
+  />
+</section>
 
       <Features />
 
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <ProductGrid products={products} addToCart={addToCart} />
-      </section>
+      <section
+  id="products"
+  className="max-w-7xl mx-auto px-6 py-20"
+>
+  <ProductGrid
+    products={products}
+    addToCart={addToCart}
+  />
+</section>
 
       {/* CART SECTION */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <Suspense fallback={<div>Loading Cart...</div>}>
+<section
+  id="cart"
+  className="max-w-7xl mx-auto px-6 py-20"
+>
+  <Suspense fallback={<div>Loading Cart...</div>}>
           <Cart
             cart={cart}
             setCart={setCart}
@@ -289,14 +303,18 @@ function HomePage() {
         </Suspense>
       </section>
 
-      <About />
+      <section id="about">
+  <About />
+</section>
       <FAQ />
 
       <Suspense fallback={<div>Loading Testimonials...</div>}>
         <Testimonials />
       </Suspense>
 
-      <Contact />
+      <section id="contact">
+  <Contact />
+</section>
       <Footer />
     </div>
   );
