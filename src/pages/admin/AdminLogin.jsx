@@ -1,36 +1,53 @@
 import { useState } from "react";
-
 import { useNavigate } from "react-router-dom";
+
+import {
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+import { auth } from "../../firebase";
 
 export default function AdminLogin() {
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const [password,
-    setPassword] =
+  const [email, setEmail] =
     useState("");
 
-  const handleLogin = () => {
+  const [password, setPassword] =
+    useState("");
 
-    if (
-      password === "admin123"
-    ) {
+  const [loading, setLoading] =
+    useState(false);
 
-      localStorage.setItem(
-        "admin",
-        "true"
+  const handleLogin = async () => {
+
+    try {
+
+      setLoading(true);
+
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
       );
 
       navigate(
         "/admin/dashboard"
       );
 
-    } else {
+    } catch (error) {
 
       alert(
-        "Wrong Password"
+        "Invalid email or password"
       );
+
+      console.error(error);
+
+    } finally {
+
+      setLoading(false);
+
     }
   };
 
@@ -45,22 +62,33 @@ export default function AdminLogin() {
         </h1>
 
         <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
+          className="border p-3 rounded w-full mb-4"
+        />
+
+        <input
           type="password"
-          placeholder="Enter Password"
+          placeholder="Password"
           value={password}
           onChange={(e) =>
-            setPassword(
-              e.target.value
-            )
+            setPassword(e.target.value)
           }
           className="border p-3 rounded w-full mb-4"
         />
 
         <button
           onClick={handleLogin}
+          disabled={loading}
           className="bg-black text-white w-full p-3 rounded"
         >
-          Login
+          {loading
+            ? "Logging in..."
+            : "Login"}
         </button>
 
       </div>

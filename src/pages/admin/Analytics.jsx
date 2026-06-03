@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import AdminSidebar from "../../components/AdminSidebar";
 
 import {
   collection,
@@ -238,10 +237,7 @@ export default function Analytics() {
   // UI
   // =========================
   return (
-    <div className="flex">
-      <AdminSidebar />
-
-      <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
+    <div className="p-8">
 
         {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
@@ -520,6 +516,5 @@ export default function Analytics() {
         </div>
 
       </div>
-    </div>
-  );
+   );
 }

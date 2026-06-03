@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 
-import AdminSidebar from "../../components/AdminSidebar";
-
 import {
   collection,
   onSnapshot,
@@ -135,11 +133,7 @@ export default function Dashboard() {
   // =========================
   return (
 
-    <div className="flex">
-
-      <AdminSidebar />
-
-      <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
+   <div className="p-8 w-full min-h-screen bg-gray-100">
 
         {/* HEADER */}
         <div className="mb-8">
@@ -452,7 +446,5 @@ export default function Dashboard() {
         </div>
 
       </div>
-
-    </div>
   );
 }

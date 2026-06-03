@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminSidebar from "../../components/AdminSidebar";
 
 import {
   collection,
@@ -133,10 +132,7 @@ export default function Orders() {
   };
 
   return (
-    <div className="flex">
-      <AdminSidebar />
-
-      <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
+    <div className="p-8 w-full min-h-screen bg-gray-100">
         <h1 className="text-4xl font-bold mb-6">
           📦 Orders Management
         </h1>
@@ -250,6 +246,5 @@ export default function Orders() {
           ))}
         </div>
       </div>
-    </div>
   );
 }

@@ -1,61 +1,36 @@
-import React, {
-  Suspense,
-  lazy,
-} from "react";
-
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
-
-import {
-  BrowserRouter,
-} from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 
 import "./index.css";
 
-// =========================
-// LAZY IMPORTS
-// =========================
-const App = lazy(() =>
-  import("./App")
-);
+const App = lazy(() => import("./App"));
 
-// =========================
-// ROOT COMPONENT
-// =========================
 function Root() {
+  console.log("Root rendered");
 
   return (
-
     <BrowserRouter>
-
-      <Suspense
-        fallback={
-
-          <div className="min-h-screen flex items-center justify-center text-2xl font-bold">
-
-            Loading...
-
-          </div>
-        }
-      >
-
-        <App />
-
-      </Suspense>
-
+      <AuthProvider>
+        <Suspense
+          fallback={
+            <div className="min-h-screen flex items-center justify-center text-2xl font-bold">
+              Loading...
+            </div>
+          }
+        >
+          <App />
+        </Suspense>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
 
-// =========================
-// RENDER APP
-// =========================
 ReactDOM.createRoot(
   document.getElementById("root")
 ).render(
-
   <React.StrictMode>
-
     <Root />
-
   </React.StrictMode>
 );

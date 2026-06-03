@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 
-import AdminSidebar from "../../components/AdminSidebar";
-
 import {
   collection,
   addDoc,
@@ -307,11 +305,7 @@ export default function Coupons() {
 
   return (
 
-    <div className="flex">
-
-      <AdminSidebar />
-
-      <div className="ml-64 p-8 w-full min-h-screen bg-gray-100">
+    <div className="p-8">
 
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
@@ -576,7 +570,5 @@ export default function Coupons() {
         </div>
 
       </div>
-
-    </div>
   );
 }
