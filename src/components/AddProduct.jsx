@@ -9,28 +9,36 @@ import { db } from "../firebase";
 
 export default function AddProduct({
   refreshProducts,
+  categories,
+  subcategories,
 }) {
+const [selectedCategory, setSelectedCategory] = useState("");
+const [subcategoryId, setSubcategoryId] = useState("");
+const [form, setForm] = useState({
+  name: "",
+  tamilName: "",
 
-  const [form, setForm] =
-    useState({
+  category: "",
+  description: "",
 
-      name: "",
-      category: "",
-      description: "",
+  benefits: "",
+  ingredients: "",
+  usage: "",
+  shelfLife: "",
 
-      // MULTIPLE IMAGES
-      images: [""],
+  images: [""],
 
-      // VARIANTS
-      variants: [
-        {
-          weight: "",
-          price: "",
-          stock: "",
-        }
-      ]
-    });
+  variants: [
+    {
+      weight: "",
+      price: "",
+      stock: "",
+    }
+  ]
+});
 
+    console.log("Selected Category:", selectedCategory);
+    console.log("All Subcategories:", subcategories);
   // =========================
   // HANDLE BASIC FIELDS
   // =========================
@@ -213,51 +221,69 @@ export default function AddProduct({
           );
 
         // ADD TO FIRESTORE
-        await addDoc(
-          collection(
-            db,
-            "products"
-          ),
-          {
+        // ADD TO FIRESTORE
+await addDoc(
+  collection(db, "products"),
+  {
+    name: form.name,
+    tamilName: form.tamilName,
 
-            name:
-              form.name,
+    category: selectedCategory,
 
-            category:
-              form.category,
+    subcategory:
+      subcategories.find(
+        (sub) => sub.id === subcategoryId
+      )?.name || "",
 
-            description:
-              form.description,
+    description: form.description,
 
-            images:
-              cleanImages,
+    benefits: form.benefits
+      .split("\n")
+      .filter(Boolean),
 
-            variants:
-              cleanVariants,
-          }
-        );
+    ingredients: form.ingredients,
+
+    usage: form.usage,
+
+    shelfLife: form.shelfLife,
+
+    images: cleanImages,
+
+    variants: cleanVariants,
+
+    isActive: true,      // ADD THIS
+    createdAt: Date.now() // OPTIONAL
+  }
+);
 
         alert(
           "Product Added Successfully"
         );
-
+setSelectedCategory("");
+setSubcategoryId("");
         // RESET FORM
         setForm({
+  name: "",
+  tamilName: "",
 
-          name: "",
-          category: "",
-          description: "",
+  category: "",
+  description: "",
 
-          images: [""],
+  benefits: "",
+  ingredients: "",
+  usage: "",
+  shelfLife: "",
 
-          variants: [
-            {
-              weight: "",
-              price: "",
-              stock: "",
-            }
-          ]
-        });
+  images: [""],
+
+  variants: [
+    {
+      weight: "",
+      price: "",
+      stock: "",
+    }
+  ]
+});
 
         refreshProducts();
 
@@ -287,23 +313,68 @@ export default function AddProduct({
       <div className="grid gap-4 mb-6">
 
         <input
-          type="text"
-          name="name"
-          placeholder="Product Name"
-          value={form.name}
-          onChange={handleChange}
-          className="border p-3 rounded"
-          required
-        />
+  type="text"
+  name="name"
+  placeholder="Product Name"
+  value={form.name}
+  onChange={handleChange}
+  className="border p-3 rounded"
+  required
+/>
 
-        <input
-          type="text"
-          name="category"
-          placeholder="Category"
-          value={form.category}
-          onChange={handleChange}
-          className="border p-3 rounded"
-        />
+<input
+  type="text"
+  name="tamilName"
+  placeholder="Tamil Name"
+  value={form.tamilName}
+  onChange={handleChange}
+  className="border p-3 rounded"
+/>
+
+        <div className="mb-4">
+  <label className="block mb-2 font-semibold">
+    Category
+  </label>
+
+  <select
+  value={selectedCategory}
+  onChange={(e) => {
+    setSelectedCategory(e.target.value);
+    setSubcategoryId("");
+  }}
+    className="w-full border p-3 rounded"
+  >
+    <option value="">Select Category</option>
+
+    {categories?.map((cat) => (
+      <option key={cat.id} value={cat.name}>
+  {cat.name}
+</option>
+    ))}
+  </select>
+</div>
+
+<div className="mb-4">
+  <label className="block mb-2 font-semibold">
+    Subcategory
+  </label>
+
+  <select
+  value={subcategoryId}
+  onChange={(e) => setSubcategoryId(e.target.value)}
+  className="w-full border p-3 rounded"
+>
+  <option value="">Select Subcategory</option>
+
+  {subcategories
+    ?.filter((sub) => sub.category === selectedCategory)
+    .map((sub) => (
+      <option key={sub.id} value={sub.id}>
+        {sub.name}
+      </option>
+    ))}
+</select>
+</div>
 
         <textarea
           name="description"
@@ -313,7 +384,41 @@ export default function AddProduct({
           className="border p-3 rounded"
           rows="4"
         />
+<textarea
+  name="benefits"
+  placeholder="Benefits (one per line)"
+  value={form.benefits}
+  onChange={handleChange}
+  className="border p-3 rounded"
+  rows="4"
+/>
 
+<input
+  type="text"
+  name="ingredients"
+  placeholder="Ingredients"
+  value={form.ingredients}
+  onChange={handleChange}
+  className="border p-3 rounded"
+/>
+
+<input
+  type="text"
+  name="usage"
+  placeholder="Usage"
+  value={form.usage}
+  onChange={handleChange}
+  className="border p-3 rounded"
+/>
+
+<input
+  type="text"
+  name="shelfLife"
+  placeholder="Shelf Life"
+  value={form.shelfLife}
+  onChange={handleChange}
+  className="border p-3 rounded"
+/>
       </div>
 
       {/* PRODUCT IMAGES */}

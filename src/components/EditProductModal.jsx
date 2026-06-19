@@ -20,23 +20,35 @@ export default function EditProductModal({
   closeModal,
   refreshProducts,
 }) {
-
+console.log("EDIT PRODUCT", product);
   // =========================
   // FORM STATE
   // =========================
 
-  const [form, setForm] =
-    useState({
+  const [form, setForm] = useState({
+  ...product,
 
-      ...product,
+  tamilName:
+    product.tamilName || "",
 
-      images:
-        product.images || [],
+  benefits:
+    product.benefits || [],
 
-      variants:
-        product.variants || [],
-    });
+  ingredients:
+    product.ingredients || "",
 
+  usage:
+    product.usage || "",
+
+  shelfLife:
+    product.shelfLife || "",
+
+  images:
+    product.images || [],
+
+  variants:
+    product.variants || [],
+});
   // =========================
   // IMAGE GALLERY STATE
   // =========================
@@ -275,82 +287,59 @@ export default function EditProductModal({
   // =========================
   // UPDATE PRODUCT
   // =========================
+const handleUpdate = async () => {
+  try {
+    const cleanVariants = form.variants.map((variant) => ({
+      weight: variant.weight,
+      price: Number(variant.price),
+      stock: Number(variant.stock),
+    }));
 
-  const handleUpdate =
-    async () => {
+    const cleanImages = form.images.filter((img) => img.trim() !== "");
 
-      try {
+    const productRef = doc(db, "products", product.id);
 
-        const cleanVariants =
-          form.variants.map(
-            (variant) => ({
+    await updateDoc(productRef, {
+  name: form.name,
 
-              weight:
-                variant.weight,
+  tamilName: form.tamilName || "",
 
-              price:
-                Number(
-                  variant.price
-                ),
+  category: form.category || "",
 
-              stock:
-                Number(
-                  variant.stock
-                ),
-            })
-          );
+  subcategory: form.subcategory || "",
 
-        const cleanImages =
-          form.images.filter(
-            (img) =>
-              img.trim() !== ""
-          );
+  description: form.description,
 
-        const productRef =
-          doc(
-            db,
-            "products",
-            product.id
-          );
+  benefits:
+    typeof form.benefits === "string"
+      ? form.benefits
+          .split("\n")
+          .filter(Boolean)
+      : form.benefits || [],
 
-        await updateDoc(
-          productRef,
-          {
+  ingredients:
+    form.ingredients || "",
 
-            name:
-              form.name,
+  usage:
+    form.usage || "",
 
-            category:
-              form.category,
+  shelfLife:
+    form.shelfLife || "",
 
-            description:
-              form.description,
+  images: cleanImages,
 
-            images:
-              cleanImages,
+  variants: cleanVariants,
+});
 
-            variants:
-              cleanVariants,
-          }
-        );
+    alert("Updated Successfully");
 
-        alert(
-          "Updated Successfully"
-        );
-
-        refreshProducts();
-
-        closeModal();
-
-      } catch (err) {
-
-        console.error(err);
-
-        alert(
-          "Update Failed"
-        );
-      }
-    };
+    refreshProducts();
+    closeModal();
+  } catch (err) {
+    console.error(err);
+    alert("Update Failed");
+  }
+};
 
   return (
 
@@ -560,23 +549,55 @@ export default function EditProductModal({
               focus:ring-black
             "
           />
-
+<input
+  type="text"
+  name="tamilName"
+  value={form.tamilName || ""}
+  onChange={handleChange}
+  placeholder="Tamil Name"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+    focus:outline-none
+    focus:ring-2
+    focus:ring-black
+  "
+/>
           <input
-            type="text"
-            name="category"
-            value={form.category}
-            onChange={handleChange}
-            placeholder="Category"
-            className="
-              border
-              border-gray-200
-              p-4
-              rounded-2xl
-              focus:outline-none
-              focus:ring-2
-              focus:ring-black
-            "
-          />
+  type="text"
+  name="category"
+  value={form.category || ""}
+  onChange={handleChange}
+  placeholder="Category"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+    focus:outline-none
+    focus:ring-2
+    focus:ring-black
+  "
+/>
+
+<input
+  type="text"
+  name="subcategory"
+  value={form.subcategory || ""}
+  onChange={handleChange}
+  placeholder="Subcategory"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+    focus:outline-none
+    focus:ring-2
+    focus:ring-black
+  "
+/>
 
           <textarea
             name="description"
@@ -594,7 +615,65 @@ export default function EditProductModal({
               focus:ring-black
             "
           />
+<textarea
+  name="benefits"
+  value={
+    Array.isArray(form.benefits)
+      ? form.benefits.join("\n")
+      : form.benefits || ""
+  }
+  onChange={handleChange}
+  placeholder="Benefits (one per line)"
+  rows="4"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+  "
+/>
 
+<input
+  type="text"
+  name="ingredients"
+  value={form.ingredients || ""}
+  onChange={handleChange}
+  placeholder="Ingredients"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+  "
+/>
+
+<input
+  type="text"
+  name="usage"
+  value={form.usage || ""}
+  onChange={handleChange}
+  placeholder="Usage"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+  "
+/>
+
+<input
+  type="text"
+  name="shelfLife"
+  value={form.shelfLife || ""}
+  onChange={handleChange}
+  placeholder="Shelf Life"
+  className="
+    border
+    border-gray-200
+    p-4
+    rounded-2xl
+  "
+/>
         </div>
 
         {/* PRODUCT IMAGES */}

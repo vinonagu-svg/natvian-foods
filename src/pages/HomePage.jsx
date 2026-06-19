@@ -1,7 +1,12 @@
 import { useState, useEffect, Suspense, lazy } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
+import { db } from "../firebase";
 // Components
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
@@ -16,44 +21,126 @@ import Footer from "../components/Footer";
 import MurungabannerImage from "../assets/Murunga-banner.webp";
 import BananabannerImage from "../assets/Bloom-banner.webp";
 
-// Lazy components
+
+// Lazy Components
 const Cart = lazy(() => import("../components/Cart"));
-const Testimonials = lazy(() => import("../components/Testimonials"));
+const Testimonials = lazy(() =>
+  import("../components/Testimonials")
+);
 
 export default function HomePage() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [language, setLanguage] = useState("en");
+  const [darkMode, setDarkMode] =
+    useState(false);
 
-  const [cart, setCart] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [coupons, setCoupons] = useState([]);
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [language, setLanguage] =
+    useState("en");
 
-  // FETCH PRODUCTS
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const snapshot = await getDocs(collection(db, "products"));
+  const [cart, setCart] =
+    useState([]);
 
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+  const [products, setProducts] =
+    useState([]);
+
+  const [coupons, setCoupons] =
+    useState([]);
+
+  const [appliedCoupon, setAppliedCoupon] =
+    useState(null);
+
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] = useState("All");
+
+  const [
+    selectedSubcategory,
+    setSelectedSubcategory,
+  ] = useState("All");
+
+ // // ==========================
+// FETCH PRODUCTS
+// ==========================
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      const q = query(
+        collection(db, "products"),
+        where("isActive", "==", true)
+      );
+
+      const snapshot = await getDocs(q);
+
+      const data = snapshot.docs.map((doc) => {
+  const product = {
+    id: doc.id,
+    ...doc.data(),
+  };
+
+ if (product.name === "Murunga Leaf Health Mix") {
+  console.log(
+    "MURUNGA KEYS:",
+    Object.keys(product)
+  );
+
+  console.log(
+    "MURUNGA JSON:",
+    JSON.stringify(product, null, 2)
+  );
+}
+
+  return product;
+});
+
+console.table(
+  data.map((p) => ({
+    id: p.id,
+    name: p.name,
+    tamilName: p.tamilName,
+  }))
+);
 
       setProducts(data);
-    };
 
-    fetchProducts();
-  }, []);
+      console.log("Fetched Products:", data);
+    } catch (error) {
+      console.error(
+        "Error fetching products:",
+        error
+      );
+    }
+  };
 
+  fetchProducts();
+}, []);
+// ==========================
+// DEBUG PRODUCTS
+// ==========================
+useEffect(() => {
+  console.log("Products:", products);
+
+  console.table(
+    products.map((p) => ({
+      name: p.name,
+      category: p.category,
+      subcategory: p.subcategory,
+    }))
+  );
+}, [products]);
+
+  // ==========================
   // FETCH COUPONS
+  // ==========================
   useEffect(() => {
     const fetchCoupons = async () => {
-      const snap = await getDocs(collection(db, "coupons"));
+      const snap = await getDocs(
+        collection(db, "coupons")
+      );
 
-      const data = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const data =
+        snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
       setCoupons(data);
     };
@@ -61,7 +148,9 @@ export default function HomePage() {
     fetchCoupons();
   }, []);
 
+  // ==========================
   // OFFER CONFIG
+  // ==========================
   const OFFER_CONFIG = {
     name: "Launching Offer",
     type: "PERCENT",
@@ -69,104 +158,173 @@ export default function HomePage() {
     isActive: true,
   };
 
-  // OFFER PRICE
   const getOfferPrice = (price) => {
-    const safePrice = Number(price) || 0;
+    const safePrice =
+      Number(price) || 0;
 
-    if (!OFFER_CONFIG.isActive) return safePrice;
+    if (!OFFER_CONFIG.isActive)
+      return safePrice;
 
-    if (OFFER_CONFIG.type === "PERCENT") {
-      return safePrice - (safePrice * OFFER_CONFIG.value) / 100;
-    }
-
-    if (OFFER_CONFIG.type === "FIXED") {
-      return safePrice - OFFER_CONFIG.value;
-    }
-
-    return safePrice;
-  };
-
-  // ADD TO CART
-  const addToCart = (product, variant) => {
-    const safeVariant = {
-      weight: variant?.weight || "100g",
-      price: Number(variant?.price) || 0,
-    };
-
-    const existingIndex = cart.findIndex(
-      (item) =>
-        item.id === product.id &&
-        item.weight === safeVariant.weight
+    return (
+      safePrice -
+      (safePrice *
+        OFFER_CONFIG.value) /
+        100
     );
-
-    if (existingIndex !== -1) {
-      const updated = [...cart];
-      updated[existingIndex].qty += 1;
-      setCart(updated);
-      return;
-    }
-
-    setCart((prev) => [
-      ...prev,
-      {
-        id: product.id,
-        name: product.name,
-        image: product.imageUrl || product.images?.[0] || "",
-        weight: safeVariant.weight,
-        mrp: safeVariant.price,
-        qty: 1,
-      },
-    ]);
   };
 
-  // REMOVE FROM CART
-  const removeFromCart = (index) => {
+  // ==========================
+  // ADD TO CART
+  // ==========================
+  const addToCart = (product, variant) => {
+  if (!product || !variant) {
+    console.error(
+      "Missing product or variant",
+      product,
+      variant
+    );
+    return;
+  }
+
+  const existingIndex = cart.findIndex(
+    (item) =>
+      item.id === product.id &&
+      item.weight === variant.weight
+  );
+
+  if (existingIndex !== -1) {
     const updated = [...cart];
+    updated[existingIndex].qty += 1;
+    setCart(updated);
+    return;
+  }
+
+  setCart((prev) => [
+    ...prev,
+    {
+      id: product.id,
+      name: product.name,
+      image: product.images?.[0] || "",
+      weight: variant?.weight || "",
+      mrp: Number(variant?.price) || 0,
+      qty: 1,
+    },
+  ]);
+};
+  // ==========================
+  // REMOVE FROM CART
+  // ==========================
+  const removeFromCart = (
+    index
+  ) => {
+    const updated = [...cart];
+
     updated.splice(index, 1);
+
     setCart(updated);
   };
 
-  // TOTAL PRICE
-  const totalPrice = cart.reduce((total, item) => {
-    const mrp = Number(item.mrp) || 0;
-    const qty = Number(item.qty) || 1;
-    return total + getOfferPrice(mrp) * qty;
-  }, 0);
-
-  // COUPON VALIDATION
-  const isCouponValid = (coupon) => {
-    const today = new Date();
-
-    const expiry = coupon.expiryDate?.toDate
-      ? coupon.expiryDate.toDate()
-      : new Date(coupon.expiryDate);
-
-    return coupon.isActive === true && expiry >= today;
-  };
-
-  const discount = appliedCoupon
-    ? appliedCoupon.type === "PERCENT"
-      ? (totalPrice * appliedCoupon.value) / 100
-      : appliedCoupon.value
-    : 0;
-
-  const finalPrice = totalPrice - discount;
-
-  // APPLY COUPON
-  const applyCoupon = (code) => {
-    const coupon = coupons.find(
-      (c) => c.code.toLowerCase() === code.toLowerCase()
+  // ==========================
+  // TOTALS
+  // ==========================
+  const totalPrice =
+    cart.reduce(
+      (total, item) =>
+        total +
+        getOfferPrice(
+          item.mrp
+        ) *
+          item.qty,
+      0
     );
 
-    if (!coupon) return alert("Invalid coupon");
+  const discount =
+    appliedCoupon
+      ? appliedCoupon.type ===
+        "PERCENT"
+        ? (totalPrice *
+            appliedCoupon.value) /
+          100
+        : appliedCoupon.value
+      : 0;
 
-    if (!isCouponValid(coupon)) return alert("Coupon expired or inactive");
+  const finalPrice =
+    totalPrice - discount;
 
-    if (totalPrice < coupon.minCartValue)
-      return alert(`Minimum cart value is ₹${coupon.minCartValue}`);
+  // ==========================
+  // APPLY COUPON
+  // ==========================
+  const applyCoupon = (
+    code
+  ) => {
+    const coupon =
+      coupons.find(
+        (c) =>
+          c.code.toLowerCase() ===
+          code.toLowerCase()
+      );
+
+    if (!coupon)
+      return alert(
+        "Invalid coupon"
+      );
 
     setAppliedCoupon(coupon);
   };
+
+  // ==========================
+  // CATEGORY LIST
+  // ==========================
+  const categories = [
+    "All",
+    ...new Set(
+      products
+        .map((p) => p.category)
+        .filter(Boolean)
+    ),
+  ];
+
+  const subcategories = [
+    "All",
+    ...new Set(
+      products
+        .filter(
+          (p) =>
+            selectedCategory ===
+              "All" ||
+            p.category ===
+              selectedCategory
+        )
+        .map(
+          (p) =>
+            p.subcategory
+        )
+        .filter(Boolean)
+    ),
+  ];
+
+  // ==========================
+  // FILTER PRODUCTS
+  // ==========================
+  const filteredProducts =
+    products.filter((p) => {
+      const categoryMatch =
+        selectedCategory ===
+          "All" ||
+        p.category ===
+          selectedCategory;
+
+      const subcategoryMatch =
+        selectedSubcategory ===
+          "All" ||
+        p.subcategory ===
+          selectedSubcategory;
+
+      return (
+        categoryMatch &&
+        subcategoryMatch
+      );
+    });
 
   return (
     <div
@@ -177,39 +335,136 @@ export default function HomePage() {
       }
     >
       <Navbar
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        language={language}
-        setLanguage={setLanguage}
-        cartCount={cart.length}
-      />
+  darkMode={darkMode}
+  setDarkMode={setDarkMode}
+  language={language}
+  setLanguage={setLanguage}
+  cartCount={cart.length}
+  categories={categories}
+  setSelectedCategory={setSelectedCategory}
+  setSelectedSubcategory={setSelectedSubcategory}
+/>
 
       <section id="home">
         <Hero
           language={language}
-          MurungabannerImage={MurungabannerImage}
-          BananabannerImage={BananabannerImage}
+          MurungabannerImage={
+            MurungabannerImage
+          }
+          BananabannerImage={
+            BananabannerImage
+          }
         />
       </section>
 
       <Features />
 
-      <section id="products" className="max-w-7xl mx-auto px-6 py-20">
-        <ProductGrid products={products} addToCart={addToCart} />
+      {/* CATEGORY FILTER */}
+      <section className="max-w-7xl mx-auto px-6 pt-10">
+
+        <h2 className="text-3xl font-bold mb-5">
+          Shop By Category
+        </h2>
+
+        <div className="flex flex-wrap gap-3 mb-6">
+          {categories.map(
+            (cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(
+                    cat
+                  );
+                  setSelectedSubcategory(
+                    "All"
+                  );
+                }}
+                className={`px-5 py-2 rounded-full ${
+                  selectedCategory ===
+                  cat
+                    ? "bg-green-600 text-white"
+                    : "bg-white border"
+                }`}
+              >
+                {cat}
+              </button>
+            )
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          {subcategories.map(
+            (sub) => (
+              <button
+                key={sub}
+                onClick={() =>
+                  setSelectedSubcategory(
+                    sub
+                  )
+                }
+                className={`px-4 py-2 rounded-full ${
+                  selectedSubcategory ===
+                  sub
+                    ? "bg-orange-500 text-white"
+                    : "bg-white border"
+                }`}
+              >
+                {sub}
+              </button>
+            )
+          )}
+        </div>
+
+      </section>
+
+      {/* PRODUCTS */}
+      <section
+        id="products"
+        className="max-w-7xl mx-auto px-6 py-12"
+      >
+        <ProductGrid
+          products={
+            filteredProducts
+          }
+          addToCart={
+            addToCart
+          }
+        />
       </section>
 
       {/* CART */}
-      <section id="cart" className="max-w-7xl mx-auto px-6 py-20">
-        <Suspense fallback={<div>Loading Cart...</div>}>
+      <section
+        id="cart"
+        className="max-w-7xl mx-auto px-6 py-20"
+      >
+        <Suspense
+          fallback={
+            <div>
+              Loading Cart...
+            </div>
+          }
+        >
           <Cart
             cart={cart}
             setCart={setCart}
-            removeFromCart={removeFromCart}
-            totalPrice={totalPrice}
-            finalPrice={finalPrice}
-            discount={discount}
-            applyCoupon={applyCoupon}
-            appliedCoupon={appliedCoupon}
+            removeFromCart={
+              removeFromCart
+            }
+            totalPrice={
+              totalPrice
+            }
+            finalPrice={
+              finalPrice
+            }
+            discount={
+              discount
+            }
+            applyCoupon={
+              applyCoupon
+            }
+            appliedCoupon={
+              appliedCoupon
+            }
           />
         </Suspense>
       </section>
@@ -220,7 +475,13 @@ export default function HomePage() {
 
       <FAQ />
 
-      <Suspense fallback={<div>Loading Testimonials...</div>}>
+      <Suspense
+        fallback={
+          <div>
+            Loading Testimonials...
+          </div>
+        }
+      >
         <Testimonials />
       </Suspense>
 
