@@ -29,6 +29,8 @@ const prices = safeVariants.map(
 const minPrice = Math.min(...prices);
 
 const maxPrice = Math.max(...prices);
+const isComingSoon =
+  product?.comingSoon === true;
 const safeBenefits = useMemo(() => {
   if (Array.isArray(product?.benefits)) {
     return product.benefits;
@@ -270,22 +272,47 @@ const [zoom, setZoom] = useState(1);
 >
 
         {/* MAIN IMAGE */}
-        <img
-  src={selectedImage}
-  alt={product?.name}
-  className="
-    w-full
-    h-[280px]
-    object-contain
-    bg-[#F8F6F1]
-    p-6
-    cursor-pointer
-  "
-          onClick={() => {
-            setShowGallery(true);
-            setZoom(1);
-          }}
-        />
+
+<div className="relative">
+
+  {isComingSoon && (
+    <div
+      className="
+        absolute
+        top-3
+        right-3
+        z-10
+        bg-orange-500
+        text-white
+        px-3
+        py-1
+        rounded-full
+        text-xs
+        font-bold
+      "
+    >
+      Coming Soon
+    </div>
+  )}
+
+  <img
+    src={selectedImage}
+    alt={product?.name}
+    className="
+      w-full
+      h-[280px]
+      object-contain
+      bg-[#F8F6F1]
+      p-6
+      cursor-pointer
+    "
+    onClick={() => {
+      setShowGallery(true);
+      setZoom(1);
+    }}
+  />
+
+</div>
 
                 {/* CONTENT */}
         <div className="p-5 flex-1 flex flex-col">
@@ -371,26 +398,44 @@ const [zoom, setZoom] = useState(1);
 </div>
 
           {/* CART BUTTON */}
-          <button
-            onClick={handleAddToCart}
-            className="
-  w-full
-  mt-5
-  bg-[#31572C]
-  hover:bg-[#264653]
-  text-white
-  py-4
-  rounded-2xl
-  flex
-  items-center
-  justify-center
-  gap-2
-  transition
-"
-          >
-            <ShoppingCart size={18} />
-            Add to Cart
-          </button>
+{isComingSoon ? (
+  <button
+    disabled
+    className="
+      w-full
+      mt-5
+      bg-gray-300
+      text-gray-600
+      py-4
+      rounded-2xl
+      cursor-not-allowed
+      font-semibold
+    "
+  >
+    Coming Soon
+  </button>
+) : (
+  <button
+    onClick={handleAddToCart}
+    className="
+      w-full
+      mt-5
+      bg-[#31572C]
+      hover:bg-[#264653]
+      text-white
+      py-4
+      rounded-2xl
+      flex
+      items-center
+      justify-center
+      gap-2
+      transition
+    "
+  >
+    <ShoppingCart size={18} />
+    Add to Cart
+  </button>
+)}
         </div>
         <button
   onClick={() => setShowDetails(true)}

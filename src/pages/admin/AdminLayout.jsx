@@ -9,6 +9,7 @@ import {
   FiUsers,
   FiBox,
   FiShoppingCart,
+  FiArchive,
   FiTag,
   FiBarChart2,
   FiSettings,
@@ -89,6 +90,10 @@ export default function AdminLayout() {
       <NavLink to="/admin/orders" className={linkClass}>
         <FiShoppingCart /> Orders
       </NavLink>
+
+      <NavLink to="/admin/archive" className={linkClass}>
+  <FiArchive /> Archive
+</NavLink>
 
       <NavLink to="/admin/coupons" className={linkClass}>
         <FiTag /> Coupons

@@ -20,7 +20,7 @@ import Coupons from "./pages/admin/Coupons";
 import Settings from "./pages/admin/Settings";
 import Categories from "./pages/admin/Categories";
 import Subcategories from "./pages/admin/Subcategories";
-
+import Archive from "./pages/admin/Archive";
 // LAZY
 const AdminLogin = lazy(() =>
   import("./pages/admin/AdminLogin")
@@ -94,7 +94,15 @@ export default function App() {
               </PermissionRoute>
             }
           />
-
+{/* ARCHIVE */}
+<Route
+  path="archive"
+  element={
+    <PermissionRoute permission="orders:read">
+      <Archive />
+    </PermissionRoute>
+  }
+/>
           {/* CATEGORIES */}
           <Route path="categories" element={<Categories />} />
 
