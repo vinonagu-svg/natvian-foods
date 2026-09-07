@@ -101,17 +101,23 @@ export default function Footer() {
 
 
             {/* YOUTUBE */}
-            <div className="text-center">
-              <img
-                src="/youtube-qr.png"
-                alt="YouTube QR Code"
-                className="w-24 h-24 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer"
-              />
+<div className="text-center">
+  <a
+    href="https://youtube.com/@thenativefooddotcom?si=07mylR26rgvu5QIv"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <img
+      src="/youtube-qr.png"
+      alt="YouTube QR Code"
+      className="w-24 h-24 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer"
+    />
+  </a>
 
-              <p className="mt-2 text-sm font-semibold">
-                YouTube
-              </p>
-            </div>
+  <p className="mt-2 text-sm font-semibold">
+    YouTube
+  </p>
+</div>
 
           </div>
 
