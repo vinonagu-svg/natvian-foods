@@ -4,7 +4,7 @@ export default function LeftHero({ language }) {
 
       {/* Tagline */}
       <div className="inline-block bg-orange-100 text-orange-700 px-4 py-2 rounded-full mb-4 font-semibold">
-  🎉 Launch Offer – 10% OFF on Health Mixes
+  🎉 Launch Offer – 50% OFF on Health Mixes
 </div>
       <p className="text-[#4F772D] text-xl md:text-2xl italic mb-4">
   🌾 Made with Traditional Ingredients & Superfoods
