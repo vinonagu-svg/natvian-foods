@@ -34,7 +34,7 @@ export default function Footer() {
             <p>FSSAI Lic No: 22426402000209</p>
             <p>GSTIN: 33ATHPN4463C1ZW</p>
             <p>MSME Reg.No: UDYAM-TN-03-0316573</p>
-            <p>Address: Natvain Foods, 3/147A, Chettiyar Thottam,
+            <p>Address: Natvian Foods, 3/147A, Chettiyar Thottam,
             Periyathottampudur, Karamadai block,
             Coimbatore, Tamil Nadu-638459</p>
 
