@@ -58,51 +58,59 @@ export default function Footer() {
             Follow Us
           </h4>
 
-          <div className="flex gap-5">
+          <div className="flex flex-wrap gap-4">
 
             {/* INSTAGRAM */}
             <div className="text-center">
-
               <a
                 href="https://www.instagram.com/thenativefooddotcom/"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Follow us on Instagram"
               >
                 <img
                   src="/instagram-qr.jpeg"
                   alt="Instagram QR Code"
-                  className="w-28 h-28 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200"
+                  className="w-24 h-24 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200"
                 />
               </a>
 
               <p className="mt-2 text-sm font-semibold">
                 Instagram
               </p>
-
             </div>
 
 
             {/* FACEBOOK */}
             <div className="text-center">
-
               <a
                 href="https://www.facebook.com/share/1EH2tJbgwU/"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Follow us on Facebook"
               >
                 <img
                   src="/facebook-qr.png"
                   alt="Facebook QR Code"
-                  className="w-28 h-28 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200"
+                  className="w-24 h-24 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200"
                 />
               </a>
 
               <p className="mt-2 text-sm font-semibold">
                 Facebook
               </p>
+            </div>
 
+
+            {/* YOUTUBE */}
+            <div className="text-center">
+              <img
+                src="/youtube-qr.png"
+                alt="YouTube QR Code"
+                className="w-24 h-24 object-contain rounded-xl bg-white p-2 shadow-lg hover:scale-105 transition-transform duration-200 cursor-pointer"
+              />
+
+              <p className="mt-2 text-sm font-semibold">
+                YouTube
+              </p>
             </div>
 
           </div>
