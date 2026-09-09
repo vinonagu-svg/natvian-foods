@@ -86,44 +86,53 @@ export default function Hero({ language }) {
     </div>
   </div>
 </div>
-      {/* Categories Strip */}
-      <div className="relative z-10 bg-gradient-to-r from-[#1B4332] via-[#2D6A4F] to-[#1B4332] py-3 shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center items-center gap-4 md:gap-6 text-white text-xs md:text-base font-medium">
-          
-          <span>🌾 Native Rice Varieties</span>
+     {/* Categories Strip */}
+<div className="relative z-10 bg-gradient-to-r from-[#1B4332] via-[#2D6A4F] to-[#1B4332] py-3 shadow-lg">
+  <div
+    className="
+      max-w-7xl mx-auto
+      px-4 md:px-6
+      flex flex-nowrap
+      justify-start md:justify-center
+      items-center
+      gap-3 md:gap-5
+      text-white
+      text-xs md:text-base
+      font-medium
+      whitespace-nowrap
+      overflow-x-auto
+      scrollbar-hide
+    "
+  >
 
-          <span className="hidden md:block opacity-40">
-            |
-          </span>
+    <span className="shrink-0">🌾 Native Rice Varieties</span>
 
-          <span>🌿 Millets</span>
+    <span className="hidden md:block opacity-40 shrink-0">|</span>
 
-          <span className="hidden md:block opacity-40">
-            |
-          </span>
+    <span className="shrink-0">🌿 Millets</span>
 
-          <span>🫘 Pulses & Dals</span>
+    <span className="hidden md:block opacity-40 shrink-0">|</span>
 
-          <span className="hidden md:block opacity-40">
-            |
-          </span>
+    <span className="shrink-0">🫘 Pulses & Dals</span>
 
-          <span>🍶 Cooking Essentials</span>
+    <span className="hidden md:block opacity-40 shrink-0">|</span>
 
-          <span className="hidden md:block opacity-40">
-            |
-          </span>
+    <span className="shrink-0">🍶 Cooking Essentials</span>
 
-          <span>🧈 Oils & Ghee</span>
+    <span className="hidden md:block opacity-40 shrink-0">|</span>
 
-          <span className="hidden md:block opacity-40">
-            |
-          </span>
+    <span className="shrink-0">🧈 Oils & Ghee</span>
 
-          <span>🥣 Health Mixes</span>
+    <span className="hidden md:block opacity-40 shrink-0">|</span>
 
-        </div>
-      </div>
+    <span className="shrink-0">🥣 Health Mixes</span>
+
+    <span className="hidden md:block opacity-40 shrink-0">|</span>
+
+    <span className="shrink-0">🌸 Beauty & Personal Care</span>
+
+  </div>
+</div>
     </section>
   );
 }

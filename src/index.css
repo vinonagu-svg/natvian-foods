@@ -4,3 +4,12 @@
 html {
   scroll-behavior: smooth;
 }
+/* Hide horizontal scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

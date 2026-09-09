@@ -48,6 +48,10 @@ export default function Footer() {
               Periyathottampudur, Karamadai block,
               Coimbatore, Tamil Nadu-638459
             </p>
+            <p>
+              Feedback/Complaints : +91 7411498799/ +91 9788857645
+                                    natvianfoods@gmail.com
+            </p>
           </div>
         </div>
 
