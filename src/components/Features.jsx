@@ -8,57 +8,105 @@ import {
 
 const benefits = [
   {
-    icon: <Leaf size={42} strokeWidth={1.8} />,
+    icon: Leaf,
     title: "Authentic & Natural",
   },
   {
-    icon: <HandHeart size={42} strokeWidth={1.8} />,
-    title: "Carefully Sourced from Trusted Producers",
+    icon: HandHeart,
+    title: "Trusted Producers",
   },
   {
-    icon: <Soup size={42} strokeWidth={1.8} />,
-    title: "Wholesome Nutrition for Every Family",
+    icon: Soup,
+    title: "Wholesome Nutrition",
   },
   {
-    icon: <Sprout size={42} strokeWidth={1.8} />,
-    title: "Traditional Foods for a Healthier Lifestyle",
+    icon: Sprout,
+    title: "Traditional Foods",
   },
   {
-    icon: <ShieldCheck size={42} strokeWidth={1.8} />,
-    title: "No Artificial Additives & No Preservatives",
+    icon: ShieldCheck,
+    title: "No Preservatives",
   },
 ];
 
 export default function Features() {
   return (
     <section
-      className="py-12 border-b border-[#d8d0b8]"
+      className="border-b border-[#ddd6c5]"
       style={{
         background:
-          "linear-gradient(to bottom, #f8f5ee, #f5f1e8)",
+          "linear-gradient(to bottom, #faf8f2, #f6f3eb)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
 
-          {benefits.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-5 min-h-[140px]"
-            >
-              {/* Modern Premium Icon Circle */}
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-[#f3f6eb] border border-[#d7dfc7] shadow-lg flex items-center justify-center text-[#5B7F2A] shrink-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                {item.icon}
-              </div>
+          {benefits.map((item, index) => {
+            const Icon = item.icon;
 
-              {/* Text */}
-              <div className="flex items-center min-h-[100px]">
-                <h3 className="text-[17px] md:text-[19px] font-semibold text-[#243424] leading-snug">
+            return (
+              <div
+                key={item.title}
+                className={`
+                  group
+                  flex items-center justify-center
+                  gap-3
+                  px-4
+                  py-4
+                  lg:py-5
+                  transition-all duration-300
+                  ${
+                    index !== benefits.length - 1
+                      ? "lg:border-r lg:border-[#ddd6c5]"
+                      : ""
+                  }
+                  ${
+                    index < 4
+                      ? "border-b md:border-b-0 border-[#ddd6c5]"
+                      : ""
+                  }
+                `}
+              >
+                {/* Icon */}
+                <div
+                  className="
+                    flex items-center justify-center
+                    w-10 h-10
+                    shrink-0
+                    rounded-full
+                    border border-[#d7dfc7]
+                    bg-[#f1f5e9]
+                    text-[#5B7F2A]
+                    transition-all duration-300
+                    group-hover:bg-[#e7efda]
+                    group-hover:border-[#c8d7b2]
+                    group-hover:scale-105
+                  "
+                >
+                  <Icon
+                    size={22}
+                    strokeWidth={1.7}
+                  />
+                </div>
+
+                {/* Text */}
+                <span
+                  className="
+                    text-[13px]
+                    sm:text-[14px]
+                    lg:text-[15px]
+                    font-medium
+                    tracking-[-0.01em]
+                    text-[#263526]
+                    leading-tight
+                    whitespace-nowrap
+                  "
+                >
                   {item.title}
-                </h3>
+                </span>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
         </div>
       </div>

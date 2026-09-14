@@ -19,231 +19,354 @@ export default function EditProductModal({
   product,
   closeModal,
   refreshProducts,
+  categories = [],
+  subcategories = [],
 }) {
-console.log("EDIT PRODUCT", product);
-  // =========================
-  // FORM STATE
-  // =========================
+  /* =========================================================
+     CHECK COMBO
+  ========================================================= */
+  const isCombo =
+    product.isCombo === true ||
+    product.type === "combo" ||
+    product.productType === "combo";
+
+  /* =========================================================
+     INITIAL FORM
+  ========================================================= */
 
   const [form, setForm] = useState({
-  ...product,
+    ...product,
 
-  tamilName:
-    product.tamilName || "",
+    name: product.name || "",
+    tamilName: product.tamilName || "",
 
-  benefits:
-    product.benefits || [],
+    category: product.category || "",
+    categoryId: product.categoryId || "",
 
-  ingredients:
-    product.ingredients || "",
+    subcategory: product.subcategory || "",
+    subcategoryId: product.subcategoryId || "",
 
-  usage:
-    product.usage || "",
+    description: product.description || "",
 
-  shelfLife:
-    product.shelfLife || "",
+    benefits: Array.isArray(product.benefits)
+      ? product.benefits
+      : product.benefits
+      ? String(product.benefits)
+          .split("\n")
+          .filter(Boolean)
+      : [],
 
-  images:
-    product.images || [],
+    ingredients: product.ingredients || "",
+    usage: product.usage || "",
+    shelfLife: product.shelfLife || "",
 
-  variants:
-    product.variants || [],
-});
-  // =========================
-  // IMAGE GALLERY STATE
-  // =========================
+    images:
+      Array.isArray(product.images)
+        ? product.images
+        : [],
 
-  const [selectedImage,
-    setSelectedImage] =
+    variants:
+      Array.isArray(product.variants)
+        ? product.variants
+        : [],
+
+    /* COMBO */
+    isCombo: isCombo,
+
+    mrp: product.mrp ?? "",
+
+    comboPrice:
+      product.comboPrice ??
+      product.price ??
+      "",
+
+    comboItems:
+      Array.isArray(product.comboItems)
+        ? product.comboItems
+        : [
+            {
+              name: "",
+              weight: "",
+            },
+          ],
+  });
+
+  /* =========================================================
+     IMAGE GALLERY STATE
+  ========================================================= */
+
+  const [selectedImage, setSelectedImage] =
     useState(
       product.images?.[0] || ""
     );
 
-  const [showGallery,
-    setShowGallery] =
+  const [showGallery, setShowGallery] =
     useState(false);
 
-  const [zoom,
-    setZoom] =
-    useState(1);
+  const [zoom, setZoom] = useState(1);
 
-  // =========================
-  // HANDLE BASIC FIELDS
-  // =========================
+  /* =========================================================
+     BASIC FIELD CHANGE
+  ========================================================= */
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
 
-    setForm({
-
-      ...form,
-
-      [e.target.name]:
-        e.target.value,
-    });
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // =========================
-  // HANDLE IMAGE URL CHANGE
-  // =========================
+  /* =========================================================
+     CATEGORY CHANGE
+  ========================================================= */
+
+  const handleCategoryChange = (e) => {
+    const categoryName = e.target.value;
+
+    const category = categories.find(
+      (cat) =>
+        cat.name === categoryName ||
+        cat.id === categoryName
+    );
+
+    setForm((prev) => ({
+      ...prev,
+
+      category:
+        category?.name || categoryName,
+
+      categoryId:
+        category?.id || "",
+
+      subcategory: "",
+      subcategoryId: "",
+    }));
+  };
+
+  /* =========================================================
+     SUBCATEGORY CHANGE
+  ========================================================= */
+
+  const handleSubcategoryChange = (e) => {
+    const subcategoryId = e.target.value;
+
+    const subcategory =
+      subcategories.find(
+        (sub) =>
+          sub.id === subcategoryId
+      );
+
+    setForm((prev) => ({
+      ...prev,
+
+      subcategory:
+        subcategory?.name || "",
+
+      subcategoryId:
+        subcategoryId,
+    }));
+  };
+
+  /* =========================================================
+     FILTER SUBCATEGORIES
+  ========================================================= */
+
+  const filteredSubcategories =
+    subcategories.filter((sub) => {
+      return (
+        sub.category === form.category ||
+        sub.categoryId === form.categoryId
+      );
+    });
+
+  /* =========================================================
+     IMAGE CHANGE
+  ========================================================= */
 
   const handleImageChange = (
     index,
     value
   ) => {
+    const updatedImages = [
+      ...form.images,
+    ];
 
-    const updatedImages =
-      [...form.images];
+    updatedImages[index] = value;
 
-    updatedImages[index] =
-      value;
-
-    setForm({
-
-      ...form,
-
-      images:
-        updatedImages,
-    });
+    setForm((prev) => ({
+      ...prev,
+      images: updatedImages,
+    }));
 
     if (
       selectedImage ===
       form.images[index]
     ) {
-
-      setSelectedImage(
-        value
-      );
+      setSelectedImage(value);
     }
   };
 
-  // =========================
-  // ADD IMAGE FIELD
-  // =========================
+  /* =========================================================
+     ADD IMAGE
+  ========================================================= */
 
   const addImageField = () => {
-
-    setForm({
-
-      ...form,
-
+    setForm((prev) => ({
+      ...prev,
       images: [
-
-        ...form.images,
+        ...prev.images,
         "",
       ],
-    });
+    }));
   };
 
-  // =========================
-  // REMOVE IMAGE
-  // =========================
+  /* =========================================================
+     REMOVE IMAGE
+  ========================================================= */
 
-  const removeImage = (
-    index
-  ) => {
-
+  const removeImage = (index) => {
     const updatedImages =
       form.images.filter(
-        (_, i) =>
-          i !== index
+        (_, i) => i !== index
       );
 
-    setForm({
-
-      ...form,
-
-      images:
-        updatedImages,
-    });
+    setForm((prev) => ({
+      ...prev,
+      images: updatedImages,
+    }));
 
     if (
       selectedImage ===
       form.images[index]
     ) {
-
       setSelectedImage(
         updatedImages[0] || ""
       );
     }
   };
 
-  // =========================
-  // HANDLE VARIANTS
-  // =========================
+  /* =========================================================
+     VARIANT CHANGE
+  ========================================================= */
 
   const handleVariantChange = (
     index,
     field,
     value
   ) => {
+    const updatedVariants = [
+      ...form.variants,
+    ];
 
-    const updatedVariants =
-      [...form.variants];
+    updatedVariants[index] = {
+      ...updatedVariants[index],
+      [field]: value,
+    };
 
-    updatedVariants[index][field] =
-      value;
-
-    setForm({
-
-      ...form,
-
+    setForm((prev) => ({
+      ...prev,
       variants:
         updatedVariants,
-    });
+    }));
   };
 
-  // =========================
-  // ADD VARIANT
-  // =========================
+  /* =========================================================
+     ADD VARIANT
+  ========================================================= */
 
   const addVariant = () => {
-
-    setForm({
-
-      ...form,
-
+    setForm((prev) => ({
+      ...prev,
       variants: [
-
-        ...form.variants,
-
+        ...prev.variants,
         {
           weight: "",
           price: "",
           stock: "",
-        }
-
-      ]
-    });
+        },
+      ],
+    }));
   };
 
-  // =========================
-  // REMOVE VARIANT
-  // =========================
+  /* =========================================================
+     REMOVE VARIANT
+  ========================================================= */
 
-  const removeVariant = (
-    index
-  ) => {
-
-    const updatedVariants =
-      form.variants.filter(
-        (_, i) =>
-          i !== index
-      );
-
-    setForm({
-
-      ...form,
-
+  const removeVariant = (index) => {
+    setForm((prev) => ({
+      ...prev,
       variants:
-        updatedVariants,
-    });
+        prev.variants.filter(
+          (_, i) => i !== index
+        ),
+    }));
   };
 
-  // =========================
-  // NEXT IMAGE
-  // =========================
+  /* =========================================================
+     COMBO ITEM CHANGE
+  ========================================================= */
+
+  const handleComboItemChange = (
+    index,
+    field,
+    value
+  ) => {
+    const updatedItems = [
+      ...form.comboItems,
+    ];
+
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value,
+    };
+
+    setForm((prev) => ({
+      ...prev,
+      comboItems:
+        updatedItems,
+    }));
+  };
+
+  /* =========================================================
+     ADD COMBO ITEM
+  ========================================================= */
+
+  const addComboItem = () => {
+    setForm((prev) => ({
+      ...prev,
+      comboItems: [
+        ...prev.comboItems,
+        {
+          name: "",
+          weight: "",
+        },
+      ],
+    }));
+  };
+
+  /* =========================================================
+     REMOVE COMBO ITEM
+  ========================================================= */
+
+  const removeComboItem = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      comboItems:
+        prev.comboItems.filter(
+          (_, i) => i !== index
+        ),
+    }));
+  };
+
+  /* =========================================================
+     NEXT IMAGE
+  ========================================================= */
 
   const nextImage = () => {
+    if (form.images.length <= 1)
+      return;
 
     const currentIndex =
       form.images.indexOf(
@@ -261,11 +384,13 @@ console.log("EDIT PRODUCT", product);
     setZoom(1);
   };
 
-  // =========================
-  // PREVIOUS IMAGE
-  // =========================
+  /* =========================================================
+     PREVIOUS IMAGE
+  ========================================================= */
 
   const prevImage = () => {
+    if (form.images.length <= 1)
+      return;
 
     const currentIndex =
       form.images.indexOf(
@@ -284,65 +409,217 @@ console.log("EDIT PRODUCT", product);
     setZoom(1);
   };
 
-  // =========================
-  // UPDATE PRODUCT
-  // =========================
-const handleUpdate = async () => {
-  try {
-    const cleanVariants = form.variants.map((variant) => ({
-      weight: variant.weight,
-      price: Number(variant.price),
-      stock: Number(variant.stock),
-    }));
+  /* =========================================================
+     UPDATE
+  ========================================================= */
 
-    const cleanImages = form.images.filter((img) => img.trim() !== "");
+  const handleUpdate = async () => {
+    try {
+      /* -----------------------------------------
+         CLEAN IMAGES
+      ----------------------------------------- */
 
-    const productRef = doc(db, "products", product.id);
+      const cleanImages =
+        form.images
+          .map((img) =>
+            String(img).trim()
+          )
+          .filter(Boolean);
 
-    await updateDoc(productRef, {
-  name: form.name,
+      /* -----------------------------------------
+         CLEAN BENEFITS
+      ----------------------------------------- */
 
-  tamilName: form.tamilName || "",
+      const cleanBenefits =
+        Array.isArray(form.benefits)
+          ? form.benefits
+              .map((item) =>
+                String(item).trim()
+              )
+              .filter(Boolean)
+          : String(
+              form.benefits || ""
+            )
+              .split("\n")
+              .map((item) =>
+                item.trim()
+              )
+              .filter(Boolean);
 
-  category: form.category || "",
+      /* -----------------------------------------
+         CLEAN VARIANTS
+      ----------------------------------------- */
 
-  subcategory: form.subcategory || "",
+      const cleanVariants =
+        form.variants
+          .filter(
+            (variant) =>
+              variant.weight ||
+              variant.price ||
+              variant.stock
+          )
+          .map((variant) => ({
+            weight:
+              variant.weight || "",
 
-  description: form.description,
+            price:
+              Number(
+                variant.price
+              ) || 0,
 
-  benefits:
-    typeof form.benefits === "string"
-      ? form.benefits
-          .split("\n")
-          .filter(Boolean)
-      : form.benefits || [],
+            stock:
+              Number(
+                variant.stock
+              ) || 0,
+          }));
 
-  ingredients:
-    form.ingredients || "",
+      /* -----------------------------------------
+         CLEAN COMBO ITEMS
+      ----------------------------------------- */
 
-  usage:
-    form.usage || "",
+      const cleanComboItems =
+        form.comboItems
+          .filter(
+            (item) =>
+              item.name &&
+              item.name.trim()
+          )
+          .map((item) => ({
+            name:
+              item.name.trim(),
 
-  shelfLife:
-    form.shelfLife || "",
+            weight:
+              item.weight
+                ? item.weight.trim()
+                : "",
+          }));
 
-  images: cleanImages,
+      /* -----------------------------------------
+         VALIDATE COMBO
+      ----------------------------------------- */
 
-  variants: cleanVariants,
-});
+      if (form.isCombo) {
+        if (!form.comboPrice) {
+          alert(
+            "Please enter Combo Price"
+          );
+          return;
+        }
 
-    alert("Updated Successfully");
+        if (
+          cleanComboItems.length ===
+          0
+        ) {
+          alert(
+            "Please add at least one Combo Item"
+          );
+          return;
+        }
+      }
 
-    refreshProducts();
-    closeModal();
-  } catch (err) {
-    console.error(err);
-    alert("Update Failed");
-  }
-};
+      /* -----------------------------------------
+         PRODUCT REF
+      ----------------------------------------- */
+
+      const productRef = doc(
+        db,
+        "products",
+        product.id
+      );
+
+      /* -----------------------------------------
+         UPDATE DATA
+      ----------------------------------------- */
+
+      await updateDoc(
+        productRef,
+        {
+          name:
+            form.name.trim(),
+
+          tamilName:
+            form.tamilName.trim(),
+
+          category:
+            form.category || "",
+
+          categoryId:
+            form.categoryId || "",
+
+          subcategory:
+            form.subcategory || "",
+
+          subcategoryId:
+            form.subcategoryId || "",
+
+          description:
+            form.description || "",
+
+          benefits:
+            cleanBenefits,
+
+          ingredients:
+            form.ingredients || "",
+
+          usage:
+            form.usage || "",
+
+          shelfLife:
+            form.shelfLife || "",
+
+          images:
+            cleanImages,
+
+          /* COMBO */
+          isCombo:
+            form.isCombo,
+
+          comboItems:
+            form.isCombo
+              ? cleanComboItems
+              : [],
+
+          mrp:
+            form.isCombo
+              ? Number(form.mrp) || 0
+              : 0,
+
+          price:
+            form.isCombo
+              ? Number(
+                  form.comboPrice
+                ) || 0
+              : 0,
+
+          /* NORMAL VARIANTS */
+          variants:
+            form.isCombo
+              ? []
+              : cleanVariants,
+        }
+      );
+
+      alert(
+        form.isCombo
+          ? "Combo Pack Updated Successfully"
+          : "Product Updated Successfully"
+      );
+
+      refreshProducts();
+
+      closeModal();
+
+    } catch (err) {
+      console.error(
+        "Update error:",
+        err
+      );
+
+      alert("Update Failed");
+    }
+  };
 
   return (
-
     <div
       className="
         fixed
@@ -371,21 +648,36 @@ const handleUpdate = async () => {
         "
       >
 
-        {/* TITLE */}
+        {/* =====================================================
+            TITLE
+        ===================================================== */}
 
         <div className="flex justify-between items-center mb-8">
 
-          <h2
-            className="
-              text-4xl
-              font-bold
-              text-gray-900
-            "
-          >
-            Edit Product
-          </h2>
+          <div>
+
+            <h2
+              className="
+                text-4xl
+                font-bold
+                text-gray-900
+              "
+            >
+              {form.isCombo
+                ? "Edit Combo Pack"
+                : "Edit Product"}
+            </h2>
+
+            {form.isCombo && (
+              <p className="text-orange-600 font-medium mt-1">
+                🎁 Combo Pack
+              </p>
+            )}
+
+          </div>
 
           <button
+            type="button"
             onClick={closeModal}
             className="
               bg-gray-100
@@ -400,10 +692,11 @@ const handleUpdate = async () => {
 
         </div>
 
-        {/* IMAGE PREVIEW */}
+        {/* =====================================================
+            IMAGE PREVIEW
+        ===================================================== */}
 
         {selectedImage && (
-
           <div className="mb-8">
 
             <div
@@ -420,9 +713,7 @@ const handleUpdate = async () => {
                 src={selectedImage}
                 alt="Preview"
                 onClick={() => {
-
                   setShowGallery(true);
-
                   setZoom(1);
                 }}
                 className="
@@ -437,10 +728,9 @@ const handleUpdate = async () => {
               />
 
               <button
+                type="button"
                 onClick={() => {
-
                   setShowGallery(true);
-
                   setZoom(1);
                 }}
                 className="
@@ -448,7 +738,6 @@ const handleUpdate = async () => {
                   bottom-5
                   right-5
                   bg-black/70
-                  backdrop-blur-md
                   text-white
                   px-5
                   py-2
@@ -466,7 +755,9 @@ const handleUpdate = async () => {
           </div>
         )}
 
-        {/* THUMBNAILS */}
+        {/* =====================================================
+            THUMBNAILS
+        ===================================================== */}
 
         <div
           className="
@@ -479,13 +770,8 @@ const handleUpdate = async () => {
         >
 
           {form.images?.map(
-            (
-              image,
-              index
-            ) => (
-
+            (image, index) =>
               image && (
-
                 <div
                   key={index}
                   onClick={() =>
@@ -501,10 +787,9 @@ const handleUpdate = async () => {
                     cursor-pointer
                     border-2
                     transition-all
-                    duration-300
-
                     ${
-                      selectedImage === image
+                      selectedImage ===
+                      image
                         ? "border-black scale-105 shadow-lg"
                         : "border-transparent opacity-70 hover:opacity-100"
                     }
@@ -513,7 +798,7 @@ const handleUpdate = async () => {
 
                   <img
                     src={image}
-                    alt="thumb"
+                    alt={`thumb-${index}`}
                     className="
                       w-full
                       h-full
@@ -522,14 +807,14 @@ const handleUpdate = async () => {
                   />
 
                 </div>
-
               )
-            )
           )}
 
         </div>
 
-        {/* BASIC INFO */}
+        {/* =====================================================
+            BASIC INFO
+        ===================================================== */}
 
         <div className="grid gap-5 mb-8">
 
@@ -538,70 +823,129 @@ const handleUpdate = async () => {
             name="name"
             value={form.name}
             onChange={handleChange}
-            placeholder="Product Name"
+            placeholder={
+              form.isCombo
+                ? "Combo Pack Name"
+                : "Product Name"
+            }
             className="
               border
               border-gray-200
               p-4
               rounded-2xl
-              focus:outline-none
-              focus:ring-2
-              focus:ring-black
             "
           />
-<input
-  type="text"
-  name="tamilName"
-  value={form.tamilName || ""}
-  onChange={handleChange}
-  placeholder="Tamil Name"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-    focus:outline-none
-    focus:ring-2
-    focus:ring-black
-  "
-/>
-          <input
-  type="text"
-  name="category"
-  value={form.category || ""}
-  onChange={handleChange}
-  placeholder="Category"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-    focus:outline-none
-    focus:ring-2
-    focus:ring-black
-  "
-/>
 
-<input
-  type="text"
-  name="subcategory"
-  value={form.subcategory || ""}
-  onChange={handleChange}
-  placeholder="Subcategory"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-    focus:outline-none
-    focus:ring-2
-    focus:ring-black
-  "
-/>
+          <input
+            type="text"
+            name="tamilName"
+            value={form.tamilName}
+            onChange={handleChange}
+            placeholder="Tamil Name"
+            className="
+              border
+              border-gray-200
+              p-4
+              rounded-2xl
+            "
+          />
+
+          {/* CATEGORY */}
+
+          <div>
+
+            <label className="block font-semibold mb-2">
+              Category
+            </label>
+
+            <select
+              value={
+                form.category || ""
+              }
+              onChange={
+                handleCategoryChange
+              }
+              className="
+                w-full
+                border
+                border-gray-200
+                p-4
+                rounded-2xl
+              "
+            >
+
+              <option value="">
+                Select Category
+              </option>
+
+              {categories.map(
+                (category) => (
+                  <option
+                    key={category.id}
+                    value={category.name}
+                  >
+                    {category.name}
+                  </option>
+                )
+              )}
+
+            </select>
+
+          </div>
+
+          {/* SUBCATEGORY */}
+
+          <div>
+
+            <label className="block font-semibold mb-2">
+              Subcategory
+            </label>
+
+            <select
+              value={
+                form.subcategoryId ||
+                ""
+              }
+              onChange={
+                handleSubcategoryChange
+              }
+              className="
+                w-full
+                border
+                border-gray-200
+                p-4
+                rounded-2xl
+              "
+            >
+
+              <option value="">
+                Select Subcategory
+              </option>
+
+              {filteredSubcategories.map(
+                (subcategory) => (
+                  <option
+                    key={subcategory.id}
+                    value={
+                      subcategory.id
+                    }
+                  >
+                    {subcategory.name}
+                  </option>
+                )
+              )}
+
+            </select>
+
+          </div>
+
+          {/* DESCRIPTION */}
 
           <textarea
             name="description"
-            value={form.description}
+            value={
+              form.description
+            }
             onChange={handleChange}
             placeholder="Description"
             rows="4"
@@ -610,92 +954,273 @@ const handleUpdate = async () => {
               border-gray-200
               p-4
               rounded-2xl
-              focus:outline-none
-              focus:ring-2
-              focus:ring-black
             "
           />
-<textarea
-  name="benefits"
-  value={
-    Array.isArray(form.benefits)
-      ? form.benefits.join("\n")
-      : form.benefits || ""
-  }
-  onChange={handleChange}
-  placeholder="Benefits (one per line)"
-  rows="4"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-  "
-/>
 
-<input
-  type="text"
-  name="ingredients"
-  value={form.ingredients || ""}
-  onChange={handleChange}
-  placeholder="Ingredients"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-  "
-/>
+          {/* BENEFITS */}
 
-<input
-  type="text"
-  name="usage"
-  value={form.usage || ""}
-  onChange={handleChange}
-  placeholder="Usage"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-  "
-/>
+          <textarea
+            name="benefits"
+            value={
+              Array.isArray(
+                form.benefits
+              )
+                ? form.benefits.join(
+                    "\n"
+                  )
+                : form.benefits || ""
+            }
+            onChange={handleChange}
+            placeholder="Benefits (one per line)"
+            rows="4"
+            className="
+              border
+              border-gray-200
+              p-4
+              rounded-2xl
+            "
+          />
 
-<input
-  type="text"
-  name="shelfLife"
-  value={form.shelfLife || ""}
-  onChange={handleChange}
-  placeholder="Shelf Life"
-  className="
-    border
-    border-gray-200
-    p-4
-    rounded-2xl
-  "
-/>
+          {/* INGREDIENTS */}
+
+          <input
+            type="text"
+            name="ingredients"
+            value={
+              form.ingredients
+            }
+            onChange={handleChange}
+            placeholder="Ingredients"
+            className="
+              border
+              border-gray-200
+              p-4
+              rounded-2xl
+            "
+          />
+
+          {/* USAGE */}
+
+          <input
+            type="text"
+            name="usage"
+            value={form.usage}
+            onChange={handleChange}
+            placeholder="Usage"
+            className="
+              border
+              border-gray-200
+              p-4
+              rounded-2xl
+            "
+          />
+
+          {/* SHELF LIFE */}
+
+          <input
+            type="text"
+            name="shelfLife"
+            value={
+              form.shelfLife
+            }
+            onChange={handleChange}
+            placeholder="Shelf Life"
+            className="
+              border
+              border-gray-200
+              p-4
+              rounded-2xl
+            "
+          />
+
         </div>
 
-        {/* PRODUCT IMAGES */}
+        {/* =====================================================
+            COMBO DETAILS
+        ===================================================== */}
 
-        <h3
-          className="
-            text-2xl
-            font-bold
-            mb-5
-          "
-        >
+        {form.isCombo && (
+          <div
+            className="
+              bg-orange-50
+              p-6
+              rounded-3xl
+              mb-8
+            "
+          >
+
+            <h3 className="text-2xl font-bold mb-5">
+              🎁 Combo Pack Details
+            </h3>
+
+            {/* MRP / PRICE */}
+
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+
+              <div>
+
+                <label className="block font-semibold mb-2">
+                  MRP
+                </label>
+
+                <input
+                  type="number"
+                  name="mrp"
+                  value={form.mrp}
+                  onChange={handleChange}
+                  min="0"
+                  className="
+                    border
+                    border-gray-200
+                    p-4
+                    rounded-2xl
+                    w-full
+                  "
+                />
+
+              </div>
+
+              <div>
+
+                <label className="block font-semibold mb-2">
+                  Combo Price
+                </label>
+
+                <input
+                  type="number"
+                  name="comboPrice"
+                  value={
+                    form.comboPrice
+                  }
+                  onChange={handleChange}
+                  min="0"
+                  className="
+                    border
+                    border-gray-200
+                    p-4
+                    rounded-2xl
+                    w-full
+                  "
+                />
+
+              </div>
+
+            </div>
+
+            {/* COMBO ITEMS */}
+
+            <h4 className="font-bold text-lg mb-4">
+              Products Included
+            </h4>
+
+            <div className="space-y-4">
+
+              {form.comboItems.map(
+                (item, index) => (
+                  <div
+                    key={index}
+                    className="
+                      grid
+                      grid-cols-1
+                      md:grid-cols-3
+                      gap-3
+                    "
+                  >
+
+                    <input
+                      type="text"
+                      value={
+                        item.name
+                      }
+                      onChange={(e) =>
+                        handleComboItemChange(
+                          index,
+                          "name",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Product Name"
+                      className="
+                        border
+                        p-4
+                        rounded-2xl
+                      "
+                    />
+
+                    <input
+                      type="text"
+                      value={
+                        item.weight ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        handleComboItemChange(
+                          index,
+                          "weight",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Weight / Quantity"
+                      className="
+                        border
+                        p-4
+                        rounded-2xl
+                      "
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeComboItem(
+                          index
+                        )
+                      }
+                      className="
+                        bg-red-500
+                        hover:bg-red-600
+                        text-white
+                        rounded-2xl
+                      "
+                    >
+                      Remove
+                    </button>
+
+                  </div>
+                )
+              )}
+
+            </div>
+
+            <button
+              type="button"
+              onClick={addComboItem}
+              className="
+                bg-orange-200
+                hover:bg-orange-300
+                px-6
+                py-3
+                rounded-2xl
+                mt-5
+              "
+            >
+              + Add Combo Item
+            </button>
+
+          </div>
+        )}
+
+        {/* =====================================================
+            PRODUCT IMAGES
+        ===================================================== */}
+
+        <h3 className="text-2xl font-bold mb-5">
           Product Images
         </h3>
 
         <div className="space-y-4 mb-8">
 
           {form.images?.map(
-            (
-              image,
-              index
-            ) => (
-
+            (image, index) => (
               <div
                 key={index}
                 className="flex gap-4"
@@ -703,7 +1228,6 @@ const handleUpdate = async () => {
 
                 <input
                   type="text"
-                  placeholder={`Image URL ${index + 1}`}
                   value={image}
                   onChange={(e) =>
                     handleImageChange(
@@ -711,15 +1235,15 @@ const handleUpdate = async () => {
                       e.target.value
                     )
                   }
+                  placeholder={`Image URL ${
+                    index + 1
+                  }`}
                   className="
                     border
                     border-gray-200
                     p-4
                     rounded-2xl
                     w-full
-                    focus:outline-none
-                    focus:ring-2
-                    focus:ring-black
                   "
                 />
 
@@ -736,7 +1260,6 @@ const handleUpdate = async () => {
                     text-white
                     px-5
                     rounded-2xl
-                    transition
                   "
                 >
                   Remove
@@ -755,7 +1278,6 @@ const handleUpdate = async () => {
               px-6
               py-3
               rounded-2xl
-              transition
             "
           >
             + Add Image
@@ -763,146 +1285,141 @@ const handleUpdate = async () => {
 
         </div>
 
-        {/* VARIANTS */}
+        {/* =====================================================
+            NORMAL PRODUCT VARIANTS
+        ===================================================== */}
 
-        <h3
-          className="
-            text-2xl
-            font-bold
-            mb-5
-          "
-        >
-          Variants
-        </h3>
+        {!form.isCombo && (
+          <>
+            <h3 className="text-2xl font-bold mb-5">
+              Variants
+            </h3>
 
-        <div className="space-y-4">
+            <div className="space-y-4">
 
-          {form.variants?.map(
-            (
-              variant,
-              index
-            ) => (
+              {form.variants?.map(
+                (variant, index) => (
+                  <div
+                    key={index}
+                    className="
+                      grid
+                      grid-cols-1
+                      md:grid-cols-4
+                      gap-4
+                    "
+                  >
 
-              <div
-                key={index}
-                className="
-                  grid
-                  grid-cols-1
-                  md:grid-cols-4
-                  gap-4
-                "
-              >
+                    <input
+                      type="text"
+                      value={
+                        variant.weight ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        handleVariantChange(
+                          index,
+                          "weight",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Weight"
+                      className="
+                        border
+                        p-4
+                        rounded-2xl
+                      "
+                    />
 
-                <input
-                  type="text"
-                  placeholder="Weight"
-                  value={
-                    variant.weight
-                  }
-                  onChange={(e) =>
-                    handleVariantChange(
-                      index,
-                      "weight",
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    border-gray-200
-                    p-4
-                    rounded-2xl
-                  "
-                />
+                    <input
+                      type="number"
+                      value={
+                        variant.price ??
+                        ""
+                      }
+                      onChange={(e) =>
+                        handleVariantChange(
+                          index,
+                          "price",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Price"
+                      className="
+                        border
+                        p-4
+                        rounded-2xl
+                      "
+                    />
 
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={
-                    variant.price
-                  }
-                  onChange={(e) =>
-                    handleVariantChange(
-                      index,
-                      "price",
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    border-gray-200
-                    p-4
-                    rounded-2xl
-                  "
-                />
+                    <input
+                      type="number"
+                      value={
+                        variant.stock ??
+                        ""
+                      }
+                      onChange={(e) =>
+                        handleVariantChange(
+                          index,
+                          "stock",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Stock"
+                      className="
+                        border
+                        p-4
+                        rounded-2xl
+                      "
+                    />
 
-                <input
-                  type="number"
-                  placeholder="Stock"
-                  value={
-                    variant.stock
-                  }
-                  onChange={(e) =>
-                    handleVariantChange(
-                      index,
-                      "stock",
-                      e.target.value
-                    )
-                  }
-                  className="
-                    border
-                    border-gray-200
-                    p-4
-                    rounded-2xl
-                  "
-                />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeVariant(
+                          index
+                        )
+                      }
+                      className="
+                        bg-red-500
+                        hover:bg-red-600
+                        text-white
+                        rounded-2xl
+                      "
+                    >
+                      Remove
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    removeVariant(
-                      index
-                    )
-                  }
-                  className="
-                    bg-red-500
-                    hover:bg-red-600
-                    text-white
-                    rounded-2xl
-                    transition
-                  "
-                >
-                  Remove
-                </button>
+                  </div>
+                )
+              )}
 
-              </div>
-            )
-          )}
+            </div>
 
-        </div>
+            <button
+              type="button"
+              onClick={addVariant}
+              className="
+                bg-gray-100
+                hover:bg-gray-200
+                px-6
+                py-3
+                rounded-2xl
+                mt-5
+              "
+            >
+              + Add Variant
+            </button>
+          </>
+        )}
 
-        {/* ADD VARIANT */}
-
-        <button
-          type="button"
-          onClick={addVariant}
-          className="
-            bg-gray-100
-            hover:bg-gray-200
-            px-6
-            py-3
-            rounded-2xl
-            mt-5
-            transition
-          "
-        >
-          + Add Variant
-        </button>
-
-        {/* ACTIONS */}
+        {/* =====================================================
+            SAVE / CANCEL
+        ===================================================== */}
 
         <div className="flex gap-4 mt-10">
 
           <button
+            type="button"
             onClick={handleUpdate}
             className="
               bg-black
@@ -912,13 +1429,15 @@ const handleUpdate = async () => {
               rounded-2xl
               w-full
               font-semibold
-              transition
             "
           >
-            Save Changes
+            {form.isCombo
+              ? "🎁 Save Combo Pack"
+              : "Save Changes"}
           </button>
 
           <button
+            type="button"
             onClick={closeModal}
             className="
               bg-gray-200
@@ -926,7 +1445,6 @@ const handleUpdate = async () => {
               p-4
               rounded-2xl
               w-full
-              transition
             "
           >
             Cancel
@@ -936,16 +1454,16 @@ const handleUpdate = async () => {
 
       </div>
 
-      {/* FULLSCREEN GALLERY */}
+      {/* =====================================================
+          FULLSCREEN GALLERY
+      ===================================================== */}
 
       {showGallery && (
-
         <div
           className="
             fixed
             inset-0
             bg-black/95
-            backdrop-blur-lg
             z-[100]
             flex
             items-center
@@ -956,6 +1474,7 @@ const handleUpdate = async () => {
           {/* CLOSE */}
 
           <button
+            type="button"
             onClick={() =>
               setShowGallery(false)
             }
@@ -965,12 +1484,10 @@ const handleUpdate = async () => {
               right-5
               bg-white/10
               hover:bg-white/20
-              backdrop-blur-md
               p-3
               rounded-full
               text-white
               z-50
-              transition
             "
           >
             <X size={28} />
@@ -978,9 +1495,10 @@ const handleUpdate = async () => {
 
           {/* LEFT */}
 
-          {form.images?.length > 1 && (
-
+          {form.images?.length >
+            1 && (
             <button
+              type="button"
               onClick={prevImage}
               className="
                 absolute
@@ -989,22 +1507,24 @@ const handleUpdate = async () => {
                 -translate-y-1/2
                 bg-white/10
                 hover:bg-white/20
-                backdrop-blur-md
                 p-4
                 rounded-full
                 text-white
                 z-50
               "
             >
-              <ChevronLeft size={35} />
+              <ChevronLeft
+                size={35}
+              />
             </button>
           )}
 
           {/* RIGHT */}
 
-          {form.images?.length > 1 && (
-
+          {form.images?.length >
+            1 && (
             <button
+              type="button"
               onClick={nextImage}
               className="
                 absolute
@@ -1013,18 +1533,19 @@ const handleUpdate = async () => {
                 -translate-y-1/2
                 bg-white/10
                 hover:bg-white/20
-                backdrop-blur-md
                 p-4
                 rounded-full
                 text-white
                 z-50
               "
             >
-              <ChevronRight size={35} />
+              <ChevronRight
+                size={35}
+              />
             </button>
           )}
 
-          {/* ZOOM CONTROLS */}
+          {/* ZOOM */}
 
           <div
             className="
@@ -1038,6 +1559,7 @@ const handleUpdate = async () => {
           >
 
             <button
+              type="button"
               onClick={() =>
                 setZoom(
                   (prev) =>
@@ -1047,7 +1569,6 @@ const handleUpdate = async () => {
               className="
                 bg-white/10
                 hover:bg-white/20
-                backdrop-blur-md
                 p-3
                 rounded-full
                 text-white
@@ -1057,6 +1578,7 @@ const handleUpdate = async () => {
             </button>
 
             <button
+              type="button"
               onClick={() =>
                 setZoom(
                   (prev) =>
@@ -1069,7 +1591,6 @@ const handleUpdate = async () => {
               className="
                 bg-white/10
                 hover:bg-white/20
-                backdrop-blur-md
                 p-3
                 rounded-full
                 text-white
@@ -1094,22 +1615,22 @@ const handleUpdate = async () => {
             "
           >
 
-            <img
-              src={selectedImage}
-              alt="Fullscreen"
-              style={{
-                transform: `scale(${zoom})`,
-              }}
-              className="
-                max-w-full
-                max-h-[85vh]
-                object-contain
-                transition-transform
-                duration-300
-                rounded-2xl
-                shadow-2xl
-              "
-            />
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Fullscreen"
+                style={{
+                  transform: `scale(${zoom})`,
+                }}
+                className="
+                  max-w-full
+                  max-h-[85vh]
+                  object-contain
+                  rounded-2xl
+                  transition-transform
+                "
+              />
+            )}
 
           </div>
 
@@ -1124,7 +1645,6 @@ const handleUpdate = async () => {
               flex
               gap-4
               bg-white/10
-              backdrop-blur-md
               px-5
               py-3
               rounded-2xl
@@ -1134,21 +1654,14 @@ const handleUpdate = async () => {
           >
 
             {form.images?.map(
-              (
-                image,
-                index
-              ) => (
-
+              (image, index) =>
                 image && (
-
                   <div
                     key={index}
                     onClick={() => {
-
                       setSelectedImage(
                         image
                       );
-
                       setZoom(1);
                     }}
                     className={`
@@ -1158,19 +1671,18 @@ const handleUpdate = async () => {
                       overflow-hidden
                       cursor-pointer
                       border-2
-                      transition-all
-
                       ${
-                        selectedImage === image
+                        selectedImage ===
+                        image
                           ? "border-white scale-105"
-                          : "border-transparent opacity-70 hover:opacity-100"
+                          : "border-transparent opacity-70"
                       }
                     `}
                   >
 
                     <img
                       src={image}
-                      alt="thumb"
+                      alt={`thumb-${index}`}
                       className="
                         w-full
                         h-full
@@ -1179,9 +1691,7 @@ const handleUpdate = async () => {
                     />
 
                   </div>
-
                 )
-              )
             )}
 
           </div>

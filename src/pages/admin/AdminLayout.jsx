@@ -87,6 +87,14 @@ export default function AdminLayout() {
         <FiBox /> Products
       </NavLink>
 
+      <NavLink
+  to="/admin/combo-packs"
+  className={linkClass}
+>
+  <FiBox /> 
+  Combo Packs
+</NavLink>
+
       <NavLink to="/admin/orders" className={linkClass}>
         <FiShoppingCart /> Orders
       </NavLink>

@@ -3,7 +3,7 @@ const testimonials = [
     name: "Priya S",
     role: "Mumbai Customer",
     rating: 5,
-    image: "/customers/priya.png",
+    image: "/customers/priya.webp",
     message:
       "Excellent quality products with authentic taste. Packaging was very neat and delivery was fast.",
   },
@@ -11,7 +11,7 @@ const testimonials = [
     name: "Arun Kumar",
     role: "Bangalore Buyer",
     rating: 4.5,
-    image: "/customers/arunkumar.png",
+    image: "/customers/arunkumar.webp",
     message:
       "Really loved the natural ingredients. Feels healthy and fresh compared to other brands.",
   },
@@ -19,7 +19,7 @@ const testimonials = [
     name: "Meena R",
     role: "Coimbatore Customer",
     rating: 5,
-    image: "/customers/meena.png",
+    image: "/customers/meena.webp",
     message:
       "Very good product quality. My family enjoys it daily. Will definitely reorder again.",
   },

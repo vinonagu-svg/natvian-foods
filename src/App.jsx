@@ -21,6 +21,7 @@ import Settings from "./pages/admin/Settings";
 import Categories from "./pages/admin/Categories";
 import Subcategories from "./pages/admin/Subcategories";
 import Archive from "./pages/admin/Archive";
+import ComboPacks from "./pages/admin/ComboPacks";
 // LAZY
 const AdminLogin = lazy(() =>
   import("./pages/admin/AdminLogin")
@@ -84,6 +85,15 @@ export default function App() {
               </PermissionRoute>
             }
           />
+          {/* COMBO PACKS */}
+<Route
+  path="combo-packs"
+  element={
+    <PermissionRoute permission="products:read">
+      <ComboPacks />
+    </PermissionRoute>
+  }
+/>
 
           {/* ORDERS */}
           <Route

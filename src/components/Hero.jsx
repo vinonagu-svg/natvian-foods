@@ -1,5 +1,3 @@
-// src/components/Hero.jsx
-
 import LeftHero from "./LeftHero";
 import RightHero from "./RightHero";
 
@@ -8,10 +6,7 @@ import FarmBackground from "../assets/farm-background.webp";
 
 export default function Hero({ language }) {
   return (
-    <section
-      id="home"
-      className="relative overflow-hidden"
-    >
+    <section className="relative overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
@@ -30,109 +25,30 @@ export default function Hero({ language }) {
           relative z-10
           max-w-[1700px]
           mx-auto
-          px-6
-          py-8 md:py-10
+          px-5 sm:px-6
+          py-4 md:py-5 lg:py-6
           grid
-          lg:grid-cols-[1fr_1.1fr]
-          gap-6
+          lg:grid-cols-[1fr_1.05fr]
+          gap-4 lg:gap-6
           items-start
         "
       >
         {/* Left Content */}
         <LeftHero language={language} />
 
-        {/* Right Banner */}
+        {/* Right Product Image */}
         <div
-  className="relative"
-  style={{ top: "40px" }}
->
-  <RightHero HeroProductsImage={HeroProductsImage} />
-</div>
+          className="
+            relative
+            mt-2
+            lg:mt-8
+          "
+        >
+          <RightHero
+            HeroProductsImage={HeroProductsImage}
+          />
+        </div>
       </div>
-{/* Trust Badges */}
-<div className="relative z-10 px-6 pb-6">
-  <div className="max-w-7xl mx-auto">
-    <div
-      className="
-        flex
-        flex-wrap
-        justify-center
-        gap-3
-      "
-    >
-      <span className="bg-white px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-        🌿 100% Natural Ingredients
-      </span>
-
-      <span className="bg-white px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-        🌾 Millet-Based Nutrition
-      </span>
-
-      <span className="bg-white px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-        💪 Targeted Wellness Formulas
-      </span>
-
-      <span className="bg-white px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-        🚫 No Preservatives
-      </span>
-
-      <span className="bg-white px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-        ❤️ For Every Age Group
-      </span>
-
-      <span className="bg-white px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-        🇮🇳 Made in Tamil Nadu
-      </span>
-    </div>
-  </div>
-</div>
-     {/* Categories Strip */}
-<div className="relative z-10 bg-gradient-to-r from-[#1B4332] via-[#2D6A4F] to-[#1B4332] py-3 shadow-lg">
-  <div
-    className="
-      max-w-7xl mx-auto
-      px-4 md:px-6
-      flex flex-nowrap
-      justify-start md:justify-center
-      items-center
-      gap-3 md:gap-5
-      text-white
-      text-xs md:text-base
-      font-medium
-      whitespace-nowrap
-      overflow-x-auto
-      scrollbar-hide
-    "
-  >
-
-    <span className="shrink-0">🌾 Native Rice Varieties</span>
-
-    <span className="hidden md:block opacity-40 shrink-0">|</span>
-
-    <span className="shrink-0">🌿 Millets</span>
-
-    <span className="hidden md:block opacity-40 shrink-0">|</span>
-
-    <span className="shrink-0">🫘 Pulses & Dals</span>
-
-    <span className="hidden md:block opacity-40 shrink-0">|</span>
-
-    <span className="shrink-0">🍶 Cooking Essentials</span>
-
-    <span className="hidden md:block opacity-40 shrink-0">|</span>
-
-    <span className="shrink-0">🧈 Oils & Ghee</span>
-
-    <span className="hidden md:block opacity-40 shrink-0">|</span>
-
-    <span className="shrink-0">🥣 Health Mixes</span>
-
-    <span className="hidden md:block opacity-40 shrink-0">|</span>
-
-    <span className="shrink-0">🌸 Beauty & Personal Care</span>
-
-  </div>
-</div>
     </section>
   );
 }
