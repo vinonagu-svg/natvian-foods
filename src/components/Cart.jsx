@@ -13,10 +13,6 @@ export default function Cart({
   setCart,
   removeFromCart,
 }) {
-
-  // =========================
-  // CUSTOMER DETAILS
-  // =========================
   const [customer, setCustomer] = useState({
     name: "",
     phone: "",
@@ -25,182 +21,136 @@ export default function Cart({
     pincode: "",
   });
 
-  // =========================
-  // STATE
-  // =========================
-  const [state, setState] =
-    useState("Tamil Nadu");
+  const [state, setState] = useState("Tamil Nadu");
+
+  const [coupon, setCoupon] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // =========================
-  // COUPON STATE
+  // FETCH COUPONS
   // =========================
-  const [coupon, setCoupon] =
-    useState("");
 
-  const [couponDiscount, setCouponDiscount] =
-    useState(0);
-
-  const [appliedCoupon, setAppliedCoupon] =
-    useState(null);
-
-  const [availableCoupons, setAvailableCoupons] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  // =========================
-  // FETCH ACTIVE COUPONS
-  // =========================
   useEffect(() => {
-
     const fetchCoupons = async () => {
-
       try {
+        const snap = await getDocs(
+          collection(db, "coupons")
+        );
 
-        const snap =
-          await getDocs(
-            collection(db, "coupons")
-          );
-
-        const data =
-          snap.docs
-            .map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
-            .filter(
-              (c) =>
-                c.isActive === true
-            );
+        const data = snap.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter((c) => c.isActive === true);
 
         setAvailableCoupons(data);
-
-      } catch (err) {
-
-        console.error(
-          "Coupon fetch error:",
-          err
-        );
+      } catch (error) {
+        console.error("Coupon fetch error:", error);
       }
     };
 
     fetchCoupons();
-
   }, []);
 
   // =========================
-  // PRODUCT PRICE
-  // GST IS ALREADY INCLUDED
+  // GET CART PRICE
   // =========================
-  const getPrice = (mrp) => {
-    return Number(mrp) || 0;
+  // Normal product = mrp
+  // Combo pack = comboPrice
+  // =========================
+
+  const getPrice = (item) => {
+    if (item?.type === "combo") {
+      return Number(item.comboPrice || 0);
+    }
+
+    return Number(item?.mrp || 0);
   };
 
   // =========================
   // CART TOTAL
   // =========================
+
   const mrpTotal = cart.reduce(
-    (sum, item) =>
-      sum +
-      getPrice(item.mrp) *
-      Number(item.qty || 1),
+    (sum, item) => {
+      const price = getPrice(item);
+      const qty = Number(item.qty || 1);
+
+      return sum + price * qty;
+    },
     0
   );
 
-  // No automatic product discount
   const offerTotal = mrpTotal;
 
   // =========================
   // RESET COUPON WHEN CART CHANGES
   // =========================
-  useEffect(() => {
 
+  useEffect(() => {
     setCoupon("");
     setCouponDiscount(0);
     setAppliedCoupon(null);
-
   }, [cart]);
 
   // =========================
   // APPLY COUPON
   // =========================
+
   const applyCoupon = () => {
+    const code = coupon.trim().toUpperCase();
 
-    const code =
-      coupon.trim().toUpperCase();
-
-    const found =
-      availableCoupons.find(
-        (c) =>
-          c.code?.toUpperCase() ===
-          code
-      );
-
-    // INVALID COUPON
-    if (!found) {
-
-      setCouponDiscount(0);
-      setAppliedCoupon(null);
-
-      alert(
-        "Invalid Coupon ❌"
-      );
-
+    if (!code) {
+      alert("Please select a coupon");
       return;
     }
 
-    // =========================
-    // CHECK EXPIRY
-    // =========================
+    const found = availableCoupons.find(
+      (c) =>
+        String(c.code || "")
+          .trim()
+          .toUpperCase() === code
+    );
 
-    let expiryDate;
+    if (!found) {
+      setCouponDiscount(0);
+      setAppliedCoupon(null);
+      alert("Invalid Coupon");
+      return;
+    }
+
+    // Check expiry
+    let expiryDate = null;
 
     if (found.expiryDate?.seconds) {
-
-      expiryDate =
-        new Date(
-          found.expiryDate.seconds *
-          1000
-        );
-
-    } else {
-
-      expiryDate =
-        new Date(
-          found.expiryDate
-        );
+      expiryDate = new Date(
+        found.expiryDate.seconds * 1000
+      );
+    } else if (found.expiryDate) {
+      expiryDate = new Date(found.expiryDate);
     }
 
     if (
       expiryDate &&
-      !isNaN(expiryDate) &&
+      !isNaN(expiryDate.getTime()) &&
       expiryDate < new Date()
     ) {
-
       setCouponDiscount(0);
       setAppliedCoupon(null);
-
-      alert(
-        "Coupon Expired ⛔"
-      );
-
+      alert("Coupon Expired");
       return;
     }
 
-    // =========================
-    // MINIMUM CART VALUE
-    // =========================
+    // Minimum cart value
+    const minCart = Number(
+      found.minCartValue || 0
+    );
 
-    const minCart =
-      Number(
-        found.minCartValue || 0
-      );
-
-    if (
-      offerTotal < minCart
-    ) {
-
+    if (offerTotal < minCart) {
       setCouponDiscount(0);
       setAppliedCoupon(null);
 
@@ -211,112 +161,64 @@ export default function Cart({
       return;
     }
 
-    // =========================
-    // CALCULATE DISCOUNT
-    // =========================
-
+    // Calculate discount
     let discount = 0;
 
     if (
-      found.type === "PERCENT"
+      String(found.type || "").toUpperCase() ===
+      "PERCENT"
     ) {
-
       discount =
-        (
-          offerTotal *
-          Number(found.value || 0)
-        ) / 100;
-
+        (offerTotal * Number(found.value || 0)) /
+        100;
     } else {
-
-      discount =
-        Number(
-          found.value || 0
-        );
+      discount = Number(found.value || 0);
     }
 
-    // Prevent negative total
-    if (
-      discount > offerTotal
-    ) {
-
-      discount =
-        offerTotal;
+    if (discount > offerTotal) {
+      discount = offerTotal;
     }
 
-    setCouponDiscount(
-      discount
-    );
+    setCouponDiscount(discount);
+    setAppliedCoupon(found.code);
 
-    setAppliedCoupon(
-      found.code
-    );
-
-    alert(
-      "Coupon Applied ✅"
-    );
+    alert("Coupon Applied");
   };
 
   // =========================
   // REMOVE COUPON
   // =========================
-  const removeCoupon = () => {
 
+  const removeCoupon = () => {
     setCoupon("");
     setCouponDiscount(0);
     setAppliedCoupon(null);
   };
 
   // =========================
-  // FINAL PRODUCT TOTAL
-  // GST INCLUDED
+  // FINAL PRICE AFTER COUPON
   // =========================
-  const finalAfterCoupon =
-    Math.max(
-      offerTotal -
-      couponDiscount,
-      0
-    );
+
+  const finalAfterCoupon = Math.max(
+    offerTotal - couponDiscount,
+    0
+  );
 
   // =========================
   // GST
-  // GST IS INCLUDED IN PRICE
   // =========================
 
   const GST_PERCENT = 5;
 
-  /*
-    Example:
-
-    Product price = ₹199
-
-    GST included:
-
-    ₹199 × 5 / 105
-    = ₹9.48 GST
-
-    CGST = ₹4.74
-    SGST = ₹4.74
-
-    Taxable value = ₹189.52
-  */
-
   const totalGST =
     finalAfterCoupon *
-    (
-      GST_PERCENT /
-      (100 + GST_PERCENT)
-    );
+    (GST_PERCENT / (100 + GST_PERCENT));
 
-  const cgst =
-    totalGST / 2;
-
-  const sgst =
-    totalGST / 2;
+  const cgst = totalGST / 2;
+  const sgst = totalGST / 2;
 
   const taxableAmount =
-    finalAfterCoupon -
-    totalGST;
+    finalAfterCoupon - totalGST;
 
   // =========================
   // SHIPPING
@@ -324,14 +226,9 @@ export default function Cart({
 
   let shipping = 0;
 
-  if (
-    finalAfterCoupon >= 999
-  ) {
-
+  if (finalAfterCoupon >= 999) {
     shipping = 0;
-
   } else {
-
     shipping =
       state === "Tamil Nadu"
         ? 60
@@ -343,500 +240,308 @@ export default function Cart({
   // =========================
 
   const grandTotal =
-    finalAfterCoupon +
-    shipping;
+    finalAfterCoupon + shipping;
 
   // =========================
-  // QUANTITY CONTROL
+  // INCREASE QUANTITY
   // =========================
 
-  const increaseQty = (i) => {
+  const increaseQty = (index) => {
+    const updated = [...cart];
 
-    const updated =
-      [...cart];
-
-    updated[i].qty =
-      Number(
-        updated[i].qty || 1
-      ) + 1;
+    updated[index].qty =
+      Number(updated[index].qty || 1) + 1;
 
     setCart(updated);
   };
 
-  const decreaseQty = (i) => {
+  // =========================
+  // DECREASE QUANTITY
+  // =========================
 
-    const updated =
-      [...cart];
+  const decreaseQty = (index) => {
+    const updated = [...cart];
 
-    if (
-      Number(
-        updated[i].qty || 1
-      ) > 1
-    ) {
+    const currentQty = Number(
+      updated[index].qty || 1
+    );
 
-      updated[i].qty -= 1;
+    if (currentQty > 1) {
+      updated[index].qty = currentQty - 1;
     }
 
     setCart(updated);
   };
 
   // =========================
-  // RAZORPAY PAYMENT
+  // PAYMENT
   // =========================
 
-  const handlePayment =
-    async () => {
+  const handlePayment = async () => {
+    try {
+      // Validation
 
-      try {
+      if (!customer.name.trim()) {
+        alert("Please enter your name");
+        return;
+      }
 
-        // =========================
-        // VALIDATION
-        // =========================
+      if (!customer.phone.trim()) {
+        alert("Please enter your phone number");
+        return;
+      }
 
-        if (
-          !customer.name.trim()
-        ) {
+      if (!customer.address.trim()) {
+        alert("Please enter your address");
+        return;
+      }
 
-          alert(
-            "Please enter your name"
-          );
+      if (!customer.city.trim()) {
+        alert("Please enter your city");
+        return;
+      }
 
-          return;
-        }
+      if (!customer.pincode.trim()) {
+        alert("Please enter your pincode");
+        return;
+      }
 
-        if (
-          !customer.phone.trim()
-        ) {
+      if (!state) {
+        alert("Please select your state");
+        return;
+      }
 
-          alert(
-            "Please enter your phone number"
-          );
+      if (cart.length === 0) {
+        alert("Your cart is empty");
+        return;
+      }
 
-          return;
-        }
+      if (!window.Razorpay) {
+        alert("Razorpay SDK not loaded");
+        return;
+      }
 
-        if (
-          !customer.address.trim()
-        ) {
+      setLoading(true);
 
-          alert(
-            "Please enter your address"
-          );
+      // =========================
+      // PREPARE ORDER ITEMS
+      // =========================
 
-          return;
-        }
+      const orderItems = cart.map((item) => {
+        const actualPrice = getPrice(item);
 
-        if (
-          !customer.city.trim()
-        ) {
+        return {
+          id: item.id || "",
 
-          alert(
-            "Please enter your city"
-          );
+          name: item.name || "",
 
-          return;
-        }
+          tamilName: item.tamilName || "",
 
-        if (
-          !customer.pincode.trim()
-        ) {
+          type: item.type || "product",
 
-          alert(
-            "Please enter your pincode"
-          );
+          weight: item.weight || "",
 
-          return;
-        }
+          mrp: Number(item.mrp || 0),
 
-        if (!state) {
+          regularPrice: Number(
+            item.regularPrice || 0
+          ),
 
-          alert(
-            "Please select your state"
-          );
+          comboPrice: Number(
+            item.comboPrice || 0
+          ),
 
-          return;
-        }
+          savings: Number(
+            item.savings || 0
+          ),
 
-        if (!window.Razorpay) {
+          // ACTUAL PRICE CHARGED
+          price: Number(actualPrice) || 0,
 
-          alert(
-            "Razorpay SDK not loaded"
-          );
+          qty: Number(item.qty || 1),
 
-          return;
-        }
-
-        setLoading(true);
-
-        // =========================
-        // RAZORPAY OPTIONS
-        // =========================
-
-        const options = {
-
-          key:
-            import.meta.env
-              .VITE_RAZORPAY_KEY_ID,
-
-          // Amount in paise
-          amount:
-            Math.round(
-              grandTotal * 100
-            ),
-
-          currency: "INR",
-
-          name:
-            "Natvian Foods",
-
-          description:
-            "Online Order",
-
-          prefill: {
-
-            name:
-              customer.name,
-
-            contact:
-              customer.phone,
-          },
-
-          notes: {
-
-            address:
-              customer.address,
-
-            city:
-              customer.city,
-
-            state:
-              state,
-
-            pincode:
-              customer.pincode,
-
-            coupon:
-              appliedCoupon || "",
-          },
-
-          theme: {
-
-            color:
-              "#31572C",
-          },
-
-          // =========================
-          // PAYMENT SUCCESS
-          // =========================
-
-          handler:
-            async function (
-              response
-            ) {
-
-              try {
-
-                const orderNumber =
-                  "NF-" +
-                  Date.now();
-
-                console.log(
-                  "Customer",
-                  customer
-                );
-
-                console.log(
-                  "State",
-                  state
-                );
-
-                console.log(
-                  "Cart",
-                  cart
-                );
-
-                console.log(
-                  "Applied Coupon",
-                  appliedCoupon
-                );
-
-                console.log(
-                  "Payment Response",
-                  response
-                );
-
-                // =========================
-                // SAVE ORDER
-                // =========================
-
-                await addDoc(
-                  collection(
-                    db,
-                    "orders"
-                  ),
-                  {
-
-                    // =========================
-                    // ORDER NUMBER
-                    // =========================
-
-                    orderNumber:
-                      orderNumber,
-
-                    // =========================
-                    // CUSTOMER
-                    // =========================
-
-                    customer: {
-
-                      name:
-                        customer.name ||
-                        "",
-
-                      phone:
-                        customer.phone ||
-                        "",
-
-                      address:
-                        customer.address ||
-                        "",
-
-                      city:
-                        customer.city ||
-                        "",
-
-                      state:
-                        state ||
-                        "",
-
-                      pincode:
-                        customer.pincode ||
-                        "",
-                    },
-
-                    // =========================
-                    // ITEMS
-                    // =========================
-
-                    items:
-                      cart.map(
-                        (item) => ({
-
-                          id:
-                            item.id ||
-                            "",
-
-                          name:
-                            item.name ||
-                            "",
-
-                          weight:
-                            item.weight ||
-                            "",
-
-                          mrp:
-                            Number(
-                              item.mrp ||
-                              0
-                            ),
-
-                          qty:
-                            Number(
-                              item.qty ||
-                              1
-                            ),
-                        })
-                      ),
-
-                    // =========================
-                    // PRICE DETAILS
-                    // =========================
-
-                    subtotal:
-                      Number(
-                        mrpTotal
-                      ) || 0,
-
-                    couponDiscount:
-                      Number(
-                        couponDiscount
-                      ) || 0,
-
-                    taxableAmount:
-                      Number(
-                        taxableAmount
-                      ) || 0,
-
-                    totalGST:
-                      Number(
-                        totalGST
-                      ) || 0,
-
-                    cgst:
-                      Number(
-                        cgst
-                      ) || 0,
-
-                    sgst:
-                      Number(
-                        sgst
-                      ) || 0,
-
-                    shipping:
-                      Number(
-                        shipping
-                      ) || 0,
-
-                    grandTotal:
-                      Number(
-                        grandTotal
-                      ) || 0,
-
-                    // =========================
-                    // COUPON
-                    // =========================
-
-                    coupon:
-                      appliedCoupon ||
-                      "",
-
-                    // =========================
-                    // PAYMENT
-                    // =========================
-
-                    paymentId:
-                      response
-                        ?.razorpay_payment_id ||
-                      "",
-
-                    paymentStatus:
-                      "PAID",
-
-                    orderStatus:
-                      "pending",
-
-                    // =========================
-                    // GST
-                    // =========================
-
-                    gstIncluded:
-                      true,
-
-                    gstRate:
-                      GST_PERCENT,
-
-                    // =========================
-                    // TIMESTAMP
-                    // =========================
-
-                    createdAt:
-                      serverTimestamp(),
-                  }
-                );
-
-                alert(
-                  "Payment Successful ✅"
-                );
-
-                setCart([]);
-
-              } catch (error) {
-
-                console.error(
-                  "FULL ERROR:",
-                  error
-                );
-
-                console.error(
-                  "ERROR CODE:",
-                  error.code
-                );
-
-                console.error(
-                  "ERROR MESSAGE:",
-                  error.message
-                );
-
-                alert(
-                  `Order save failed:
-${error.code || ""}
-${error.message || ""}`
-                );
-
-              } finally {
-
-                setLoading(false);
-              }
-            },
+          items: Array.isArray(item.items)
+            ? item.items
+            : [],
         };
+      });
+
+      // =========================
+      // RAZORPAY
+      // =========================
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+
+        amount: Math.round(
+          grandTotal * 100
+        ),
+
+        currency: "INR",
+
+        name: "Natvian Foods",
+
+        description: "Online Order",
+
+        prefill: {
+          name: customer.name,
+          contact: customer.phone,
+        },
+
+        notes: {
+          address: customer.address,
+          city: customer.city,
+          state: state,
+          pincode: customer.pincode,
+          coupon: appliedCoupon || "",
+        },
+
+        theme: {
+          color: "#31572C",
+        },
 
         // =========================
-        // CREATE RAZORPAY
+        // PAYMENT SUCCESS
         // =========================
 
-        const razorpay =
-          new window.Razorpay(
-            options
-          );
+        handler: async function (response) {
+          try {
+            const orderNumber =
+              "NF-" + Date.now();
 
-        // =========================
-        // PAYMENT FAILED
-        // =========================
+            // =========================
+            // SAVE ORDER
+            // =========================
 
-        razorpay.on(
-          "payment.failed",
-          function (
-            response
-          ) {
+            await addDoc(
+              collection(db, "orders"),
+              {
+                orderNumber: orderNumber,
 
-            console.error(
-              response
+                customer: {
+                  name: customer.name || "",
+                  phone: customer.phone || "",
+                  address: customer.address || "",
+                  city: customer.city || "",
+                  state: state || "",
+                  pincode: customer.pincode || "",
+                },
+
+                items: orderItems,
+
+                subtotal:
+                  Number(mrpTotal) || 0,
+
+                couponDiscount:
+                  Number(couponDiscount) || 0,
+
+                taxableAmount:
+                  Number(taxableAmount) || 0,
+
+                totalGST:
+                  Number(totalGST) || 0,
+
+                cgst:
+                  Number(cgst) || 0,
+
+                sgst:
+                  Number(sgst) || 0,
+
+                shipping:
+                  Number(shipping) || 0,
+
+                grandTotal:
+                  Number(grandTotal) || 0,
+
+                coupon:
+                  appliedCoupon || "",
+
+                paymentId:
+                  response?.razorpay_payment_id || "",
+
+                paymentStatus: "PAID",
+
+                orderStatus: "pending",
+
+                gstIncluded: true,
+
+                gstRate: GST_PERCENT,
+
+                createdAt: serverTimestamp(),
+              }
             );
 
-            setLoading(false);
+            alert("Payment Successful");
+
+            setCart([]);
+          } catch (error) {
+            console.error(
+              "Order save error:",
+              error
+            );
 
             alert(
-              response.error
-                ?.description ||
-              "Payment Failed"
+              `Order save failed:\n${
+                error.code || ""
+              }\n${error.message || ""}`
             );
+          } finally {
+            setLoading(false);
           }
-        );
+        },
+      };
 
-        razorpay.open();
+      const razorpay =
+        new window.Razorpay(options);
 
-      } catch (error) {
+      // =========================
+      // PAYMENT FAILED
+      // =========================
 
-        console.error(
-          error
-        );
+      razorpay.on(
+        "payment.failed",
+        function (response) {
+          console.error(
+            "Payment failed:",
+            response
+          );
 
-        setLoading(false);
+          setLoading(false);
 
-        alert(
-          "Unable to start payment"
-        );
-      }
-    };
+          alert(
+            response.error?.description ||
+              "Payment Failed"
+          );
+        }
+      );
+
+      razorpay.open();
+    } catch (error) {
+      console.error(
+        "Payment error:",
+        error
+      );
+
+      setLoading(false);
+
+      alert(
+        "Unable to start payment"
+      );
+    }
+  };
 
   // =========================
   // EMPTY CART
   // =========================
 
-  if (
-    cart.length === 0
-  ) {
-
+  if (cart.length === 0) {
     return (
-
       <section className="max-w-4xl mx-auto p-6">
-
         <h1 className="text-4xl font-bold mb-8 text-[#31572C]">
           Shopping Cart
         </h1>
 
         <div className="bg-white p-10 rounded-3xl shadow text-center">
-
           <h2 className="text-2xl font-bold mb-3">
             Your cart is empty
           </h2>
@@ -844,63 +549,123 @@ ${error.message || ""}`
           <p className="text-gray-500">
             Add products to continue shopping
           </p>
-
         </div>
-
       </section>
     );
   }
 
   // =========================
-  // MAIN UI
+  // CART UI
   // =========================
 
   return (
-
     <section className="max-w-5xl mx-auto p-6">
-
       <h1 className="text-4xl font-bold mb-8 text-[#31572C]">
         Shopping Cart
       </h1>
 
-      {/* =========================
-          CART ITEMS
-      ========================= */}
+      {/* CART ITEMS */}
 
       <div className="space-y-4">
+        {cart.map((item, i) => {
+          const itemPrice = getPrice(item);
 
-        {cart.map(
-          (item, i) => (
+          const isCombo =
+            item.type === "combo";
 
+          const regularPrice =
+            Number(item.regularPrice || 0);
+
+          const comboPrice =
+            Number(item.comboPrice || 0);
+
+          const savings =
+            Number(item.savings || 0);
+
+          return (
             <div
-              key={i}
-              className="border rounded-2xl p-4 flex justify-between bg-white"
+              key={
+                item.id
+                  ? `${item.id}-${i}`
+                  : i
+              }
+              className="border rounded-2xl p-4 flex flex-col md:flex-row md:justify-between gap-4 bg-white"
             >
+              {/* ITEM DETAILS */}
 
               <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-lg">
+                    {item.name}
+                  </h3>
 
-                <h3 className="font-bold text-lg">
-                  {item.name}
-                </h3>
+                  {isCombo && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                      Combo
+                    </span>
+                  )}
+                </div>
 
-                <p className="text-gray-500">
-                  {item.weight}
-                </p>
+                {item.weight && (
+                  <p className="text-gray-500">
+                    {item.weight}
+                  </p>
+                )}
 
-                <p className="font-bold text-green-700 mt-1">
+                {/* PRICE */}
 
-                  ₹
-                  {getPrice(
-                    item.mrp
-                  ).toFixed(2)}
+                <div className="mt-1">
+                  {isCombo &&
+                    regularPrice > comboPrice && (
+                      <span className="text-sm text-gray-400 line-through mr-2">
+                        ₹{regularPrice.toFixed(2)}
+                      </span>
+                    )}
 
-                </p>
+                  <span className="font-bold text-green-700">
+                    ₹{itemPrice.toFixed(2)}
+                  </span>
 
+                  {isCombo && savings > 0 && (
+                    <span className="ml-2 text-xs font-semibold text-red-600">
+                      Save ₹{savings.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+
+                {/* COMBO ITEMS */}
+
+                {isCombo &&
+                  Array.isArray(item.items) &&
+                  item.items.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      {item.items.map(
+                        (comboItem, index) => (
+                          <div key={index}>
+                            •{" "}
+                            {comboItem.productName ||
+                              comboItem.name ||
+                              "Product"}
+
+                            {comboItem.weight
+                              ? ` - ${comboItem.weight}`
+                              : ""}
+
+                            {" x "}
+
+                            {comboItem.quantity || 1}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
               </div>
 
-              <div className="flex gap-3 items-center">
+              {/* QUANTITY */}
 
+              <div className="flex gap-3 items-center">
                 <button
+                  type="button"
                   onClick={() =>
                     decreaseQty(i)
                   }
@@ -914,6 +679,7 @@ ${error.message || ""}`
                 </span>
 
                 <button
+                  type="button"
                   onClick={() =>
                     increaseQty(i)
                   }
@@ -923,6 +689,7 @@ ${error.message || ""}`
                 </button>
 
                 <button
+                  type="button"
                   onClick={() =>
                     removeFromCart(i)
                   }
@@ -930,29 +697,20 @@ ${error.message || ""}`
                 >
                   Remove
                 </button>
-
               </div>
-
             </div>
-          )
-        )}
-
+          );
+        })}
       </div>
 
-      {/* =========================
-          CUSTOMER DETAILS
-      ========================= */}
+      {/* CUSTOMER DETAILS */}
 
       <div className="mt-10 bg-white p-6 rounded-3xl shadow">
-
         <h2 className="text-2xl font-bold mb-5">
           Customer Details
         </h2>
 
         <div className="grid md:grid-cols-2 gap-4">
-
-          {/* NAME */}
-
           <input
             type="text"
             placeholder="Full Name"
@@ -961,13 +719,10 @@ ${error.message || ""}`
             onChange={(e) =>
               setCustomer({
                 ...customer,
-                name:
-                  e.target.value,
+                name: e.target.value,
               })
             }
           />
-
-          {/* PHONE */}
 
           <input
             type="tel"
@@ -977,13 +732,10 @@ ${error.message || ""}`
             onChange={(e) =>
               setCustomer({
                 ...customer,
-                phone:
-                  e.target.value,
+                phone: e.target.value,
               })
             }
           />
-
-          {/* CITY */}
 
           <input
             type="text"
@@ -993,66 +745,24 @@ ${error.message || ""}`
             onChange={(e) =>
               setCustomer({
                 ...customer,
-                city:
-                  e.target.value,
+                city: e.target.value,
               })
             }
           />
-
-          {/* STATE */}
 
           <select
             className="border p-3 rounded-xl"
             value={state}
             onChange={(e) =>
-              setState(
-                e.target.value
-              )
+              setState(e.target.value)
             }
           >
-
             <option value="">
               Select State
             </option>
 
-            <option value="Andhra Pradesh">
-              Andhra Pradesh
-            </option>
-
-            <option value="Arunachal Pradesh">
-              Arunachal Pradesh
-            </option>
-
-            <option value="Assam">
-              Assam
-            </option>
-
-            <option value="Bihar">
-              Bihar
-            </option>
-
-            <option value="Chhattisgarh">
-              Chhattisgarh
-            </option>
-
-            <option value="Goa">
-              Goa
-            </option>
-
-            <option value="Gujarat">
-              Gujarat
-            </option>
-
-            <option value="Haryana">
-              Haryana
-            </option>
-
-            <option value="Himachal Pradesh">
-              Himachal Pradesh
-            </option>
-
-            <option value="Jharkhand">
-              Jharkhand
+            <option value="Tamil Nadu">
+              Tamil Nadu
             </option>
 
             <option value="Karnataka">
@@ -1063,102 +773,33 @@ ${error.message || ""}`
               Kerala
             </option>
 
-            <option value="Madhya Pradesh">
-              Madhya Pradesh
-            </option>
-
-            <option value="Maharashtra">
-              Maharashtra
-            </option>
-
-            <option value="Manipur">
-              Manipur
-            </option>
-
-            <option value="Meghalaya">
-              Meghalaya
-            </option>
-
-            <option value="Mizoram">
-              Mizoram
-            </option>
-
-            <option value="Nagaland">
-              Nagaland
-            </option>
-
-            <option value="Odisha">
-              Odisha
-            </option>
-
-            <option value="Punjab">
-              Punjab
-            </option>
-
-            <option value="Rajasthan">
-              Rajasthan
-            </option>
-
-            <option value="Sikkim">
-              Sikkim
-            </option>
-
-            <option value="Tamil Nadu">
-              Tamil Nadu
+            <option value="Andhra Pradesh">
+              Andhra Pradesh
             </option>
 
             <option value="Telangana">
               Telangana
             </option>
 
-            <option value="Tripura">
-              Tripura
-            </option>
-
-            <option value="Uttar Pradesh">
-              Uttar Pradesh
-            </option>
-
-            <option value="Uttarakhand">
-              Uttarakhand
-            </option>
-
-            <option value="West Bengal">
-              West Bengal
+            <option value="Maharashtra">
+              Maharashtra
             </option>
 
             <option value="Delhi">
               Delhi
             </option>
 
-            <option value="Jammu and Kashmir">
-              Jammu and Kashmir
+            <option value="Other">
+              Other
             </option>
-
-            <option value="Ladakh">
-              Ladakh
-            </option>
-
-            <option value="Puducherry">
-              Puducherry
-            </option>
-
-            <option value="Chandigarh">
-              Chandigarh
-            </option>
-
           </select>
-
-          {/* PINCODE */}
 
           <input
             type="text"
             placeholder="Pincode"
             maxLength={6}
             className="border p-3 rounded-xl"
-            value={
-              customer.pincode
-            }
+            value={customer.pincode}
             onChange={(e) =>
               setCustomer({
                 ...customer,
@@ -1171,256 +812,174 @@ ${error.message || ""}`
             }
           />
 
-          {/* ADDRESS */}
-
           <textarea
             placeholder="Address"
             className="border p-3 rounded-xl md:col-span-2"
             rows={4}
-            value={
-              customer.address
-            }
+            value={customer.address}
             onChange={(e) =>
               setCustomer({
                 ...customer,
-                address:
-                  e.target.value,
+                address: e.target.value,
               })
             }
           />
-
         </div>
-
       </div>
 
-      {/* =========================
-          COUPON
-      ========================= */}
+      {/* COUPON */}
 
       <div className="mt-8 bg-white p-6 rounded-3xl shadow">
-
         <h2 className="text-2xl font-bold mb-4">
           Apply Coupon
         </h2>
 
         <div className="flex gap-3">
-
           <select
             className="border p-3 rounded-xl flex-1"
             value={coupon}
             onChange={(e) =>
-              setCoupon(
-                e.target.value
-              )
+              setCoupon(e.target.value)
             }
           >
-
             <option value="">
               Select Coupon
             </option>
 
-            {availableCoupons.map(
-              (c) => (
-
-                <option
-                  key={c.id}
-                  value={c.code}
-                >
-                  {c.code}
-                </option>
-
-              )
-            )}
-
+            {availableCoupons.map((c) => (
+              <option
+                key={c.id}
+                value={c.code}
+              >
+                {c.code}
+              </option>
+            ))}
           </select>
 
           <button
-            onClick={
-              applyCoupon
-            }
+            type="button"
+            onClick={applyCoupon}
             className="bg-black text-white px-6 rounded-xl"
           >
             Apply
           </button>
-
         </div>
 
         {appliedCoupon && (
-
           <div className="mt-4 flex items-center gap-4">
-
             <p className="text-green-700 font-semibold">
-
-              Coupon Applied:
-              {" "}
-              {appliedCoupon}
-
+              Coupon Applied: {appliedCoupon}
             </p>
 
             <button
-              onClick={
-                removeCoupon
-              }
+              type="button"
+              onClick={removeCoupon}
               className="text-red-500"
             >
               Remove Coupon
             </button>
-
           </div>
-
         )}
-
       </div>
 
-      {/* =========================
-          ORDER SUMMARY
-      ========================= */}
+      {/* ORDER SUMMARY */}
 
       <div className="mt-10 bg-white p-6 rounded-3xl shadow">
-
         <h2 className="text-2xl font-bold mb-5">
           Order Summary
         </h2>
 
         <div className="space-y-2 text-lg">
-
-          {/* SUBTOTAL */}
-
           <div className="flex justify-between">
-
             <span>
               Subtotal (GST Included)
             </span>
 
             <span>
-              ₹
-              {mrpTotal.toFixed(2)}
+              ₹{mrpTotal.toFixed(2)}
             </span>
-
           </div>
 
-          {/* COUPON */}
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-red-500">
+              <span>
+                Coupon Discount
+              </span>
 
-          <div className="flex justify-between text-red-500">
-
-            <span>
-              Coupon Discount
-            </span>
-
-            <span>
-              -₹
-              {couponDiscount.toFixed(2)}
-            </span>
-
-          </div>
-
-          {/* CGST */}
+              <span>
+                -₹{couponDiscount.toFixed(2)}
+              </span>
+            </div>
+          )}
 
           <div className="flex justify-between text-gray-600">
-
             <span>
               CGST (Included)
             </span>
 
             <span>
-              ₹
-              {cgst.toFixed(2)}
+              ₹{cgst.toFixed(2)}
             </span>
-
           </div>
 
-          {/* SGST */}
-
           <div className="flex justify-between text-gray-600">
-
             <span>
               SGST (Included)
             </span>
 
             <span>
-              ₹
-              {sgst.toFixed(2)}
+              ₹{sgst.toFixed(2)}
             </span>
-
           </div>
 
-          {/* SHIPPING */}
-
           <div className="flex justify-between">
-
             <span>
               Shipping
             </span>
 
             <span>
-
               {shipping === 0
                 ? "FREE"
                 : `₹${shipping.toFixed(2)}`}
-
             </span>
-
           </div>
-
-          {/* GST NOTE */}
 
           <p className="text-sm text-gray-500 pt-2">
             GST is already included in the product price.
           </p>
 
-          {/* SHIPPING NOTE */}
-
           {finalAfterCoupon < 999 && (
-
             <p className="text-sm text-gray-500">
-
               {state === "Tamil Nadu"
                 ? "Tamil Nadu shipping: ₹60"
                 : "Other state shipping: ₹100"}
-
             </p>
-
           )}
 
           {finalAfterCoupon >= 999 && (
-
             <p className="text-sm text-green-700 font-semibold">
-
-              🎉 Free shipping on orders ₹999 and above
-
+              Free shipping on orders ₹999 and above
             </p>
-
           )}
-
         </div>
 
-        {/* =========================
-            GRAND TOTAL
-        ========================= */}
+        {/* GRAND TOTAL */}
 
         <div className="border-t mt-5 pt-5 flex justify-between items-center">
-
           <h2 className="text-3xl font-bold">
             Grand Total
           </h2>
 
           <h2 className="text-3xl font-bold text-[#31572C]">
-
-            ₹
-            {grandTotal.toFixed(2)}
-
+            ₹{grandTotal.toFixed(2)}
           </h2>
-
         </div>
 
-        {/* =========================
-            PAYMENT BUTTON
-        ========================= */}
+        {/* PAYMENT BUTTON */}
 
         <button
-          onClick={
-            handlePayment
-          }
+          type="button"
+          onClick={handlePayment}
           disabled={loading}
           className={`w-full mt-6 text-white py-4 rounded-2xl text-lg font-bold ${
             loading
@@ -1428,15 +987,11 @@ ${error.message || ""}`
               : "bg-[#31572C] hover:bg-[#264653]"
           }`}
         >
-
           {loading
             ? "Processing..."
             : "Proceed to Pay"}
-
         </button>
-
       </div>
-
     </section>
   );
 }

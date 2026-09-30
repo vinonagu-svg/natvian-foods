@@ -49,12 +49,10 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] =
     useState("All");
 
-  // Keep this because Navbar may still use subcategory
-  // navigation. Homepage itself will NOT display subcategory
-  // filter buttons.
+  // Keep this because Navbar may still use subcategory navigation.
+  // Homepage itself does not display subcategory filter buttons.
   const [selectedSubcategory, setSelectedSubcategory] =
     useState("All");
-
 
   // =========================================================
   // HELPER
@@ -67,7 +65,6 @@ export default function HomePage() {
 
     return String(value).trim();
   };
-
 
   // =========================================================
   // FETCH PRODUCTS
@@ -102,12 +99,10 @@ export default function HomePage() {
     fetchProducts();
   }, []);
 
-
   // =========================================================
   // FETCH COMBO PACKS
   // =========================================================
   //
-  // IMPORTANT:
   // Combo Packs are stored in "combopacks" collection.
   //
   // =========================================================
@@ -146,7 +141,6 @@ export default function HomePage() {
     fetchComboPacks();
   }, []);
 
-
   // =========================================================
   // FETCH COUPONS
   // =========================================================
@@ -175,7 +169,6 @@ export default function HomePage() {
     fetchCoupons();
   }, []);
 
-
   // =========================================================
   // LAUNCH OFFER
   // =========================================================
@@ -186,7 +179,6 @@ export default function HomePage() {
     value: 10,
     isActive: true,
   };
-
 
   const getOfferPrice = (price) => {
     const safePrice = Number(price) || 0;
@@ -200,7 +192,6 @@ export default function HomePage() {
       (safePrice * OFFER_CONFIG.value) / 100
     );
   };
-
 
   // =========================================================
   // ADD NORMAL PRODUCT TO CART
@@ -238,6 +229,7 @@ export default function HomePage() {
       ...prev,
       {
         id: product.id,
+
         type: "product",
 
         name: product.name,
@@ -251,6 +243,7 @@ export default function HomePage() {
         weight:
           variant?.weight || "",
 
+        // Original product price
         mrp:
           Number(variant?.price) || 0,
 
@@ -259,9 +252,19 @@ export default function HomePage() {
     ]);
   };
 
-
   // =========================================================
   // ADD COMBO PACK TO CART
+  // =========================================================
+  //
+  // IMPORTANT:
+  // Combo Pack has its own selling price.
+  //
+  // regularPrice = combined original product price
+  // comboPrice   = actual discounted combo price
+  // savings      = amount saved
+  //
+  // The Cart will use comboPrice for billing.
+  //
   // =========================================================
 
   const addComboToCart = (combo) => {
@@ -274,6 +277,20 @@ export default function HomePage() {
       return;
     }
 
+    const regularPrice =
+      Number(combo.regularPrice) || 0;
+
+    const comboPrice =
+      Number(combo.comboPrice) || 0;
+
+    const savings =
+      Number(combo.savings) ||
+      Math.max(
+        regularPrice - comboPrice,
+        0
+      );
+
+    // Check if this exact combo is already in cart
     const existingIndex = cart.findIndex(
       (item) =>
         item.type === "combo" &&
@@ -290,14 +307,16 @@ export default function HomePage() {
       return;
     }
 
+    // Add combo to cart
     setCart((prev) => [
       ...prev,
       {
         id: combo.id,
 
+        // Important for Cart pricing
         type: "combo",
 
-        name: combo.name,
+        name: combo.name || "",
 
         tamilName:
           combo.tamilName || "",
@@ -309,28 +328,37 @@ export default function HomePage() {
 
         weight: "Combo Pack",
 
-        mrp:
-          Number(combo.regularPrice) || 0,
+        // Original combined price
+        regularPrice: regularPrice,
 
-        comboPrice:
-          Number(combo.comboPrice) || 0,
+        // Actual discounted selling price
+        comboPrice: comboPrice,
 
-        savings:
-          Number(combo.savings) ||
-          Math.max(
-            (Number(combo.regularPrice) || 0) -
-              (Number(combo.comboPrice) || 0),
-            0
-          ),
+        // Customer savings
+        savings: savings,
+
+        // Keep mrp for compatibility
+        // with existing Cart code
+        mrp: regularPrice,
 
         qty: 1,
 
-        items:
-          combo.items || [],
+        // Products inside the combo
+        items: combo.items || [],
       },
     ]);
-  };
 
+    console.log(
+      "Combo added to cart:",
+      {
+        id: combo.id,
+        name: combo.name,
+        regularPrice,
+        comboPrice,
+        savings,
+      }
+    );
+  };
 
   // =========================================================
   // REMOVE FROM CART
@@ -344,9 +372,18 @@ export default function HomePage() {
     setCart(updated);
   };
 
-
   // =========================================================
   // TOTAL PRICE
+  // =========================================================
+  //
+  // Normal product:
+  // Original price -> 10% Launching Offer
+  //
+  // Combo:
+  // Uses comboPrice directly.
+  //
+  // Combo does NOT receive another 10% launch discount.
+  //
   // =========================================================
 
   const totalPrice = cart.reduce(
@@ -358,12 +395,12 @@ export default function HomePage() {
 
       return (
         total +
-        price * (Number(item.qty) || 0)
+        price *
+          (Number(item.qty) || 0)
       );
     },
     0
   );
-
 
   // =========================================================
   // APPLY COUPON
@@ -388,20 +425,23 @@ export default function HomePage() {
     setAppliedCoupon(coupon);
   };
 
-
   // =========================================================
   // COUPON DISCOUNT
   // =========================================================
 
   const discount = appliedCoupon
-    ? cleanValue(appliedCoupon.type).toUpperCase() ===
-      "PERCENT"
+    ? cleanValue(
+        appliedCoupon.type
+      ).toUpperCase() === "PERCENT"
       ? (totalPrice *
-          (Number(appliedCoupon.value) || 0)) /
+          (Number(
+            appliedCoupon.value
+          ) || 0)) /
         100
-      : Number(appliedCoupon.value) || 0
+      : Number(
+          appliedCoupon.value
+        ) || 0
     : 0;
-
 
   // =========================================================
   // FINAL PRICE
@@ -412,16 +452,15 @@ export default function HomePage() {
     0
   );
 
-
   // =========================================================
   // CATEGORY LIST
   // =========================================================
   //
   // Categories come from BOTH:
-  // 1. products
-  // 2. combo packs
+  // 1. Products
+  // 2. Combo Packs
   //
-  // This ensures "Special Collections" appears.
+  // This ensures Special Collections appears.
   //
   // =========================================================
 
@@ -445,7 +484,6 @@ export default function HomePage() {
       ...comboCategories,
     ]),
   ];
-
 
   // =========================================================
   // PRODUCT FILTER
@@ -475,7 +513,6 @@ export default function HomePage() {
       );
     });
 
-
   // =========================================================
   // COMBO FILTER
   // =========================================================
@@ -492,7 +529,6 @@ export default function HomePage() {
       );
     });
 
-
   // =========================================================
   // CATEGORY CHANGE
   // =========================================================
@@ -501,7 +537,6 @@ export default function HomePage() {
     setSelectedCategory(category);
     setSelectedSubcategory("All");
 
-    // Scroll smoothly to products.
     setTimeout(() => {
       const productsSection =
         document.getElementById(
@@ -517,7 +552,6 @@ export default function HomePage() {
     }, 50);
   };
 
-
   // =========================================================
   // RENDER
   // =========================================================
@@ -530,7 +564,6 @@ export default function HomePage() {
           : "bg-[#F8F7F2] text-gray-800 min-h-screen"
       }
     >
-
       {/* =====================================================
           NAVBAR
       ===================================================== */}
@@ -555,22 +588,19 @@ export default function HomePage() {
         }
       />
 
-
       {/* =====================================================
           HERO
       ===================================================== */}
 
       <section id="home">
-  <Hero language={language} />
-</section>
-
+        <Hero language={language} />
+      </section>
 
       {/* =====================================================
           FEATURES
       ===================================================== */}
 
       <Features />
-
 
       {/* =====================================================
           PRODUCTS
@@ -580,13 +610,10 @@ export default function HomePage() {
         id="products"
         className="max-w-7xl mx-auto px-6 py-12 scroll-mt-24"
       >
-
         {/* PRODUCT HEADER */}
 
         <div className="mb-7">
-
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
                 {language === "ta"
@@ -600,9 +627,7 @@ export default function HomePage() {
                   : "Traditional foods made with care"}
               </p>
             </div>
-
           </div>
-
 
           {/* =================================================
               SIMPLE CATEGORY BAR
@@ -610,7 +635,6 @@ export default function HomePage() {
 
           <div className="mt-6 -mx-2 px-2 overflow-x-auto">
             <div className="flex items-center gap-2 min-w-max pb-2">
-
               {categories.map((category) => {
                 const isSelected =
                   selectedCategory ===
@@ -645,12 +669,9 @@ export default function HomePage() {
                   </button>
                 );
               })}
-
             </div>
           </div>
-
         </div>
-
 
         {/* =================================================
             NORMAL PRODUCTS
@@ -665,11 +686,6 @@ export default function HomePage() {
           />
         ) : selectedCategory ===
           "Special Collections" ? (
-          /*
-            When Special Collections is selected,
-            don't show an ugly "No products found"
-            message because Combo Packs appear below.
-          */
           <div className="py-4" />
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 py-14 px-6 text-center">
@@ -680,9 +696,7 @@ export default function HomePage() {
             </p>
           </div>
         )}
-
       </section>
-
 
       {/* =====================================================
           COMBO PACKS
@@ -693,11 +707,9 @@ export default function HomePage() {
           id="combo-packs"
           className="max-w-7xl mx-auto px-6 py-12 scroll-mt-24"
         >
-
           {/* COMBO HEADER */}
 
           <div className="mb-8">
-
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
               {language === "ta"
                 ? "காம்போ தொகுப்புகள்"
@@ -709,17 +721,13 @@ export default function HomePage() {
                 ? "சிறப்பாகத் தேர்ந்தெடுக்கப்பட்ட உணவுத் தொகுப்புகளில் அதிகம் சேமிக்கவும்."
                 : "Save more with our specially curated traditional food combos."}
             </p>
-
           </div>
-
 
           {/* COMBO GRID */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
             {filteredCombos.map(
               (combo) => {
-
                 const regularPrice =
                   Number(
                     combo.regularPrice
@@ -761,11 +769,9 @@ export default function HomePage() {
                       duration-300
                     "
                   >
-
                     {/* IMAGE */}
 
                     <div className="relative bg-gray-50">
-
                       <img
                         src={comboImage}
                         alt={
@@ -782,7 +788,6 @@ export default function HomePage() {
                             "/placeholder.png";
                         }}
                       />
-
 
                       {/* SAVINGS BADGE */}
 
@@ -807,25 +812,19 @@ export default function HomePage() {
                             : `Save ₹${savings}`}
                         </div>
                       )}
-
                     </div>
-
 
                     {/* DETAILS */}
 
                     <div className="p-5">
-
                       {/* NAME */}
 
                       <h3 className="text-xl font-bold text-gray-900">
-
                         {language === "ta" &&
                         combo.tamilName
                           ? combo.tamilName
                           : combo.name}
-
                       </h3>
-
 
                       {/* ENGLISH NAME */}
 
@@ -835,7 +834,6 @@ export default function HomePage() {
                             {combo.name}
                           </p>
                         )}
-
 
                       {/* DESCRIPTION */}
 
@@ -847,13 +845,11 @@ export default function HomePage() {
                         </p>
                       )}
 
-
                       {/* INCLUDED ITEMS */}
 
                       {combo.items?.length >
                         0 && (
                         <div className="mt-4">
-
                           <p className="font-semibold text-sm mb-2 text-gray-800">
                             {language ===
                             "ta"
@@ -862,7 +858,6 @@ export default function HomePage() {
                           </p>
 
                           <ul className="text-sm text-gray-600 space-y-1.5">
-
                             {combo.items.map(
                               (
                                 item,
@@ -890,17 +885,13 @@ export default function HomePage() {
                                 </li>
                               )
                             )}
-
                           </ul>
-
                         </div>
                       )}
-
 
                       {/* PRICE */}
 
                       <div className="flex items-end gap-3 mt-5">
-
                         {regularPrice >
                           comboPrice && (
                           <span className="text-gray-400 line-through text-sm">
@@ -917,9 +908,7 @@ export default function HomePage() {
                             comboPrice
                           }
                         </span>
-
                       </div>
-
 
                       {/* SAVINGS */}
 
@@ -931,7 +920,6 @@ export default function HomePage() {
                             : `You save ₹${savings}`}
                         </p>
                       )}
-
 
                       {/* ADD TO CART */}
 
@@ -960,19 +948,14 @@ export default function HomePage() {
                           ? "காம்போவை கார்ட்டில் சேர்க்கவும்"
                           : "Add Combo to Cart"}
                       </button>
-
                     </div>
-
                   </div>
                 );
               }
             )}
-
           </div>
-
         </section>
       )}
-
 
       {/* =====================================================
           CART
@@ -982,7 +965,6 @@ export default function HomePage() {
         id="cart"
         className="max-w-7xl mx-auto px-6 py-20 scroll-mt-24"
       >
-
         <Suspense
           fallback={
             <div className="text-center py-10 text-gray-500">
@@ -990,7 +972,6 @@ export default function HomePage() {
             </div>
           }
         >
-
           <Cart
             cart={cart}
             setCart={setCart}
@@ -1013,11 +994,8 @@ export default function HomePage() {
               appliedCoupon
             }
           />
-
         </Suspense>
-
       </section>
-
 
       {/* =====================================================
           ABOUT
@@ -1027,13 +1005,11 @@ export default function HomePage() {
         <About />
       </section>
 
-
       {/* =====================================================
           FAQ
       ===================================================== */}
 
       <FAQ />
-
 
       {/* =====================================================
           TESTIMONIALS
@@ -1049,7 +1025,6 @@ export default function HomePage() {
         <Testimonials />
       </Suspense>
 
-
       {/* =====================================================
           CONTACT
       ===================================================== */}
@@ -1058,13 +1033,11 @@ export default function HomePage() {
         <Contact />
       </section>
 
-
       {/* =====================================================
           FOOTER
       ===================================================== */}
 
       <Footer />
-
     </div>
   );
 }
