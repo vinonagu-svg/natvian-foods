@@ -59,9 +59,6 @@ export default function Cart({
   // =========================
   // GET CART PRICE
   // =========================
-  // Normal product = mrp
-  // Combo pack = comboPrice
-  // =========================
 
   const getPrice = (item) => {
     if (item?.type === "combo") {
@@ -70,6 +67,126 @@ export default function Cart({
 
     return Number(item?.mrp || 0);
   };
+
+  // =========================
+  // CONVERT WEIGHT TO KG
+  // =========================
+
+  const parseWeightToKg = (weight) => {
+    if (weight === null || weight === undefined) {
+      return 0;
+    }
+
+    const value = String(weight)
+      .trim()
+      .toLowerCase()
+      .replace(/,/g, "");
+
+    if (!value) {
+      return 0;
+    }
+
+    const numberMatch = value.match(/[\d.]+/);
+
+    if (!numberMatch) {
+      return 0;
+    }
+
+    const number = Number(numberMatch[0]);
+
+    if (!Number.isFinite(number)) {
+      return 0;
+    }
+
+    // grams
+    if (value.includes("g") && !value.includes("kg")) {
+      return number / 1000;
+    }
+
+    // kilograms
+    if (value.includes("kg")) {
+      return number;
+    }
+
+    // If no unit is provided:
+    // assume the value is already in kg.
+    return number;
+  };
+
+  // =========================
+  // GET TOTAL CART WEIGHT
+  // =========================
+  //
+  // Normal product:
+  // item.weight × quantity
+  //
+  // Combo:
+  // component weight × component quantity
+  // × combo quantity
+  //
+  // =========================
+
+  const totalWeightKg = cart.reduce(
+    (total, item) => {
+      const itemQty = Number(item.qty || 1);
+
+      // COMBO PACK
+      if (
+        item.type === "combo" &&
+        Array.isArray(item.items)
+      ) {
+        const comboWeight = item.items.reduce(
+          (comboTotal, comboItem) => {
+            const componentWeight =
+              parseWeightToKg(comboItem.weight);
+
+            const componentQty = Number(
+              comboItem.quantity || 1
+            );
+
+            return (
+              comboTotal +
+              componentWeight * componentQty
+            );
+          },
+          0
+        );
+
+        return (
+          total +
+          comboWeight * itemQty
+        );
+      }
+
+      // NORMAL PRODUCT
+      const productWeight =
+        parseWeightToKg(item.weight);
+
+      return (
+        total +
+        productWeight * itemQty
+      );
+    },
+    0
+  );
+
+  // =========================
+  // ROUND WEIGHT UP TO
+  // NEXT 1 KG SLAB
+  // =========================
+  //
+  // 0.5 kg  -> 1 kg
+  // 1.0 kg  -> 1 kg
+  // 1.1 kg  -> 2 kg
+  // 2.0 kg  -> 2 kg
+  // 2.1 kg  -> 3 kg
+  //
+  // =========================
+
+  const shippingWeightSlab =
+    totalWeightKg > 0
+      ? Math.ceil(totalWeightKg)
+      : 0;
 
   // =========================
   // CART TOTAL
@@ -123,7 +240,6 @@ export default function Cart({
       return;
     }
 
-    // Check expiry
     let expiryDate = null;
 
     if (found.expiryDate?.seconds) {
@@ -145,7 +261,6 @@ export default function Cart({
       return;
     }
 
-    // Minimum cart value
     const minCart = Number(
       found.minCartValue || 0
     );
@@ -161,7 +276,6 @@ export default function Cart({
       return;
     }
 
-    // Calculate discount
     let discount = 0;
 
     if (
@@ -223,16 +337,33 @@ export default function Cart({
   // =========================
   // SHIPPING
   // =========================
+  //
+  // Tamil Nadu:
+  // Up to 1 kg = ₹80
+  // 1.1 - 2 kg = ₹160
+  // 2.1 - 3 kg = ₹240
+  //
+  // Other states:
+  // Up to 1 kg = ₹120
+  // 1.1 - 2 kg = ₹240
+  // 2.1 - 3 kg = ₹360
+  //
+  // Free shipping if order value >= ₹999
+  //
+  // =========================
 
   let shipping = 0;
 
   if (finalAfterCoupon >= 999) {
     shipping = 0;
-  } else {
-    shipping =
+  } else if (shippingWeightSlab > 0) {
+    const baseShipping =
       state === "Tamil Nadu"
-        ? 60
-        : 100;
+        ? 80
+        : 120;
+
+    shipping =
+      shippingWeightSlab * baseShipping;
   }
 
   // =========================
@@ -279,8 +410,6 @@ export default function Cart({
 
   const handlePayment = async () => {
     try {
-      // Validation
-
       if (!customer.name.trim()) {
         alert("Please enter your name");
         return;
@@ -355,7 +484,6 @@ export default function Cart({
             item.savings || 0
           ),
 
-          // ACTUAL PRICE CHARGED
           price: Number(actualPrice) || 0,
 
           qty: Number(item.qty || 1),
@@ -394,6 +522,11 @@ export default function Cart({
           state: state,
           pincode: customer.pincode,
           coupon: appliedCoupon || "",
+          totalWeightKg:
+            Number(totalWeightKg.toFixed(3)),
+          shippingWeightSlab:
+            shippingWeightSlab,
+          shippingCharge: shipping,
         },
 
         theme: {
@@ -446,6 +579,13 @@ export default function Cart({
 
                 sgst:
                   Number(sgst) || 0,
+
+                // SHIPPING DETAILS
+                totalWeightKg:
+                  Number(totalWeightKg.toFixed(3)),
+
+                shippingWeightSlab:
+                  Number(shippingWeightSlab),
 
                 shipping:
                   Number(shipping) || 0,
@@ -932,6 +1072,20 @@ export default function Cart({
             </span>
           </div>
 
+          {/* WEIGHT */}
+
+          <div className="flex justify-between text-gray-600">
+            <span>
+              Total Weight
+            </span>
+
+            <span>
+              {totalWeightKg.toFixed(3)} kg
+            </span>
+          </div>
+
+          {/* SHIPPING */}
+
           <div className="flex justify-between">
             <span>
               Shipping
@@ -948,13 +1102,14 @@ export default function Cart({
             GST is already included in the product price.
           </p>
 
-          {finalAfterCoupon < 999 && (
-            <p className="text-sm text-gray-500">
-              {state === "Tamil Nadu"
-                ? "Tamil Nadu shipping: ₹60"
-                : "Other state shipping: ₹100"}
-            </p>
-          )}
+          {finalAfterCoupon < 999 &&
+            shippingWeightSlab > 0 && (
+              <p className="text-sm text-gray-500">
+                {state === "Tamil Nadu"
+                  ? `Tamil Nadu courier: ₹80 per kg slab (${shippingWeightSlab} kg)`
+                  : `Other state courier: ₹120 per kg slab (${shippingWeightSlab} kg)`}
+              </p>
+            )}
 
           {finalAfterCoupon >= 999 && (
             <p className="text-sm text-green-700 font-semibold">

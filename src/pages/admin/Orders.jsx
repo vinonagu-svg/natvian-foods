@@ -712,6 +712,10 @@ export default function Orders() {
                       Bluedart
                     </option>
 
+                    <option value="ST Courier">
+                      ST Courier
+                    </option>
+
                   </select>
 
                   <input
