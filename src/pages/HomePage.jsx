@@ -18,7 +18,7 @@ import About from "../components/About";
 import FAQ from "../components/FAQ";
 import Contact from "../components/Contact";
 import Footer from "../components/Footer";
-
+import YouTubeShorts from "../components/YouTubeShorts";
 // Images
 import MurungabannerImage from "../assets/Murunga-banner.webp";
 import BananabannerImage from "../assets/Bloom-banner.webp";
@@ -956,7 +956,11 @@ export default function HomePage() {
           </div>
         </section>
       )}
+      {/* =====================================================
+          CHILDREN FEEDBACK VIDEOS
+          ===================================================== */}
 
+      <YouTubeShorts language={language} />
       {/* =====================================================
           CART
       ===================================================== */}
