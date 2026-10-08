@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 import {
   collection,
   onSnapshot,
   doc,
+  getDoc,
   updateDoc,
+  setDoc,
   serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "../../firebase";
 
 export default function Orders() {
+  const { user } = useAuth();
+
   const [orders, setOrders] = useState([]);
   const [trackingData, setTrackingData] = useState({});
 
@@ -170,6 +175,74 @@ export default function Orders() {
   };
 
   // =========================
+  // CREATE PUBLIC TRACKING
+  // =========================
+  const createPublicTracking = async (order) => {
+    try {
+      const orderNumber =
+        order.orderNumber || order.id;
+
+      const trackingRef = doc(
+        db,
+        "publicTracking",
+        orderNumber
+      );
+
+      const trackingSnap =
+        await getDoc(trackingRef);
+
+      // Do not overwrite an existing
+      // tracking document
+      if (trackingSnap.exists()) {
+        return;
+      }
+
+      const firstItem =
+        order.items?.[0];
+
+      await setDoc(trackingRef, {
+        orderNumber,
+
+        orderStatus:
+          order.orderStatus || "pending",
+
+        grandTotal:
+          Number(order.grandTotal || 0),
+
+        createdAt:
+          order.createdAt?.toDate
+            ? order.createdAt
+                .toDate()
+                .toLocaleString("en-IN")
+            : "",
+
+        product:
+          firstItem?.name || "",
+
+        weight:
+          firstItem?.weight || "",
+
+        qty:
+          Number(firstItem?.qty || 1),
+
+        courierName: "",
+
+        trackingNumber: "",
+      });
+
+      console.log(
+        "Public tracking created:",
+        orderNumber
+      );
+    } catch (error) {
+      console.error(
+        "Public tracking creation error:",
+        error
+      );
+    }
+  };
+
+  // =========================
   // LIVE ORDERS
   // =========================
   useEffect(() => {
@@ -204,16 +277,22 @@ export default function Orders() {
         // FIRST SNAPSHOT
         // =========================
         if (!firstSnapshotLoaded.current) {
-          snap.docs.forEach((orderDoc) => {
-            knownOrderIds.current.add(
-              orderDoc.id
-            );
-          });
+  // Create public tracking for any
+  // existing orders that don't have it yet
+  data.forEach((order) => {
+    createPublicTracking(order);
+  });
 
-          firstSnapshotLoaded.current = true;
+  snap.docs.forEach((orderDoc) => {
+    knownOrderIds.current.add(
+      orderDoc.id
+    );
+  });
 
-          return;
-        }
+  firstSnapshotLoaded.current = true;
+
+  return;
+}
 
         // =========================
         // DETECT NEW ORDERS
@@ -237,6 +316,9 @@ export default function Orders() {
 
           // Remember this order
           knownOrderIds.current.add(order.id);
+
+          // Create public tracking
+          createPublicTracking(order);
 
           // Notify admin
           notifyNewOrder(order);
@@ -266,6 +348,20 @@ export default function Orders() {
         "orders",
         id
       );
+
+      const currentOrder = orders.find(
+        (order) => order.id === id
+      );
+
+      const publicTrackingRef = doc(
+        db,
+        "publicTracking",
+        currentOrder?.orderNumber || id
+      );
+
+      // ==========================
+      // UPDATE MAIN ORDER
+      // ==========================
 
       if (status === "delivered") {
         await updateDoc(orderRef, {
@@ -300,6 +396,56 @@ export default function Orders() {
           orderStatus: status,
         });
       }
+
+      // ==========================
+      // UPDATE PUBLIC TRACKING
+      // ==========================
+
+      if (currentOrder) {
+        const firstItem =
+          currentOrder.items?.[0];
+
+        await setDoc(
+          publicTrackingRef,
+          {
+            orderNumber:
+              currentOrder.orderNumber || id,
+
+            orderStatus: status,
+
+            grandTotal:
+              Number(
+                currentOrder.grandTotal || 0
+              ),
+
+            createdAt:
+              currentOrder.createdAt
+                ?.toDate
+                ? currentOrder.createdAt
+                    .toDate()
+                    .toLocaleString("en-IN")
+                : "",
+
+            product:
+              firstItem?.name || "",
+
+            weight:
+              firstItem?.weight || "",
+
+            qty:
+              Number(firstItem?.qty || 1),
+
+            courierName:
+              currentOrder.courierName || "",
+
+            trackingNumber:
+              currentOrder.trackingNumber || "",
+          },
+          {
+            merge: true,
+          }
+        );
+      }
     } catch (error) {
       console.error(
         "Status update error:",
@@ -317,6 +463,10 @@ export default function Orders() {
     trackingNumber
   ) => {
     try {
+      const currentOrder = orders.find(
+        (order) => order.id === orderId
+      );
+
       await updateDoc(
         doc(db, "orders", orderId),
         {
@@ -324,6 +474,27 @@ export default function Orders() {
           trackingNumber,
         }
       );
+
+      if (currentOrder) {
+        const orderNumber =
+          currentOrder.orderNumber || orderId;
+
+        await setDoc(
+          doc(
+            db,
+            "publicTracking",
+            orderNumber
+          ),
+          {
+            orderNumber,
+            courierName,
+            trackingNumber,
+          },
+          {
+            merge: true,
+          }
+        );
+      }
 
       alert("Tracking Saved");
     } catch (error) {
@@ -654,8 +825,8 @@ export default function Orders() {
             {/* =========================
                 COURIER DETAILS
             ========================= */}
-            {order.orderStatus ===
-              "shipped" && (
+            {(order.orderStatus === "processing" ||
+              order.orderStatus === "shipped") && (
 
               <div className="mt-4 border-t pt-4">
 
@@ -847,8 +1018,8 @@ export default function Orders() {
               </button>
 
               {/* MARK DELIVERED */}
-              {order.orderStatus ===
-                "shipped" && (
+              {(order.orderStatus === "processing" ||
+                order.orderStatus === "shipped") && (
 
                 <button
                   disabled={
@@ -872,24 +1043,24 @@ export default function Orders() {
               )}
 
               {/* CANCEL */}
-              {order.orderStatus !==
-                "delivered" &&
-                order.orderStatus !==
-                  "cancelled" && (
+              {(user?.role === "owner" ||
+                user?.role === "superadmin") &&
+                order.orderStatus !== "delivered" &&
+                order.orderStatus !== "cancelled" && (
 
-                <button
-                  onClick={() =>
-                    updateStatus(
-                      order.id,
-                      "cancelled"
-                    )
-                  }
-                  className="px-4 py-2 bg-red-600 text-white rounded-xl"
-                >
-                  Cancel Order
-                </button>
+                  <button
+                    onClick={() =>
+                      updateStatus(
+                        order.id,
+                        "cancelled"
+                      )
+                    }
+                    className="px-4 py-2 bg-red-600 text-white rounded-xl"
+                  >
+                    Cancel Order
+                  </button>
 
-              )}
+                )}
 
               {/* RESET */}
               {order.orderStatus !==

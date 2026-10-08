@@ -6,6 +6,8 @@ import PermissionRoute from "./auth/PermissionRoute";
 
 // PUBLIC
 import HomePage from "./pages/HomePage";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import TrackOrder from "./pages/TrackOrder";
 
 // ADMIN LAYOUT
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -40,6 +42,14 @@ export default function App() {
 
         {/* ================= PUBLIC ================= */}
         <Route path="/" element={<HomePage />} />
+        <Route
+  path="/order-confirmation"
+  element={<OrderConfirmation />}
+/>
+<Route
+  path="/track-order"
+  element={<TrackOrder />}
+/>
 
         {/* ================= ADMIN LOGIN (IMPORTANT - MUST EXIST) ================= */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -113,11 +123,23 @@ export default function App() {
     </PermissionRoute>
   }
 />
-          {/* CATEGORIES */}
-          <Route path="categories" element={<Categories />} />
+          <Route
+  path="categories"
+  element={
+    <PermissionRoute permission="categories:read">
+      <Categories />
+    </PermissionRoute>
+  }
+/>
 
-          {/* SUBCATEGORIES */}
-          <Route path="subcategories" element={<Subcategories />} />
+<Route
+  path="subcategories"
+  element={
+    <PermissionRoute permission="subcategories:read">
+      <Subcategories />
+    </PermissionRoute>
+  }
+/>
 
           {/* COUPONS */}
           <Route

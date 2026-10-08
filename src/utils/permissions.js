@@ -4,8 +4,11 @@ export const hasPermission = (user, permission) => {
     return false;
   }
 
-  // Owner has full access
-  if (user.role === "owner") {
+  // Owner and Superadmin have full access
+  if (
+    user.role === "owner" ||
+    user.role === "superadmin"
+  ) {
     return true;
   }
 

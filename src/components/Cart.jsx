@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 
 import {
@@ -13,6 +14,7 @@ export default function Cart({
   setCart,
   removeFromCart,
 }) {
+  const navigate = useNavigate();
   const [customer, setCustomer] = useState({
     name: "",
     phone: "",
@@ -611,9 +613,17 @@ export default function Cart({
               }
             );
 
-            alert("Payment Successful");
-
             setCart([]);
+
+navigate("/order-confirmation", {
+  state: {
+    order: {
+      orderNumber: orderNumber,
+      grandTotal: grandTotal,
+      paymentStatus: "PAID",
+    },
+  },
+});
           } catch (error) {
             console.error(
               "Order save error:",

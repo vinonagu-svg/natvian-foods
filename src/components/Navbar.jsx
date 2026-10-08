@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import MurungaLeaf from "../assets/murunga-leaf.webp";
 
 export default function Navbar({
@@ -259,7 +260,12 @@ export default function Navbar({
               </span>
             )}
           </a>
-
+<Link
+  to="/track-order"
+  className="font-medium text-gray-700 hover:text-green-700 transition"
+>
+  📦 Track Order
+</Link>
           {/* DARK MODE */}
           <button
             onClick={() =>
@@ -386,6 +392,16 @@ export default function Navbar({
           >
             🛒 Cart ({cartCount})
           </a>
+          {/* TRACK ORDER */}
+<Link
+  to="/track-order"
+  onClick={() =>
+    setMenuOpen(false)
+  }
+  className="block px-6 py-4 border-b"
+>
+  📦 Track Order
+</Link>
 
           {/* DARK MODE */}
           <button
